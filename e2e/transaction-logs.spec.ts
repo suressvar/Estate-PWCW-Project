@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Epic: Transaction Logging Forms", () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([{ name: "estate_authenticated", value: "true", domain: "localhost", path: "/" }]);
+  });
+
   test("1. Submit Fertilizer Log entry and verify in history", async ({ page }) => {
+
     await page.goto("http://localhost:3000/fertilizer");
     await expect(page.locator("main h1")).toContainText("Fertilizer Logs");
 

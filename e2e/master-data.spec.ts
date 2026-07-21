@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Epic: Plot/Crop Master Data Management", () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([{ name: "estate_authenticated", value: "true", domain: "localhost", path: "/" }]);
+  });
+
   test("create a plot, create a crop, assign crop to plot, verify in plot_crops list", async ({ page }) => {
+
     // 1. Navigate to Plots page and create a new plot
     await page.goto("http://localhost:3000/plots");
     await expect(page.locator("main h1")).toContainText("Plot Master Data Management");

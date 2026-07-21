@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/sidebar";
+import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
   title: "Ranga Estate - PWCW Management System",
@@ -14,14 +14,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full bg-slate-50">
-      <body className="min-h-full flex antialiased text-slate-900 font-sans">
-        <Sidebar />
-        <main className="flex-1 p-8 overflow-y-auto min-h-screen">
-          {children}
-        </main>
+      <body className="min-h-full antialiased text-slate-900 font-sans">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
 }
+
 
 

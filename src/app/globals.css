@@ -2,7 +2,16 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Hide Next.js Dev Indicator Badge Overlay */
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+next-js-internal-dev-tools-portal,
+div[class*="nextjs-portal"] {
+  display: none !important;
+}
+
 @theme inline {
+
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);

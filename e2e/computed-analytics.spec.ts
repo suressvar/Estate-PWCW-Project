@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Epic: Computed Reports & Financial Dashboard", () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([{ name: "estate_authenticated", value: "true", domain: "localhost", path: "/" }]);
+  });
+
   test("seed known transactions and verify computed P&L matches manual calculation", async ({ page }) => {
+
     // 1. Reset/clear existing logs to ensure deterministic calculation
     await page.goto("http://localhost:3000/fertilizer");
 

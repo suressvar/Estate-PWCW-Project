@@ -13,8 +13,10 @@ test.describe("Security & Analytics Edge Cases", () => {
     expect(data).toHaveProperty("kpis");
   });
 
-  test("2. Edge Cases in P&L Calculation (Zero transactions, only purchases, negative stock)", async ({ page }) => {
+  test("2. Edge Cases in P&L Calculation (Zero transactions, only purchases, negative stock)", async ({ page, context }) => {
+    await context.addCookies([{ name: "estate_authenticated", value: "true", domain: "localhost", path: "/" }]);
     await page.goto("http://localhost:3000/");
+
     await expect(page.locator("main h1")).toContainText("Executive Dashboard");
 
     // Filter by future date range with 0 transactions
