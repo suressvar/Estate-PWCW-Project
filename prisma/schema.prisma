@@ -1,0 +1,247 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// Dynamic Role definitions configurable by Admins.
+model Role {
+  id                    String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String     @unique // e.g., "Admin", "Manager", "Field Staff"
+  
+  // Per-module fine-grained permission flags
+  canManagePlots       Boolean    @default(false)
+  canManageCrops       Boolean    @default(false)
+  canLogFertilizer     Boolean    @default(false)
+  canLogDiesel         Boolean    @default(false)
+  canLogMachinery      Boolean    @default(false)
+  canLogLabor          Boolean    @default(false)
+  canLogProduction     Boolean    @default(false)
+  canLogSales          Boolean    @default(false)
+  canViewReports       Boolean    @default(false)
+  canManageUsers       Boolean    @default(false)
+
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+  userRoles             UserRole[]
+
+  @@map("roles")
+}
+
+/// Links Supabase Auth users to their dynamic Roles.
+model UserRole {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid // Maps to auth.users.id
+  roleId    String   @map("role_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@map("user_roles")
+}
+
+/// Master table for Plots.
+model Plot {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String           @unique
+  location    String?
+  areaAcres   Decimal          @map("area_acres") @db.Decimal(10, 2)
+  status      PlotStatus       @default(ACTIVE)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  plotCrops   PlotCrop[]
+  assignments PlotAssignment[]
+
+  @@map("plots")
+}
+
+enum PlotStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Master table for Crops/Activities.
+model CropActivity {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String           @unique // e.g., "Tomato", "Fertilizer apply", "Tomato tieing"
+  type      CropActivityType @default(CROP)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  plotCrops PlotCrop[]
+
+  @@map("crop_activities")
+}
+
+enum CropActivityType {
+  CROP
+  ACTIVITY
+}
+
+/// Join table representing active tracking of a Crop or Activity on a Plot.
+model PlotCrop {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plotId         String         @map("plot_id") @db.Uuid
+  cropActivityId String         @map("crop_activity_id") @db.Uuid
+  startDate      DateTime       @map("start_date") @db.Date
+  endDate        DateTime?      @map("end_date") @db.Date
+  status         TrackingStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  plot                 Plot                  @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropActivity         CropActivity          @relation(fields: [cropActivityId], references: [id], onDelete: Cascade)
+  fertilizerLogs       FertilizerLog[]
+  machineryLogs        MachineryLog[]
+  laborLogs            LaborLog[]
+  productionLogs       ProductionLog[]
+  salesLogs            SalesLog[]
+  generalPurchaseLogs  GeneralPurchaseLog[]
+
+  @@unique([plotId, cropActivityId, startDate])
+  @@map("plot_crops")
+}
+
+enum TrackingStatus {
+  ACTIVE
+  COMPLETED
+}
+
+/// Links field staff users to specific plots they are authorized to manage/view.
+model PlotAssignment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid // Maps to auth.users.id
+  plotId    String   @map("plot_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  plot      Plot     @relation(fields: [plotId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, plotId])
+  @@map("plot_assignments")
+}
+
+/// Transaction type for stocks.
+enum StockTransactionType {
+  PURCHASE
+  CONSUMPTION
+}
+
+/// Fertilizer logs (Purchase and Consumption).
+model FertilizerLog {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plotCropId      String?              @map("plot_crop_id") @db.Uuid // Nullable for general purchases/stocking
+  transactionType StockTransactionType @map("transaction_type")
+  fertilizerName  String               @map("fertilizer_name") // e.g., "Urea", "NPK"
+  quantityKg      Decimal              @map("quantity_kg") @db.Decimal(10, 2)
+  cost            Decimal              @db.Decimal(12, 2) // Purchase cost or consumption value
+  date            DateTime             @db.Date
+  loggedBy        String               @map("logged_by") @db.Uuid // auth.users.id
+  createdAt       DateTime             @default(now()) @map("created_at")
+  notes           String?
+
+  plotCrop        PlotCrop?            @relation(fields: [plotCropId], references: [id], onDelete: SetNull)
+
+  @@map("fertilizer_logs")
+}
+
+/// Diesel logs (Purchase and Consumption).
+model DieselLog {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionType StockTransactionType @map("transaction_type")
+  quantityLiters  Decimal              @map("quantity_liters") @db.Decimal(10, 2)
+  cost            Decimal              @db.Decimal(12, 2) // Cost of purchase
+  date            DateTime             @db.Date
+  loggedBy        String               @map("logged_by") @db.Uuid // auth.users.id
+  createdAt       DateTime             @default(now()) @map("created_at")
+  notes           String?
+
+  @@map("diesel_logs")
+}
+
+/// Machinery usage logs.
+model MachineryLog {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plotCropId           String   @map("plot_crop_id") @db.Uuid
+  machineName          String   @map("machine_name") // e.g., "John Deere", "VST Tiller", "Rotavator"
+  startTime            DateTime @map("start_time")
+  endTime              DateTime @map("end_time")
+  dieselConsumedLiters Decimal  @map("diesel_consumed_liters") @db.Decimal(10, 2)
+  date                 DateTime @db.Date
+  loggedBy             String   @map("logged_by") @db.Uuid // auth.users.id
+  createdAt            DateTime @default(now()) @map("created_at")
+  notes                String?
+
+  plotCrop             PlotCrop @relation(fields: [plotCropId], references: [id], onDelete: Cascade)
+
+  @@map("machinery_logs")
+}
+
+/// Labor usage logs.
+model LaborLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plotCropId     String   @map("plot_crop_id") @db.Uuid
+  date           DateTime @db.Date
+  menCount       Int      @map("men_count")
+  womenCount     Int      @map("women_count")
+  menWageRate    Decimal  @map("men_wage_rate") @db.Decimal(10, 2)
+  womenWageRate  Decimal  @map("women_wage_rate") @db.Decimal(10, 2)
+  loggedBy       String   @map("logged_by") @db.Uuid // auth.users.id
+  createdAt      DateTime @default(now()) @map("created_at")
+  notes          String?
+
+  plotCrop       PlotCrop @relation(fields: [plotCropId], references: [id], onDelete: Cascade)
+
+  @@map("labor_logs")
+}
+
+/// Production / Harvest logs.
+model ProductionLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plotCropId String   @map("plot_crop_id") @db.Uuid
+  date       DateTime @db.Date
+  quantityKg Decimal  @map("quantity_kg") @db.Decimal(10, 2)
+  loggedBy   String   @map("logged_by") @db.Uuid // auth.users.id
+  createdAt  DateTime @default(now()) @map("created_at")
+  notes      String?
+
+  plotCrop   PlotCrop @relation(fields: [plotCropId], references: [id], onDelete: Cascade)
+
+  @@map("production_logs")
+}
+
+/// Sales logs.
+model SalesLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plotCropId String   @map("plot_crop_id") @db.Uuid
+  date       DateTime @db.Date
+  quantityKg Decimal  @map("quantity_kg") @db.Decimal(10, 2)
+  value      Decimal  @db.Decimal(12, 2) // Revenue received
+  buyerName  String?  @map("buyer_name")
+  loggedBy   String   @map("logged_by") @db.Uuid // auth.users.id
+  createdAt  DateTime @default(now()) @map("created_at")
+  notes      String?
+
+  plotCrop   PlotCrop @relation(fields: [plotCropId], references: [id], onDelete: Cascade)
+
+  @@map("sales_logs")
+}
+
+/// General purchases / Miscellaneous logs.
+model GeneralPurchaseLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plotCropId  String?  @map("plot_crop_id") @db.Uuid // Nullable if not tied to a specific crop
+  date        DateTime @db.Date
+  description String
+  cost        Decimal  @db.Decimal(12, 2)
+  loggedBy    String   @map("logged_by") @db.Uuid // auth.users.id
+  createdAt   DateTime @default(now()) @map("created_at")
+  notes       String?
+
+  plotCrop    PlotCrop? @relation(fields: [plotCropId], references: [id], onDelete: SetNull)
+
+  @@map("general_purchase_logs")
+}

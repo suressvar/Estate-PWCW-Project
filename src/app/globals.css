@@ -1,0 +1,105 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-profit: #10b981;
+  --color-profit-bg: #ecfdf5;
+  --color-loss: #ef4444;
+  --color-loss-bg: #fef2f2;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-amber-500: #f59e0b;
+  --color-blue-500: #3b82f6;
+}
+
+/* Tremor SVG color fallbacks for Tailwind v4 */
+.recharts-rectangle.recharts-bar-rectangle[fill="emerald"],
+svg .bg-emerald-500,
+svg [fill="#10b981"] {
+  fill: #10b981 !important;
+}
+
+.recharts-rectangle.recharts-bar-rectangle[fill="red"],
+svg .bg-red-500,
+svg [fill="#ef4444"] {
+  fill: #ef4444 !important;
+}
+
+/* Tremor default bar color fallback */
+.tremor-BarChart .recharts-bar-rectangle:nth-child(1) path,
+.recharts-layer.recharts-bar-series:nth-child(1) path {
+  fill: #10b981 !important;
+}
+
+.tremor-BarChart .recharts-bar-rectangle:nth-child(2) path,
+.recharts-layer.recharts-bar-series:nth-child(2) path {
+  fill: #ef4444 !important;
+}
+
+
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #047857;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #10b981;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
