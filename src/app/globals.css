@@ -10,7 +10,38 @@ div[class*="nextjs-portal"] {
   display: none !important;
 }
 
+/* Glassmorphism Structural Tokens */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+}
+
+.glass-sidebar {
+  background: rgba(6, 78, 59, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-modal {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+/* Ambient Estate Light Background Gradient Wash */
+.bg-ambient-estate {
+  background: radial-gradient(circle at 10% 20%, rgba(236, 253, 245, 0.8) 0%, rgba(241, 245, 249, 0.9) 40%, rgba(236, 253, 245, 0.5) 100%);
+  background-attachment: fixed;
+}
+
 @theme inline {
+
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   --color-background: var(--background);

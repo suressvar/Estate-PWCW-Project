@@ -13,12 +13,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full bg-slate-50">
-      <body className="min-h-full antialiased text-slate-900 font-sans">
+    <html lang="en" className="h-full bg-slate-100">
+      <body className="min-h-full antialiased text-slate-900 font-sans bg-ambient-estate">
         <AppShell>{children}</AppShell>
       </body>
     </html>
   );
+
 }
 
 

@@ -53,28 +53,28 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Top Banner / Date Filter Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between bg-white p-5 rounded-lg border border-slate-200 shadow-xs gap-4">
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between glass-panel p-5 rounded-xl gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900">Ranga Estate Executive Dashboard</h1>
           </div>
-
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-600 font-medium mt-1">
             Real-time financial aggregation, computed stock levels, and per-plot drilldown views.
           </p>
         </div>
 
-        {/* Date Range Filter Controls */}
-        <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-md border border-slate-200">
+        {/* Date Range Filter Controls (Solid background for input clarity) */}
+        <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 shadow-xs">
           <div className="flex items-center gap-1 text-xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-500" />
+            <Calendar className="w-3.5 h-3.5 text-slate-600" />
             <span className="font-semibold text-slate-700">From:</span>
             <input
               id="start-date-filter"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="p-1 bg-white border border-slate-300 rounded text-slate-900 text-xs"
+              className="p-1 bg-white border border-slate-300 rounded text-slate-900 text-xs font-semibold"
             />
           </div>
 
@@ -85,14 +85,14 @@ export default function DashboardPage() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="p-1 bg-white border border-slate-300 rounded text-slate-900 text-xs"
+              className="p-1 bg-white border border-slate-300 rounded text-slate-900 text-xs font-semibold"
             />
           </div>
 
           {(startDate || endDate) && (
             <button
               onClick={() => { setStartDate(""); setEndDate(""); }}
-              className="px-2 py-1 text-xs font-semibold text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded"
+              className="px-2 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded"
             >
               Reset Filter
             </button>
@@ -133,21 +133,21 @@ export default function DashboardPage() {
       {/* Analytics Section: Plot P&L + Stock Level Gauges */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Plot-wise P&L Chart */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-lg border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="lg:col-span-2 glass-panel p-5 rounded-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
             <div>
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-emerald-700" />
                 Plot-wise Profit & Loss Aggregation (₹)
               </h2>
-              <p className="text-xs text-slate-500">Live computed Revenue vs Expenses per Land Plot</p>
+              <p className="text-xs text-slate-600 font-medium">Live computed Revenue vs Expenses per Land Plot</p>
             </div>
             <div className="flex items-center gap-3 text-xs font-semibold">
-              <span className="flex items-center gap-1 text-emerald-700">
+              <span className="flex items-center gap-1 text-emerald-800">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
                 Revenue
               </span>
-              <span className="flex items-center gap-1 text-red-600">
+              <span className="flex items-center gap-1 text-red-700">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
                 Expense
               </span>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
                         className="w-1/3 bg-emerald-500 rounded-t relative hover:bg-emerald-600 transition-all flex flex-col justify-end items-center"
                         style={{ height: `${Math.max(5, (item.Revenue / maxVal) * 100)}%` }}
                       >
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1 rounded border border-emerald-300">
                           ₹{item.Revenue}
                         </span>
                       </div>
@@ -173,12 +173,12 @@ export default function DashboardPage() {
                         className="w-1/3 bg-red-500 rounded-t relative hover:bg-red-600 transition-all flex flex-col justify-end items-center"
                         style={{ height: `${Math.max(5, (item.Expense / maxVal) * 100)}%` }}
                       >
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 text-[10px] font-bold text-red-700 bg-red-50 px-1 rounded border border-red-200">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 text-[10px] font-bold text-red-800 bg-red-100 px-1 rounded border border-red-300">
                           ₹{item.Expense}
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs font-semibold text-slate-700">{item.plot}</span>
+                    <span className="text-xs font-semibold text-slate-800">{item.plot}</span>
                   </div>
                 );
               })}
@@ -187,9 +187,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Computed Stock Gauges */}
-        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-xs space-y-5 flex flex-col justify-between">
+        <div className="glass-panel p-5 rounded-xl space-y-5 flex flex-col justify-between">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200/80 pb-3">
               <FlaskConical className="w-4 h-4 text-emerald-700" />
               Computed Inventory Stock Levels
             </h2>
@@ -197,10 +197,10 @@ export default function DashboardPage() {
             <div className="mt-4 space-y-4 text-xs">
               <div className="space-y-1.5">
                 <div className="flex justify-between font-semibold">
-                  <span className="text-slate-700">Fertilizer Stock</span>
-                  <span className="text-emerald-700">{kpis.currentFertilizerStockKg} kg</span>
+                  <span className="text-slate-800">Fertilizer Stock</span>
+                  <span className="text-emerald-800 font-bold">{kpis.currentFertilizerStockKg} kg</span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div className="w-full bg-slate-200/70 rounded-full h-2.5 overflow-hidden border border-slate-300/50">
                   <div
                     className="bg-emerald-600 h-2.5 rounded-full"
                     style={{ width: `${Math.min(100, (kpis.currentFertilizerStockKg / 1000) * 100)}%` }}
@@ -210,10 +210,10 @@ export default function DashboardPage() {
 
               <div className="space-y-1.5">
                 <div className="flex justify-between font-semibold">
-                  <span className="text-slate-700">Diesel Reserve</span>
-                  <span className="text-amber-700 font-bold">{kpis.currentDieselStockLiters} L</span>
+                  <span className="text-slate-800">Diesel Reserve</span>
+                  <span className="text-amber-800 font-bold">{kpis.currentDieselStockLiters} L</span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div className="w-full bg-slate-200/70 rounded-full h-2.5 overflow-hidden border border-slate-300/50">
                   <div
                     className="bg-amber-500 h-2.5 rounded-full"
                     style={{ width: `${Math.min(100, (kpis.currentDieselStockLiters / 1000) * 100)}%` }}
@@ -223,14 +223,15 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-md text-xs space-y-1">
-            <span className="font-semibold text-slate-800">Dynamic Stock Aggregation:</span>
-            <p className="text-slate-500">
+          <div className="p-3 bg-white/90 border border-slate-200 rounded-lg text-xs space-y-1">
+            <span className="font-bold text-slate-800">Dynamic Stock Aggregation:</span>
+            <p className="text-slate-600 font-medium">
               Values computed dynamically via SQL purchases minus consumption logs.
             </p>
           </div>
         </div>
       </div>
+
 
       {/* Machinery Fuel Efficiency & Crop-wise P&L Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -86,11 +86,12 @@ export function CascadeLogForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-4 max-w-xl">
-      <div className="border-b border-slate-100 pb-3">
+    <form onSubmit={handleSubmit} className="glass-panel rounded-xl p-5 shadow-xs space-y-4 max-w-xl">
+      <div className="border-b border-slate-200/80 pb-3">
         <h3 className="text-sm font-bold text-slate-900">New {moduleTitle} Entry</h3>
-        <p className="text-xs text-slate-500">Immutable transaction log bound to current user session</p>
+        <p className="text-xs text-slate-600 font-medium">Immutable transaction log bound to current user session</p>
       </div>
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
         {/* Plot Selector */}

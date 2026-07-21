@@ -39,7 +39,8 @@ export const navItems: NavItem[] = [
 
 export function Sidebar() {
   return (
-    <aside className="w-64 border-r border-emerald-100 bg-emerald-950/95 text-emerald-100 flex flex-col min-h-screen">
+    <aside className="w-64 glass-sidebar text-emerald-100 flex flex-col min-h-screen">
+
       {/* Brand Header */}
       <div className="p-6 border-b border-emerald-800/60 flex items-center gap-3">
         <div className="p-2 bg-emerald-600/30 rounded-lg border border-emerald-500/30 text-emerald-400">
