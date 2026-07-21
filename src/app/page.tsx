@@ -57,10 +57,8 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900">Ranga Estate Executive Dashboard</h1>
-            <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded border border-emerald-300">
-              Live SQL Analytics
-            </span>
           </div>
+
           <p className="text-xs text-slate-500 mt-1">
             Real-time financial aggregation, computed stock levels, and per-plot drilldown views.
           </p>

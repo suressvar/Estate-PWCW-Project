@@ -59,7 +59,7 @@ export default function LoginPage() {
 
           {/* Username Input */}
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Username / Email</label>
+            <label className="block text-xs font-bold text-slate-700">Username</label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
@@ -67,11 +67,12 @@ export default function LoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin@rangaestate.com"
+                placeholder="estate_admin"
                 className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
           </div>
+
 
           {/* Password Input with Show/Hide Toggle */}
           <div className="space-y-1">
@@ -104,9 +105,10 @@ export default function LoginPage() {
 
           {/* Quick Demo Credentials Tip */}
           <div className="p-2.5 bg-slate-50 border border-slate-200 rounded text-[11px] text-slate-600 flex justify-between items-center">
-            <span>Demo: <strong className="text-slate-800">admin@rangaestate.com</strong></span>
+            <span>Demo User: <strong className="text-slate-800">estate_admin</strong></span>
             <span>Pass: <strong className="text-slate-800">admin123</strong></span>
           </div>
+
 
           {/* Submit Button */}
           <button

@@ -72,13 +72,14 @@ export function Sidebar() {
       <div className="p-4 border-t border-emerald-800/60 bg-emerald-900/30 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-white text-xs">
-            RE
+            EA
           </div>
           <div className="text-xs">
             <p className="font-medium text-emerald-100">Estate Admin</p>
-            <p className="text-emerald-400/80 text-[10px]">admin@rangaestate.com</p>
+            <p className="text-emerald-400/80 text-[10px]">Logged In</p>
           </div>
         </div>
+
         <button
           onClick={() => {
             document.cookie = "estate_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";

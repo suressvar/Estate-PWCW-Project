@@ -33,9 +33,10 @@ test.describe("Login Authentication & Password Toggle Flow", () => {
   test("3. Successful login redirects to main Executive Dashboard", async ({ page }) => {
     await page.goto("http://localhost:3000/login");
 
-    await page.fill("#login-username", "admin@rangaestate.com");
+    await page.fill("#login-username", "estate_admin");
     await page.fill("#login-password", "admin123");
     await page.click("#login-submit-btn");
+
 
     // Expect navigation to root Dashboard
     await page.waitForURL("http://localhost:3000/");
