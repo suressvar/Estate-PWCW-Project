@@ -21,7 +21,7 @@ export default function LoginPage() {
       return;
     }
 
-    if (username !== "admin" || password !== "admin123") {
+    if (username !== "Admin" || password !== "Admin123") {
       setError("Invalid username or password.");
       return;
     }
@@ -72,7 +72,7 @@ export default function LoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                placeholder="Admin"
                 className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
