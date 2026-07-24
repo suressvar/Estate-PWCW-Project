@@ -42,7 +42,7 @@ export default function LoginPage() {
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse [animation-duration:8s]" />
       <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse [animation-duration:12s]" />
 
-      <div className="max-w-md w-full bg-white/70 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white/80 overflow-hidden relative z-10 transition-all duration-500 ease-out hover:-translate-y-3 hover:shadow-[0_30px_60px_rgba(16,185,129,0.12)] hover:border-emerald-500/20 transform -translate-y-2">
+      <div className="max-w-md w-full bg-slate-50/85 backdrop-blur-md rounded-2xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.12)] border border-slate-200/80 overflow-hidden relative z-10 transition-all duration-500 ease-out hover:-translate-y-3 hover:shadow-[0_35px_70px_-10px_rgba(16,185,129,0.15)] hover:border-emerald-500/30 transform -translate-y-2">
         {/* Card Header */}
         <div className="bg-emerald-950/90 p-8 text-center space-y-3 border-b border-white/20 relative overflow-hidden group">
           {/* Subtle moving line reflection on header hover */}
