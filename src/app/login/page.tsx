@@ -37,39 +37,38 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 pb-24 relative overflow-hidden">
-      {/* Dynamic ambient backgrounds */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-teal-900/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-[30%] right-[10%] w-[300px] h-[300px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 pb-24 relative overflow-hidden">
+      {/* Light subtle green/teal ambient glows to elevate glassmorphism on a white background */}
+      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-teal-500/5 rounded-full blur-[90px] pointer-events-none" />
 
-      <div className="max-w-md w-full bg-white/10 backdrop-blur-md rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] border border-white/20 overflow-hidden relative z-10 transition-all duration-300 hover:shadow-emerald-500/10 hover:border-white/30 transform -translate-y-2">
+      <div className="max-w-md w-full bg-white/70 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white/80 overflow-hidden relative z-10 transition-all duration-300 hover:shadow-[0_20px_50px_rgba(16,185,129,0.1)] hover:border-white transform -translate-y-2">
         {/* Card Header */}
-        <div className="bg-emerald-950/40 p-8 text-center space-y-3 border-b border-white/10">
-          <div className="inline-flex p-3 bg-emerald-500/20 rounded-full text-emerald-400 border border-emerald-400/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+        <div className="bg-emerald-950/90 p-8 text-center space-y-3 border-b border-white/20">
+          <div className="inline-flex p-3 bg-emerald-500/20 rounded-full text-emerald-400 border border-emerald-400/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
             <Trees className="w-8 h-8" />
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-wide drop-shadow-sm">Ranga Estate</h1>
-          <p className="text-xs text-emerald-400 font-semibold tracking-wider uppercase">PWCW Farm Management Portal</p>
+          <p className="text-xs text-emerald-300 font-semibold tracking-wider uppercase">PWCW Farm Management Portal</p>
         </div>
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="p-8 space-y-5">
           <div className="text-center pb-2">
-            <h2 className="text-xl font-bold text-white tracking-wide">Account Sign In</h2>
-            <p className="text-xs text-slate-400 mt-1">Enter your credentials to access the system</p>
+            <h2 className="text-xl font-bold text-slate-800 tracking-wide">Account Sign In</h2>
+            <p className="text-xs text-slate-500 mt-1">Enter your credentials to access the system</p>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-lg text-red-300 text-xs flex items-center gap-2 backdrop-blur-xs">
-              <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+            <div className="p-3 bg-red-50 border border-red-200/60 rounded-lg text-red-700 text-xs flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-red-500 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Username Input */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-300 tracking-wide uppercase">Username</label>
+            <label className="block text-xs font-bold text-slate-600 tracking-wide uppercase">Username</label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
               <input
@@ -78,15 +77,14 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Admin"
-                className="w-full pl-9 pr-3 py-2.5 text-xs bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:bg-white/10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all duration-200"
+                className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all duration-200"
               />
             </div>
           </div>
 
-
           {/* Password Input with Show/Hide Toggle */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-300 tracking-wide uppercase">Password</label>
+            <label className="block text-xs font-bold text-slate-600 tracking-wide uppercase">Password</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
               <input
@@ -95,17 +93,17 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-10 py-2.5 text-xs bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:bg-white/10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all duration-200"
+                className="w-full pl-9 pr-10 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all duration-200"
               />
               <button
                 type="button"
                 id="toggle-password-visibility"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3.5 text-slate-400 hover:text-white transition-colors"
+                className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 transition-colors"
                 title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
-                  <EyeOff className="w-4 h-4 text-emerald-400" />
+                  <EyeOff className="w-4 h-4 text-emerald-600" />
                 ) : (
                   <Eye className="w-4 h-4 text-slate-400" />
                 )}
@@ -113,15 +111,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-
-
-
           {/* Submit Button */}
           <button
             type="submit"
             id="login-submit-btn"
             disabled={isLoading}
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 disabled:opacity-50 text-white font-bold text-xs rounded-lg shadow-lg hover:shadow-emerald-500/20 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer transform active:scale-[0.98]"
+            className="w-full py-3 bg-emerald-700 hover:bg-emerald-600 disabled:bg-emerald-800 disabled:opacity-50 text-white font-bold text-xs rounded-lg shadow-md hover:shadow-emerald-500/10 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer transform active:scale-[0.98]"
           >
             {isLoading ? "Authenticating..." : "Login"}
           </button>
