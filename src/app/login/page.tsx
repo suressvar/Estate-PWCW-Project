@@ -38,14 +38,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4 pb-24 relative overflow-hidden">
-      {/* Light subtle green/teal ambient glows to elevate glassmorphism on a white background */}
-      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-teal-500/5 rounded-full blur-[90px] pointer-events-none" />
+      {/* Dynamic breathing ambient glows */}
+      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse [animation-duration:8s]" />
+      <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse [animation-duration:12s]" />
 
-      <div className="max-w-md w-full bg-white/70 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white/80 overflow-hidden relative z-10 transition-all duration-300 hover:shadow-[0_20px_50px_rgba(16,185,129,0.1)] hover:border-white transform -translate-y-2">
+      <div className="max-w-md w-full bg-white/70 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white/80 overflow-hidden relative z-10 transition-all duration-500 ease-out hover:-translate-y-3 hover:shadow-[0_30px_60px_rgba(16,185,129,0.12)] hover:border-emerald-500/20 transform -translate-y-2">
         {/* Card Header */}
-        <div className="bg-emerald-950/90 p-8 text-center space-y-3 border-b border-white/20">
-          <div className="inline-flex p-3 bg-emerald-500/20 rounded-full text-emerald-400 border border-emerald-400/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+        <div className="bg-emerald-950/90 p-8 text-center space-y-3 border-b border-white/20 relative overflow-hidden group">
+          {/* Subtle moving line reflection on header hover */}
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+          
+          <div className="inline-flex p-3 bg-emerald-500/20 rounded-full text-emerald-400 border border-emerald-400/30 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-transform duration-500 group-hover:scale-110">
             <Trees className="w-8 h-8" />
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-wide drop-shadow-sm">Ranga Estate</h1>
@@ -60,7 +63,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200/60 rounded-lg text-red-700 text-xs flex items-center gap-2">
+            <div className="p-3 bg-red-50 border border-red-200/60 rounded-lg text-red-700 text-xs flex items-center gap-2 animate-bounce">
               <ShieldAlert className="w-4 h-4 text-red-500 shrink-0" />
               <span>{error}</span>
             </div>
@@ -70,14 +73,14 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-600 tracking-wide uppercase">Username</label>
             <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+              <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 transition-colors duration-200" />
               <input
                 id="login-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Admin"
-                className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all duration-200"
+                className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all duration-300"
               />
             </div>
           </div>
@@ -86,14 +89,14 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-600 tracking-wide uppercase">Password</label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 transition-colors duration-200" />
               <input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-10 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all duration-200"
+                className="w-full pl-9 pr-10 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all duration-300"
               />
               <button
                 type="button"
@@ -116,7 +119,7 @@ export default function LoginPage() {
             type="submit"
             id="login-submit-btn"
             disabled={isLoading}
-            className="w-full py-3 bg-emerald-700 hover:bg-emerald-600 disabled:bg-emerald-800 disabled:opacity-50 text-white font-bold text-xs rounded-lg shadow-md hover:shadow-emerald-500/10 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer transform active:scale-[0.98]"
+            className="w-full py-3 bg-emerald-700 hover:bg-emerald-600 disabled:bg-emerald-800 disabled:opacity-50 text-white font-bold text-xs rounded-lg shadow-md hover:shadow-emerald-500/20 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.01] active:scale-[0.99]"
           >
             {isLoading ? "Authenticating..." : "Login"}
           </button>
