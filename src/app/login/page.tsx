@@ -21,6 +21,11 @@ export default function LoginPage() {
       return;
     }
 
+    if (username !== "admin" || password !== "admin123") {
+      setError("Invalid username or password.");
+      return;
+    }
+
     setIsLoading(true);
 
     // Store auth state in cookie/sessionStorage
@@ -67,7 +72,7 @@ export default function LoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="estate_admin"
+                placeholder="admin"
                 className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
@@ -103,11 +108,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Quick Demo Credentials Tip */}
-          <div className="p-2.5 bg-slate-50 border border-slate-200 rounded text-[11px] text-slate-600 flex justify-between items-center">
-            <span>Demo User: <strong className="text-slate-800">estate_admin</strong></span>
-            <span>Pass: <strong className="text-slate-800">admin123</strong></span>
-          </div>
+
 
 
           {/* Submit Button */}
