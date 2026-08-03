@@ -14,7 +14,6 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const startDate = searchParams.get("startDate");
   const endDate = searchParams.get("endDate");
-  const plotFilter = searchParams.get("plot");
 
   const fert = getFertilizerLogs().filter((l) => isWithinDateRange(l.date, startDate, endDate));
   const diesel = getDieselLogs().filter((l) => isWithinDateRange(l.date, startDate, endDate));

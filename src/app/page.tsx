@@ -7,16 +7,13 @@ import {
   TrendingUp,
   TrendingDown,
   Fuel,
-  Users,
   BarChart3,
   Calendar,
-  AlertTriangle,
   FlaskConical,
   Filter,
   Tractor,
   Layers,
 } from "lucide-react";
-import { BarChart, LineChart } from "@tremor/react";
 
 export default function DashboardPage() {
   const [startDate, setStartDate] = useState("");

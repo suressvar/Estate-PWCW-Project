@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { BarChart3, Download, Calendar, Filter, FileText, Printer } from "lucide-react";
+import { BarChart3, Calendar, FileText, Printer } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 
 export default function ReportsPage() {
@@ -29,7 +29,7 @@ export default function ReportsPage() {
     return <div className="p-8 text-center text-xs text-slate-500 font-semibold">Generating Financial Reports...</div>;
   }
 
-  const { kpis, plotPnL, cropPnL, fuelEfficiency } = analytics;
+  const { kpis, plotPnL, cropPnL } = analytics;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">

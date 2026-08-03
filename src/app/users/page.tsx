@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ShieldCheck, UserPlus, SlidersHorizontal, Edit2, Trash2 } from "lucide-react";
+import { ShieldCheck, UserPlus, SlidersHorizontal } from "lucide-react";
 import { RoleBadge } from "@/components/ui/role-badge";
 
 interface RoleDef {
