@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CropItem } from "@/lib/master-data";
+import { CropItem, PlotCropAssociation, PlotItem } from "@/lib/master-data";
 import { RoleBadge } from "@/components/ui/role-badge";
+import { PlotsCropsNav } from "@/components/plots-crops-nav";
 import {
   Sprout,
   Plus,
@@ -11,10 +12,13 @@ import {
   ShieldAlert,
   SlidersHorizontal,
   FlaskConical,
+  MapPin,
 } from "lucide-react";
 
 export default function CropsPage() {
   const [crops, setCrops] = useState<CropItem[]>([]);
+  const [associations, setAssociations] = useState<PlotCropAssociation[]>([]);
+  const [plots, setPlots] = useState<PlotItem[]>([]);
   const [canEdit, setCanEdit] = useState<boolean>(true);
   const [roleName, setRoleName] = useState<string>("Admin");
 
@@ -24,14 +28,24 @@ export default function CropsPage() {
   const [name, setName] = useState("");
   const [type, setType] = useState<"CROP" | "ACTIVITY">("CROP");
 
-  const fetchCrops = async () => {
-    const res = await fetch("/api/crops");
-    const data = await res.json();
-    setCrops(data);
+  const fetchData = async () => {
+    const [cropsRes, assocRes, plotsRes] = await Promise.all([
+      fetch("/api/crops"),
+      fetch("/api/plot-crops"),
+      fetch("/api/plots"),
+    ]);
+    const [cropsData, assocData, plotsData] = await Promise.all([
+      cropsRes.json(),
+      assocRes.json(),
+      plotsRes.json(),
+    ]);
+    setCrops(cropsData);
+    setAssociations(assocData);
+    setPlots(plotsData);
   };
 
   useEffect(() => {
-    fetchCrops();
+    fetchData();
   }, []);
 
   const handleToggleRole = () => {
@@ -74,18 +88,27 @@ export default function CropsPage() {
       });
     }
     setIsFormOpen(false);
-    fetchCrops();
+    fetchData();
   };
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this Crop/Activity?")) {
       await fetch(`/api/crops?id=${id}`, { method: "DELETE" });
-      fetchCrops();
+      fetchData();
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Unified Module Nav Tabs */}
+      <PlotsCropsNav
+        stats={{
+          plotsCount: plots.length,
+          cropsCount: crops.length,
+          associationsCount: associations.length,
+        }}
+      />
+
       {/* Header & RBAC Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-5 rounded-lg border border-slate-200 shadow-xs gap-4">
         <div>
@@ -204,51 +227,76 @@ export default function CropsPage() {
             <tr>
               <th className="p-3">Item Name</th>
               <th className="p-3">Category Classification</th>
+              <th className="p-3">Active Assigned Plots</th>
               <th className="p-3">Registered Date</th>
               {canEdit && <th className="p-3 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200/80 bg-white">
-            {crops.map((crop) => (
-              <tr key={crop.id} className="hover:bg-slate-50/80 transition-colors">
-                <td className="p-3 font-bold text-slate-900">{crop.name}</td>
-                <td className="p-3">
-                  {crop.type === "CROP" ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-                      <Sprout className="w-3 h-3 text-emerald-700" />
-                      Harvest Crop
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-blue-100 px-2 py-0.5 rounded border border-blue-300">
-                      <FlaskConical className="w-3 h-3 text-blue-700" />
-                      Field Activity
-                    </span>
-                  )}
-                </td>
-                <td className="p-3 text-slate-500">{crop.createdAt}</td>
-                {canEdit && (
-                  <td className="p-3 text-right space-x-2">
-                    <button
-                      onClick={() => handleOpenEdit(crop)}
-                      className="p-1 text-slate-600 hover:text-emerald-700 transition-colors inline-block"
-                      title="Edit Item"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(crop.id)}
-                      className="p-1 text-slate-600 hover:text-red-700 transition-colors inline-block"
-                      title="Delete Item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+            {crops.map((crop) => {
+              const activePlotsForCrop = associations.filter(
+                (a) => a.cropActivityId === crop.id && a.status === "ACTIVE"
+              );
+
+              return (
+                <tr key={crop.id} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="p-3 font-bold text-slate-900">{crop.name}</td>
+                  <td className="p-3">
+                    {crop.type === "CROP" ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                        <Sprout className="w-3 h-3 text-emerald-700" />
+                        Harvest Crop
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-blue-100 px-2 py-0.5 rounded border border-blue-300">
+                        <FlaskConical className="w-3 h-3 text-blue-700" />
+                        Field Activity
+                      </span>
+                    )}
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td className="p-3">
+                    {activePlotsForCrop.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {activePlotsForCrop.map((a) => (
+                          <span
+                            key={a.id}
+                            className="inline-flex items-center gap-1 text-[10px] font-medium bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded border border-slate-200"
+                          >
+                            <MapPin className="w-2.5 h-2.5 text-emerald-600" />
+                            {a.plotName}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 italic text-[11px]">No active plots</span>
+                    )}
+                  </td>
+                  <td className="p-3 text-slate-500">{crop.createdAt}</td>
+                  {canEdit && (
+                    <td className="p-3 text-right space-x-2">
+                      <button
+                        onClick={() => handleOpenEdit(crop)}
+                        className="p-1 text-slate-600 hover:text-emerald-700 transition-colors inline-block"
+                        title="Edit Item"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(crop.id)}
+                        className="p-1 text-slate-600 hover:text-red-700 transition-colors inline-block"
+                        title="Delete Item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
     </div>
   );
 }
+

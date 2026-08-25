@@ -1,4 +1,4 @@
-// Transaction Logs In-Memory Storage & Interfaces
+// Transaction Logs & Voucher Storage & Interfaces
 
 export interface BaseLog {
   id: string;
@@ -9,6 +9,15 @@ export interface BaseLog {
   loggedBy: string;
   createdAt: string;
   notes?: string;
+}
+
+export interface VoucherLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  amount: number;
 }
 
 export interface FertilizerLogItem extends BaseLog {
@@ -45,17 +54,44 @@ export interface ProductionLogItem extends BaseLog {
 }
 
 export interface SalesLogItem extends BaseLog {
+  voucherNo?: string;
+  voucherType?: string;
   quantityKg: number;
   value: number;
   buyerName?: string;
+  buyerContact?: string;
+  buyerAddress?: string;
+  items?: VoucherLineItem[];
+  subtotal?: number;
+  taxPercent?: number;
+  taxAmount?: number;
+  discount?: number;
+  paymentMode?: "Cash" | "Bank Transfer" | "UPI / QR" | "Cheque" | "Credit / On Account";
+  paymentStatus?: "PAID" | "PENDING" | "PARTIAL";
+  referenceNo?: string;
 }
 
-export interface GeneralPurchaseLogItem extends BaseLog {
+export interface PurchaseVoucherItem extends BaseLog {
+  voucherNo: string;
+  category: "Fertilizer & Nutrition" | "Diesel & Fuel" | "Machinery Spares & Repairs" | "Irrigation & Piping" | "Seeds & Saplings" | "Pesticides & Bio" | "Tools & Hardware" | "General Estate Supplies";
+  vendorName: string;
+  vendorBillNo?: string;
+  vendorContact?: string;
+  vendorGstin?: string;
   description: string;
+  items?: VoucherLineItem[];
+  subtotal: number;
+  taxPercent?: number;
+  taxAmount?: number;
+  discount?: number;
   cost: number;
+  paymentMode?: "Cash" | "Bank Transfer" | "UPI / QR" | "Cheque" | "Credit";
+  paymentStatus?: "PAID" | "PENDING" | "PARTIAL";
 }
 
-// Stores with initial seed entries for computed aggregation
+export type GeneralPurchaseLogItem = PurchaseVoucherItem;
+
+// Stores with initial seed entries for computed aggregation & vouchers
 let fertilizerLogs: FertilizerLogItem[] = [
   { id: "f1", plotName: "Plot A - North Field", cropActivityName: "Tomato", transactionType: "PURCHASE", fertilizerName: "NPK 19-19-19", quantityKg: 1000, cost: 45000, date: "2026-06-01", loggedBy: "Estate Admin", createdAt: "2026-06-01T10:00:00Z" },
   { id: "f2", plotName: "Plot A - North Field", cropActivityName: "Tomato", transactionType: "CONSUMPTION", fertilizerName: "NPK 19-19-19", quantityKg: 350, cost: 15750, date: "2026-06-15", loggedBy: "Field Staff", createdAt: "2026-06-15T10:00:00Z" },
@@ -84,12 +120,116 @@ let productionLogs: ProductionLogItem[] = [
 ];
 
 let salesLogs: SalesLogItem[] = [
-  { id: "s1", plotName: "Plot A - North Field", cropActivityName: "Tomato", quantityKg: 2000, value: 120000, buyerName: "Koyambedu Mandi", date: "2026-07-16", loggedBy: "Estate Admin", createdAt: "2026-07-16T10:00:00Z" },
-  { id: "s2", plotName: "Plot B - Coconut Grove", cropActivityName: "Coconut", quantityKg: 1500, value: 75000, buyerName: "Direct Local Wholesaler", date: "2026-07-19", loggedBy: "Estate Admin", createdAt: "2026-07-19T10:00:00Z" },
+  {
+    id: "s1",
+    voucherNo: "SLS-VCH-2026-001",
+    voucherType: "Harvest Crop Sale",
+    plotName: "Plot A - North Field",
+    cropActivityName: "Tomato",
+    quantityKg: 2000,
+    value: 120000,
+    buyerName: "Koyambedu Mandi",
+    buyerContact: "+91 98401 23456",
+    buyerAddress: "Wholesale Mandi Complex, Chennai",
+    subtotal: 120000,
+    taxPercent: 0,
+    taxAmount: 0,
+    discount: 0,
+    paymentMode: "Bank Transfer",
+    paymentStatus: "PAID",
+    referenceNo: "NEFT-HDFC-992384",
+    items: [
+      { id: "i1", description: "Grade A Hybrid Tomatoes", quantity: 1500, unit: "kg", rate: 65, amount: 97500 },
+      { id: "i2", description: "Grade B Standard Tomatoes", quantity: 500, unit: "kg", rate: 45, amount: 22500 },
+    ],
+    date: "2026-07-16",
+    loggedBy: "Estate Admin",
+    notes: "Direct wholesale dispatch via truck TN-22-AX-8910",
+    createdAt: "2026-07-16T10:00:00Z",
+  },
+  {
+    id: "s2",
+    voucherNo: "SLS-VCH-2026-002",
+    voucherType: "Direct Mandi Sale",
+    plotName: "Plot B - Coconut Grove",
+    cropActivityName: "Coconut",
+    quantityKg: 1500,
+    value: 75000,
+    buyerName: "Direct Local Wholesaler",
+    buyerContact: "+91 94440 88712",
+    buyerAddress: "Pollachi Coconut Market",
+    subtotal: 75000,
+    taxPercent: 0,
+    taxAmount: 0,
+    discount: 0,
+    paymentMode: "UPI / QR",
+    paymentStatus: "PAID",
+    referenceNo: "UPI-429981023",
+    items: [
+      { id: "i3", description: "Matured De-husked Coconuts (Large)", quantity: 1500, unit: "pieces", rate: 50, amount: 75000 },
+    ],
+    date: "2026-07-19",
+    loggedBy: "Estate Admin",
+    notes: "Batch harvest payment settled via GPay QR",
+    createdAt: "2026-07-19T10:00:00Z",
+  },
 ];
 
-let generalPurchaseLogs: GeneralPurchaseLogItem[] = [
-  { id: "g1", plotName: "Plot A - North Field", cropActivityName: "Tomato", description: "Drip Irrigation Valve Spares", cost: 6500, date: "2026-07-05", loggedBy: "Estate Admin", createdAt: "2026-07-05T10:00:00Z" },
+let generalPurchaseLogs: PurchaseVoucherItem[] = [
+  {
+    id: "g1",
+    voucherNo: "PUR-VCH-2026-001",
+    category: "Irrigation & Piping",
+    plotName: "Plot A - North Field",
+    cropActivityName: "Tomato",
+    description: "Drip Irrigation Valve Spares & Lateral Pipes",
+    vendorName: "Kavery Drip & Hardware Enterprises",
+    vendorBillNo: "KD-INV-8891",
+    vendorContact: "+91 97890 11223",
+    vendorGstin: "33AABCK8921F1ZX",
+    items: [
+      { id: "pi1", description: "16mm Drip Lateral Line (500m Coil)", quantity: 2, unit: "coils", rate: 2200, amount: 4400 },
+      { id: "pi2", description: "Screen Filter 2-inch Flushing Valves", quantity: 3, unit: "pieces", rate: 700, amount: 2100 },
+    ],
+    subtotal: 6500,
+    taxPercent: 0,
+    taxAmount: 0,
+    discount: 0,
+    cost: 6500,
+    paymentMode: "Bank Transfer",
+    paymentStatus: "PAID",
+    date: "2026-07-05",
+    loggedBy: "Estate Admin",
+    notes: "Replaced damaged drip laterals in North sector block",
+    createdAt: "2026-07-05T10:00:00Z",
+  },
+  {
+    id: "g2",
+    voucherNo: "PUR-VCH-2026-002",
+    category: "Fertilizer & Nutrition",
+    plotName: "Plot A - North Field",
+    cropActivityName: "Tomato",
+    description: "Organic Compost & Micronutrient Foliar Spray",
+    vendorName: "Sri Murugan Agro Agencies",
+    vendorBillNo: "SMA-90214",
+    vendorContact: "+91 98412 55678",
+    vendorGstin: "33AAMFS4431E1Z8",
+    items: [
+      { id: "pi3", description: "Vermicompost Enricher (50kg Bag)", quantity: 10, unit: "bags", rate: 450, amount: 4500 },
+      { id: "pi4", description: "Bio-Chelated Micronutrient Spray (5L)", quantity: 2, unit: "cans", rate: 1200, amount: 2400 },
+    ],
+    subtotal: 6900,
+    taxPercent: 0,
+    taxAmount: 0,
+    discount: 0,
+    cost: 6900,
+    paymentMode: "UPI / QR",
+    paymentStatus: "PAID",
+    date: "2026-07-08",
+    loggedBy: "Estate Admin",
+    notes: "Applied before secondary flowering cycle",
+    createdAt: "2026-07-08T10:00:00Z",
+  },
 ];
 
 export function resetLogsForTesting() {
@@ -101,7 +241,6 @@ export function resetLogsForTesting() {
   salesLogs = [];
   generalPurchaseLogs = [];
 }
-
 
 // Machine Consumption Rates (Liters per hour)
 export const MACHINE_RATES: Record<string, number> = {
@@ -148,14 +287,40 @@ export function addProductionLog(data: Omit<ProductionLogItem, "id" | "createdAt
 
 export function getSalesLogs() { return salesLogs; }
 export function addSalesLog(data: Omit<SalesLogItem, "id" | "createdAt">) {
-  const item: SalesLogItem = { ...data, id: `sales_${Date.now()}`, createdAt: new Date().toISOString() };
+  const currentCount = salesLogs.length + 1;
+  const voucherNo = data.voucherNo || `SLS-VCH-2026-${String(currentCount).padStart(3, "0")}`;
+  const item: SalesLogItem = {
+    ...data,
+    id: `sales_${Date.now()}`,
+    voucherNo,
+    subtotal: data.subtotal ?? data.value,
+    createdAt: new Date().toISOString(),
+  };
   salesLogs.unshift(item);
   return item;
 }
 
+export function deleteSalesLog(id: string) {
+  salesLogs = salesLogs.filter((s) => s.id !== id);
+  return true;
+}
+
 export function getGeneralPurchaseLogs() { return generalPurchaseLogs; }
-export function addGeneralPurchaseLog(data: Omit<GeneralPurchaseLogItem, "id" | "createdAt">) {
-  const item: GeneralPurchaseLogItem = { ...data, id: `gen_${Date.now()}`, createdAt: new Date().toISOString() };
+export function addGeneralPurchaseLog(data: Omit<PurchaseVoucherItem, "id" | "createdAt">) {
+  const currentCount = generalPurchaseLogs.length + 1;
+  const voucherNo = data.voucherNo || `PUR-VCH-2026-${String(currentCount).padStart(3, "0")}`;
+  const item: PurchaseVoucherItem = {
+    ...data,
+    id: `gen_${Date.now()}`,
+    voucherNo,
+    subtotal: data.subtotal ?? data.cost,
+    createdAt: new Date().toISOString(),
+  };
   generalPurchaseLogs.unshift(item);
   return item;
+}
+
+export function deleteGeneralPurchaseLog(id: string) {
+  generalPurchaseLogs = generalPurchaseLogs.filter((g) => g.id !== id);
+  return true;
 }

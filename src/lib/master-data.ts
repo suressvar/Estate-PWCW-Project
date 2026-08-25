@@ -98,21 +98,43 @@ export function getPlotCrops() {
 }
 
 export function createPlotCrop(plotId: string, cropActivityId: string, startDate: string) {
+  const results = createPlotCrops(plotId, [cropActivityId], startDate);
+  return results[0] || null;
+}
+
+export function createPlotCrops(plotId: string, cropActivityIds: string[], startDate: string) {
   const plot = mockPlots.find((p) => p.id === plotId);
-  const crop = mockCrops.find((c) => c.id === cropActivityId);
+  const plotName = plot ? plot.name : "Unknown Plot";
+  const created: PlotCropAssociation[] = [];
 
-  const newAssoc: PlotCropAssociation = {
-    id: `pc_${Date.now()}`,
-    plotId,
-    plotName: plot ? plot.name : "Unknown Plot",
-    cropActivityId,
-    cropActivityName: crop ? crop.name : "Unknown Crop",
-    startDate,
-    status: "ACTIVE",
-  };
+  cropActivityIds.forEach((cropActivityId, index) => {
+    // Check if active association already exists for this plot and crop
+    const existingActive = mockPlotCrops.find(
+      (pc) => pc.plotId === plotId && pc.cropActivityId === cropActivityId && pc.status === "ACTIVE"
+    );
 
-  mockPlotCrops.unshift(newAssoc);
-  return newAssoc;
+    if (existingActive) {
+      // Return existing active association or skip duplicate
+      created.push(existingActive);
+      return;
+    }
+
+    const crop = mockCrops.find((c) => c.id === cropActivityId);
+    const newAssoc: PlotCropAssociation = {
+      id: `pc_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 6)}`,
+      plotId,
+      plotName,
+      cropActivityId,
+      cropActivityName: crop ? crop.name : "Unknown Crop",
+      startDate: startDate || new Date().toISOString().split("T")[0],
+      status: "ACTIVE",
+    };
+
+    mockPlotCrops.unshift(newAssoc);
+    created.push(newAssoc);
+  });
+
+  return created;
 }
 
 export function updatePlotCropStatus(id: string, status: "ACTIVE" | "COMPLETED") {
@@ -122,3 +144,4 @@ export function updatePlotCropStatus(id: string, status: "ACTIVE" | "COMPLETED")
 export function deletePlotCrop(id: string) {
   mockPlotCrops = mockPlotCrops.filter((pc) => pc.id !== id);
 }
+
