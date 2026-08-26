@@ -12,8 +12,8 @@ export function RoleBadge({ role }: RoleBadgeProps) {
   
   if (normalized === "ADMIN" || normalized === "OWNER") {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300/70">
-        <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#F4CEFF] text-[#1B4EF5] border border-[#5996FF]/60 shadow-2xs">
+        <ShieldCheck className="w-3.5 h-3.5 text-[#1B4EF5]" />
         Admin
       </span>
     );

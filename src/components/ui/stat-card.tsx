@@ -15,21 +15,21 @@ export function StatCard({ title, value, change, isPositive, subtitle, icon: Ico
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-700 tracking-wide uppercase">{title}</span>
         {Icon && (
-          <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-800 border border-emerald-500/20">
-            <Icon className="w-4 h-4" />
+          <div className="p-2.5 bg-[#F4CEFF]/60 rounded-xl text-[#1B4EF5] border border-[#5996FF]/40 shadow-2xs">
+            <Icon className="w-4 h-4 text-[#1B4EF5]" />
           </div>
         )}
       </div>
 
       <div className="mt-3 space-y-1">
-        <div className="text-2xl font-bold text-slate-900 tracking-tight">{value}</div>
+        <div className="text-2xl font-bold text-[#0C1838] tracking-tight">{value}</div>
         {change && (
           <div className="flex items-center gap-1">
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold ${
                 isPositive
-                  ? "bg-emerald-100/90 text-emerald-900 border border-emerald-300"
-                  : "bg-red-100/90 text-red-900 border border-red-300"
+                  ? "bg-[#F4CEFF] text-[#1B4EF5] border border-[#5996FF]/50"
+                  : "bg-red-50 text-red-900 border border-red-200"
               }`}
             >
               {change}
