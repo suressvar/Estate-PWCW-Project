@@ -21,8 +21,8 @@ export function RoleBadge({ role }: RoleBadgeProps) {
 
   if (normalized === "MANAGER") {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300/70">
-        <UserCheck className="w-3.5 h-3.5 text-blue-700" />
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300/40">
+        <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
         Manager
       </span>
     );

@@ -324,3 +324,13 @@ export function deleteGeneralPurchaseLog(id: string) {
   generalPurchaseLogs = generalPurchaseLogs.filter((g) => g.id !== id);
   return true;
 }
+
+export function resetTransactionLogs() {
+  fertilizerLogs = [];
+  dieselLogs = [];
+  machineryLogs = [];
+  laborLogs = [];
+  productionLogs = [];
+  salesLogs = [];
+  generalPurchaseLogs = [];
+}

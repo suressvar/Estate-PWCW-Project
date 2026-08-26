@@ -223,3 +223,10 @@ export function deleteVoucher(type: VoucherType | string, id: string): boolean {
       return false;
   }
 }
+
+export function resetVouchersData() {
+  mockFeedPurchases = [];
+  mockMedicinePurchases = [];
+  mockVaccinePurchases = [];
+  mockOtherVouchers = [];
+}

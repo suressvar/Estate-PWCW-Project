@@ -11,6 +11,7 @@ import {
   Filter,
   Tractor,
   Layers,
+  MapPin,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -42,7 +43,7 @@ export default function DashboardPage() {
     return <div className="p-8 text-center text-xs text-slate-500 font-semibold">Loading Live Estate Dashboard...</div>;
   }
 
-  const { kpis, cropPnL, fuelEfficiency, plotDrillDown } = analytics;
+  const { kpis, plotPnL, cropPnL, fuelEfficiency, plotDrillDown } = analytics;
   const activeDrillData = plotDrillDown.find((d: any) => d.plotName === selectedPlotDrill) || plotDrillDown[0];
 
   return (
@@ -96,21 +97,9 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <StatCard
-          title="Total Crop Revenue"
-          value={`₹${kpis.totalRevenue.toLocaleString()}`}
-          subtitle="Computed from Sales logs"
-          icon={DollarSign}
-        />
-        <StatCard
-          title="Total Operating Expense"
-          value={`₹${kpis.totalExpenses.toLocaleString()}`}
-          subtitle="Labor + Fertilizer + Gen Purchases"
-          icon={TrendingDown}
-        />
-        <StatCard
-          title="Net Farm Profit (P&L)"
+          title="Net Profit"
           value={`₹${kpis.netProfit.toLocaleString()}`}
           isPositive={kpis.netProfit >= 0}
           change={kpis.netProfit >= 0 ? "PROFITABLE" : "LOSS"}
@@ -118,19 +107,57 @@ export default function DashboardPage() {
           icon={TrendingUp}
         />
         <StatCard
-          title="Current Fuel Stock"
-          value={`${kpis.currentDieselStockLiters} Liters`}
-          subtitle="Purchases minus Consumption"
-          icon={Fuel}
+          title="Total Expense"
+          value={`₹${kpis.totalExpenses.toLocaleString()}`}
+          subtitle="Labor + Fertilizer + Gen Purchases"
+          icon={TrendingDown}
         />
       </div>
 
 
 
 
-      {/* Machinery Fuel Efficiency & Crop-wise P&L Section */}
+      {/* Overall Profit & Loss Summary Table */}
+      <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-xs space-y-3">
+        <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+          <DollarSign className="w-4.5 h-4.5 text-emerald-700" />
+          Overall Estate Profit & Loss Summary
+        </h2>
+        <table className="w-full text-left text-xs">
+          <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <tr>
+              <th className="p-2.5">Category</th>
+              <th className="p-2.5 text-right">Amount</th>
+              <th className="p-2.5">Description</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 bg-white font-medium">
+            <tr className="hover:bg-slate-50/80">
+              <td className="p-2.5 font-bold text-slate-900">Total Revenue (Crop Sales)</td>
+              <td className="p-2.5 text-right text-emerald-700 font-bold">₹{kpis.totalRevenue.toLocaleString()}</td>
+              <td className="p-2.5 text-slate-500">Earnings generated from harvesting and sales of crops.</td>
+            </tr>
+            <tr className="hover:bg-slate-50/80">
+              <td className="p-2.5 font-bold text-slate-900">Total Operating Expenses</td>
+              <td className="p-2.5 text-right text-red-600 font-bold">₹{kpis.totalExpenses.toLocaleString()}</td>
+              <td className="p-2.5 text-slate-500">Aggregated costs of labor, fertilizers, and general farm supplies.</td>
+            </tr>
+            <tr className="bg-slate-50/50">
+              <td className="p-2.5 font-black text-slate-900">Net Profit / (Loss)</td>
+              <td className={`p-2.5 text-right font-black text-sm ${kpis.netProfit >= 0 ? "text-emerald-800" : "text-red-700"}`}>
+                ₹{kpis.netProfit.toLocaleString()}
+              </td>
+              <td className="p-2.5 font-semibold text-slate-600">
+                {kpis.netProfit >= 0 ? "The estate is operating at a Net Profit." : "The estate is operating at a Net Loss."}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Crop-wise and Plot-wise P&L Aggregations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Crop-wise P&L Breakdown */}
+        {/* Crop-wise P&L */}
         <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-xs space-y-3">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
             <Layers className="w-4 h-4 text-emerald-700" />
@@ -149,10 +176,10 @@ export default function DashboardPage() {
               {cropPnL.map((item: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50/80">
                   <td className="p-2.5 font-bold text-slate-900">{item.crop}</td>
-                  <td className="p-2.5 text-emerald-700 font-semibold">₹{item.Revenue}</td>
-                  <td className="p-2.5 text-red-600 font-semibold">₹{item.Expense}</td>
+                  <td className="p-2.5 text-emerald-700 font-semibold">₹{item.Revenue.toLocaleString()}</td>
+                  <td className="p-2.5 text-red-600 font-semibold">₹{item.Expense.toLocaleString()}</td>
                   <td className={`p-2.5 font-bold ${item.NetProfit >= 0 ? "text-emerald-800" : "text-red-700"}`}>
-                    ₹{item.NetProfit}
+                    ₹{item.NetProfit.toLocaleString()}
                   </td>
                 </tr>
               ))}
@@ -160,33 +187,63 @@ export default function DashboardPage() {
           </table>
         </div>
 
-        {/* Machinery Fuel Efficiency */}
+        {/* Plot-wise P&L */}
         <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-xs space-y-3">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-            <Tractor className="w-4 h-4 text-emerald-700" />
-            Machinery Fuel Efficiency (Liters / Hour)
+            <MapPin className="w-4 h-4 text-emerald-700" />
+            Plot-wise Profit & Loss Aggregation
           </h2>
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
               <tr>
-                <th className="p-2.5">Machine Equipment</th>
-                <th className="p-2.5">Total Hours</th>
-                <th className="p-2.5">Diesel Used</th>
-                <th className="p-2.5">Efficiency (L/hr)</th>
+                <th className="p-2.5">Land Plot</th>
+                <th className="p-2.5">Revenue</th>
+                <th className="p-2.5">Expense</th>
+                <th className="p-2.5">Net Profit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/80 bg-white">
-              {fuelEfficiency.map((item: any, idx: number) => (
+              {plotPnL.map((item: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50/80">
-                  <td className="p-2.5 font-bold text-slate-900">{item.machine}</td>
-                  <td className="p-2.5 text-slate-700">{item.totalHours} hrs</td>
-                  <td className="p-2.5 text-amber-700 font-semibold">{item.totalDiesel} L</td>
-                  <td className="p-2.5 font-bold text-emerald-800">{item.litersPerHour} L/hr</td>
+                  <td className="p-2.5 font-bold text-slate-900">{item.plot}</td>
+                  <td className="p-2.5 text-emerald-700 font-semibold">₹{item.Revenue.toLocaleString()}</td>
+                  <td className="p-2.5 text-red-600 font-semibold">₹{item.Expense.toLocaleString()}</td>
+                  <td className={`p-2.5 font-bold ${item.NetProfit >= 0 ? "text-emerald-800" : "text-red-700"}`}>
+                    ₹{item.NetProfit.toLocaleString()}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Machinery Fuel Efficiency */}
+      <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-xs space-y-3">
+        <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+          <Tractor className="w-4 h-4 text-emerald-700" />
+          Machinery Fuel Efficiency (Liters / Hour)
+        </h2>
+        <table className="w-full text-left text-xs">
+          <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <tr>
+              <th className="p-2.5">Machine Equipment</th>
+              <th className="p-2.5">Total Hours</th>
+              <th className="p-2.5">Diesel Used</th>
+              <th className="p-2.5">Efficiency (L/hr)</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200/80 bg-white">
+            {fuelEfficiency.map((item: any, idx: number) => (
+              <tr key={idx} className="hover:bg-slate-50/80">
+                <td className="p-2.5 font-bold text-slate-900">{item.machine}</td>
+                <td className="p-2.5 text-slate-700">{item.totalHours} hrs</td>
+                <td className="p-2.5 text-amber-700 font-semibold">{item.totalDiesel} L</td>
+                <td className="p-2.5 font-bold text-emerald-800">{item.litersPerHour} L/hr</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Per-Plot Drill-Down View Section */}

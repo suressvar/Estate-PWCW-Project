@@ -174,7 +174,7 @@ export default function AttendanceSummaryPage() {
                     <td className="p-3.5 text-center font-bold text-emerald-800">{s.presentDays}</td>
                     <td className="p-3.5 text-center font-semibold text-amber-700">{s.halfDays}</td>
                     <td className="p-3.5 text-center font-semibold text-rose-700">{s.absentDays}</td>
-                    <td className="p-3.5 text-center font-semibold text-sky-700">{s.leaveDays}</td>
+                    <td className="p-3.5 text-center font-semibold text-emerald-700">{s.leaveDays}</td>
                     <td className="p-3.5 text-center font-bold text-slate-900 font-mono">
                       {s.effectivePresentDays} / {s.workingDays}
                     </td>

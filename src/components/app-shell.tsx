@@ -18,20 +18,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-ambient-estate flex flex-col w-full">
       {/* Mobile Top Header */}
-      <header className="h-16 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between md:hidden sticky top-0 z-30 shadow-sm">
+      <header className="h-16 bg-[#14532D] border-b border-[#0E3D20] px-4 flex items-center justify-between md:hidden sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-700 flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-8 h-8 rounded-lg bg-[#1E6C36] flex items-center justify-center text-white font-bold text-lg">
             R
           </div>
           <div>
-            <span className="font-bold text-sm text-white block leading-none">RANGA ESTATE</span>
-            <span className="text-[10px] text-emerald-400 font-medium tracking-wider uppercase">Farm Management</span>
+            <span className="font-bold text-base text-white block leading-none">RANGA ESTATE</span>
+            <span className="text-xs text-emerald-300 font-medium tracking-wider uppercase mt-0.5 block">Farm Management</span>
           </div>
         </div>
 
         <button
           onClick={() => setMobileSidebarOpen(true)}
-          className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+          className="p-2 rounded-xl bg-[#0E3D20] text-emerald-100 hover:text-white hover:bg-emerald-800 transition-colors"
           aria-label="Open Navigation Menu"
         >
           <Menu className="w-5 h-5" />

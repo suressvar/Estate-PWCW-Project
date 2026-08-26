@@ -72,7 +72,10 @@ test.describe("Epic: Plot/Crop Master Data Management", () => {
 
     const sidebar = page.locator("aside");
     // Verify single top-level Plots-Crops menu item
-    await expect(sidebar.getByText("Plots-Crops")).toBeVisible();
+    await expect(sidebar.getByText("Plots & Crops")).toBeVisible();
+
+    // Open the accordion menu
+    await sidebar.getByText("Plots & Crops").click();
 
     // Verify sub-menu items are accessible under Plots-Crops
     await expect(sidebar.getByRole("link", { name: "Plot-Crops Tracking" })).toBeVisible();

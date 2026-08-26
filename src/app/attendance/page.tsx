@@ -220,7 +220,7 @@ export default function AttendanceGridPage() {
           <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-emerald-600 text-white font-bold flex items-center justify-center text-[10px]">P</span> Present (1.0)</span>
           <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-amber-500 text-white font-bold flex items-center justify-center text-[10px]">H</span> Half Day (0.5)</span>
           <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-rose-600 text-white font-bold flex items-center justify-center text-[10px]">A</span> Absent (0.0)</span>
-          <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-sky-600 text-white font-bold flex items-center justify-center text-[10px]">L</span> Leave</span>
+          <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-emerald-800 text-white font-bold flex items-center justify-center text-[10px]">L</span> Leave</span>
           <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-slate-300 text-slate-600 font-bold flex items-center justify-center text-[10px]">-</span> Not Logged</span>
         </div>
         <span className="text-slate-500 text-[11px] italic">Showing {monthNames[month - 1]} {year}</span>
@@ -285,7 +285,7 @@ export default function AttendanceGridPage() {
                             letter = "A";
                             aCount++;
                           } else if (rec.status === "LEAVE") {
-                            badgeBg = "bg-sky-600 text-white font-bold shadow-xs";
+                            badgeBg = "bg-emerald-800 text-white font-bold shadow-xs";
                             letter = "L";
                           }
                         }

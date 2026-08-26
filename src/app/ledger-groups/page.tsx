@@ -109,7 +109,7 @@ export default function LedgerGroupsPage() {
       case "INCOME":
         return "bg-emerald-50 text-emerald-700 border-emerald-200";
       case "ASSET":
-        return "bg-sky-50 text-sky-700 border-sky-200";
+        return "bg-emerald-50/50 text-emerald-800 border-emerald-200/50";
       case "LIABILITY":
         return "bg-amber-50 text-amber-700 border-amber-200";
     }

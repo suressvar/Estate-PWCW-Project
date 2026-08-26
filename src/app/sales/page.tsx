@@ -775,7 +775,7 @@ export default function SalesPage() {
                             ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                             : log.paymentStatus === "PENDING"
                             ? "bg-amber-100 text-amber-800 border border-amber-200"
-                            : "bg-blue-100 text-blue-800 border border-blue-200"
+                            : "bg-emerald-50 text-emerald-800 border border-emerald-200/50"
                         }`}
                       >
                         {log.paymentStatus === "PENDING" ? (

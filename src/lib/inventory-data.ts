@@ -148,3 +148,10 @@ export function deleteStockValuation(id: string): boolean {
   mockStockValuations = mockStockValuations.filter((v) => v.id !== id);
   return true;
 }
+
+export function resetInventoryData() {
+  mockFeedInventory = [];
+  mockMedicineInventory = [];
+  mockVaccineInventory = [];
+  mockStockValuations = [];
+}

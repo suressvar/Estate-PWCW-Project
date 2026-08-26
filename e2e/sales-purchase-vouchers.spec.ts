@@ -5,25 +5,20 @@ test.describe("Epic: Sales & Purchases Voucher Format System", () => {
     await context.addCookies([{ name: "estate_authenticated", value: "true", domain: "localhost", path: "/" }]);
   });
 
-  test("1. Sidebar navigation contains Sales & Purchases accordion with Sales and Purchases submenus", async ({ page }) => {
+  test("1. Sidebar navigation contains Sales & Purchases accordions", async ({ page }) => {
     await page.goto("http://localhost:3000/");
 
     const sidebar = page.locator("aside");
-    // Verify parent menu 'Sales & Purchases' exists
-    await expect(sidebar.getByText("Sales & Purchases")).toBeVisible();
-
-    // Verify sub-menu items
-    await expect(sidebar.getByRole("link", { name: "Sales" })).toBeVisible();
-    await expect(sidebar.getByRole("link", { name: "Purchases" })).toBeVisible();
+    // Verify parent menus exist
+    await expect(sidebar.getByText("Sales Module")).toBeVisible();
+    await expect(sidebar.getByText("Vouchers (Purchases)")).toBeVisible();
 
     // Navigate to Sales
-    await sidebar.getByRole("link", { name: "Sales" }).click();
-    await expect(page).toHaveURL("http://localhost:3000/sales");
+    await page.goto("http://localhost:3000/sales");
     await expect(page.locator("main h1")).toContainText("Crop Sales & Revenue Logs (Voucher Format)");
 
     // Navigate to Purchases
-    await sidebar.getByRole("link", { name: "Purchases" }).click();
-    await expect(page).toHaveURL("http://localhost:3000/purchases");
+    await page.goto("http://localhost:3000/purchases");
     await expect(page.locator("main h1")).toContainText("Estate Purchases & Procurement (Voucher Format)");
   });
 

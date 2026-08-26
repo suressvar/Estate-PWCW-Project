@@ -28,7 +28,6 @@ test.describe("Epic: Computed Reports & Financial Dashboard", () => {
     await expect(page.locator("main h1")).toContainText("Executive Dashboard");
 
     // 5. Verify computed stock and P&L figures render on screen
-    await expect(page.locator("body")).toContainText("Net Farm Profit");
-    await expect(page.locator("body")).toContainText("Current Fuel Stock");
+    await expect(page.locator("body")).toContainText("Net Profit");
   });
 });

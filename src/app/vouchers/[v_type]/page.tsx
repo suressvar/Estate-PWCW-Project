@@ -724,7 +724,7 @@ export default function VoucherRegisterPage() {
               )}
 
               {v_type === "medicine" && (
-                <div className="p-3 bg-sky-50/50 rounded-xl border border-sky-100 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div className="p-3 bg-emerald-50/20 rounded-xl border border-emerald-100 grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="sm:col-span-2">
                     <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Medicine Name *</label>
                     <input
@@ -762,14 +762,14 @@ export default function VoucherRegisterPage() {
                       required
                       value={cost}
                       onChange={(e) => setCost(Number(e.target.value))}
-                      className="w-full p-2 bg-white border border-sky-300 rounded-lg font-bold text-slate-900"
+                      className="w-full p-2 bg-white border border-emerald-300 rounded-lg font-bold text-slate-900"
                     />
                   </div>
                 </div>
               )}
 
               {v_type === "vaccine" && (
-                <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-emerald-50/20 rounded-xl border border-emerald-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Vaccine Name *</label>
                     <input
@@ -798,7 +798,7 @@ export default function VoucherRegisterPage() {
                       required
                       value={cost}
                       onChange={(e) => setCost(Number(e.target.value))}
-                      className="w-full p-2 bg-white border border-purple-300 rounded-lg font-bold text-slate-900"
+                      className="w-full p-2 bg-white border border-emerald-300 rounded-lg font-bold text-slate-900"
                     />
                   </div>
                 </div>

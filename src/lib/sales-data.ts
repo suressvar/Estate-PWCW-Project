@@ -217,3 +217,7 @@ export function calculateSalesAnalytics() {
 export const getSalesAnalytics = calculateSalesAnalytics;
 export const updateSaleItem = updateSale;
 export const deleteSaleItem = deleteSale;
+
+export function resetSalesData() {
+  mockOtherSales = [];
+}

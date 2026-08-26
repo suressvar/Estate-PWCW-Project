@@ -32,6 +32,7 @@ import {
   Award,
   X,
   LogOut,
+  Settings,
 } from "lucide-react";
 
 export interface SubNavItem {
@@ -126,6 +127,7 @@ export const navItems: NavItem[] = [
     ],
   },
   { title: "Users & Roles", href: "/users", icon: ShieldCheck },
+  { title: "Settings", href: "/settings", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -196,21 +198,21 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
 
       {/* Sidebar Drawer */}
       <aside
-        className={`w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen fixed top-0 left-0 z-50 text-slate-300 transition-transform duration-300 ease-in-out md:translate-x-0 ${
+        className={`w-64 bg-[#14532D] border-r border-[#0E3D20] flex flex-col h-screen fixed top-0 left-0 z-50 text-emerald-100 transition-transform duration-300 ease-in-out md:translate-x-0 ${
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
         }`}
       >
         {/* Brand / Logo */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/80">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-[#0E3D20]">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-emerald-700 group-hover:bg-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-sm transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-[#1E6C36] group-hover:bg-[#2E7D32] flex items-center justify-center text-white font-bold text-lg shadow-sm transition-colors">
               R
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-sm tracking-tight text-white leading-none">
+              <span className="font-bold text-base tracking-tight text-white leading-none">
                 RANGA ESTATE
               </span>
-              <span className="text-[10px] text-emerald-400 font-medium tracking-wider uppercase mt-0.5">
+              <span className="text-[11px] text-emerald-300 font-medium tracking-wider uppercase mt-0.5">
                 Farm Management
               </span>
             </div>
@@ -219,7 +221,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           {/* Close button on Mobile */}
           <button
             onClick={onMobileClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 md:hidden"
+            className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 md:hidden"
             aria-label="Close Sidebar"
           >
             <X className="w-5 h-5" />
@@ -241,32 +243,32 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                   {/* Main Accordion Header (Click / Touch to toggle submenus) */}
                   <button
                     onClick={() => toggleMenu(item.title)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold rounded-xl transition-all group cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-xl transition-all group cursor-pointer ${
                       isAnyChildActive
-                        ? "text-white bg-slate-800/90 shadow-xs border border-slate-700/60"
+                        ? "text-white bg-[#1E6C36] shadow-xs border border-[#2E7D32]/40"
                         : isOpen
-                        ? "text-white bg-slate-800/50"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                        ? "text-white bg-[#1E6C36]/55"
+                        : "text-emerald-100 hover:text-white hover:bg-[#1E6C36]/40"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Icon
                         className={`w-4 h-4 transition-colors ${
-                          isAnyChildActive || isOpen ? "text-emerald-400" : "text-slate-400 group-hover:text-white"
+                          isAnyChildActive || isOpen ? "text-emerald-300" : "text-emerald-200/70 group-hover:text-white"
                         }`}
                       />
                       <span>{item.title}</span>
                     </div>
                     <ChevronDown
-                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-emerald-400" : ""
+                      className={`w-4 h-4 text-emerald-200/70 transition-transform duration-200 ${
+                        isOpen ? "rotate-180 text-emerald-300" : ""
                       }`}
                     />
                   </button>
 
                   {/* Sub Menu Links (Collapsible) */}
                   {isOpen && (
-                    <div className="pl-4 pr-1 space-y-1 border-l-2 border-emerald-800/60 ml-4 py-1.5 animate-in slide-in-from-top-2 duration-200">
+                    <div className="pl-4 pr-1 space-y-1 border-l-2 border-[#1E6C36]/30 ml-4 py-1.5 animate-in slide-in-from-top-2 duration-200">
                       {item.children.map((child) => {
                         const ChildIcon = child.icon;
                         const isChildActive = pathname === child.href;
@@ -275,13 +277,13 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                           <Link
                             key={child.href}
                             href={child.href}
-                            className={`flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
+                            className={`flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                               isChildActive
-                                ? "bg-emerald-800 text-white font-bold shadow-xs border border-emerald-600/40"
-                                : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                                ? "bg-[#1E6C36] text-white font-bold shadow-xs border border-[#2E7D32]/40"
+                                : "text-emerald-100/80 hover:text-white hover:bg-[#1E6C36]/40"
                             }`}
                           >
-                            <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? "text-emerald-300" : "text-slate-500"}`} />
+                            <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? "text-white" : "text-emerald-300/60"}`} />
                             <span>{child.title}</span>
                           </Link>
                         );
@@ -297,13 +299,13 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
               <Link
                 key={item.title}
                 href={item.href || "#"}
-                className={`flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold rounded-xl transition-all ${
+                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                   isActive
-                    ? "bg-emerald-800 text-white font-bold shadow-xs border border-emerald-600/40"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                    ? "bg-[#1E6C36] text-white font-bold shadow-xs border border-[#2E7D32]/40"
+                    : "text-emerald-100/85 hover:text-white hover:bg-[#1E6C36]/40"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-emerald-300" : "text-slate-400"}`} />
+                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-emerald-200/70"}`} />
                 <span>{item.title}</span>
               </Link>
             );
@@ -311,25 +313,25 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         </div>
 
         {/* Footer Profile & Logout */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-950/50">
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-900/60 border border-slate-800/80">
+        <div className="p-3 border-t border-[#0E3D20] bg-[#0E3D20]/30">
+          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#0E3D20]/50 border border-[#0E3D20]/60">
             <div className="flex items-center gap-2.5 truncate">
-              <div className="w-8 h-8 rounded-full bg-emerald-900 border border-emerald-700 flex items-center justify-center text-xs font-bold text-emerald-200 shrink-0 shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-[#1E6C36] border border-[#2E7D32]/40 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-xs">
                 A
               </div>
               <div className="flex flex-col truncate">
-                <span className="text-xs font-bold text-white truncate">Administrator</span>
-                <span className="text-[10px] text-emerald-400 font-medium truncate">All Modules Active</span>
+                <span className="text-sm font-bold text-white truncate">Administrator</span>
+                <span className="text-xs text-emerald-300 font-medium truncate">All Modules Active</span>
               </div>
             </div>
 
             <button
               onClick={handleLogout}
-              className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-900/50 transition-all shrink-0 group flex items-center justify-center"
+              className="p-2 rounded-lg text-emerald-100 hover:text-rose-300 hover:bg-rose-900/40 border border-transparent hover:border-rose-900/50 transition-all shrink-0 group flex items-center justify-center"
               title="Log Out of Estate Application"
               aria-label="Log Out"
             >
-              <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform text-slate-400 group-hover:text-rose-400" />
+              <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform text-emerald-100 group-hover:text-rose-300" />
             </button>
           </div>
         </div>

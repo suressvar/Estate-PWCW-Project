@@ -58,7 +58,7 @@ export default function VouchersHubPage() {
       total: summary.feedTotal,
       icon: Layers,
       color: "emerald",
-      bgGradient: "from-emerald-900 to-emerald-950 text-white",
+      bgGradient: "from-emerald-800 to-emerald-950 text-white",
       badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
     },
     {
@@ -68,9 +68,9 @@ export default function VouchersHubPage() {
       count: summary.medicineCount,
       total: summary.medicineTotal,
       icon: Pill,
-      color: "sky",
-      bgGradient: "from-sky-900 to-sky-950 text-white",
-      badgeColor: "bg-sky-50 text-sky-800 border-sky-200",
+      color: "emerald",
+      bgGradient: "from-emerald-700 to-emerald-900 text-white",
+      badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
     },
     {
       type: "vaccine",
@@ -79,9 +79,9 @@ export default function VouchersHubPage() {
       count: summary.vaccineCount,
       total: summary.vaccineTotal,
       icon: Syringe,
-      color: "purple",
-      bgGradient: "from-purple-900 to-purple-950 text-white",
-      badgeColor: "bg-purple-50 text-purple-800 border-purple-200",
+      color: "emerald",
+      bgGradient: "from-emerald-600 to-emerald-850 text-white",
+      badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
     },
     {
       type: "other",
@@ -90,9 +90,9 @@ export default function VouchersHubPage() {
       count: summary.otherCount,
       total: summary.otherTotal,
       icon: Receipt,
-      color: "slate",
-      bgGradient: "from-slate-800 to-slate-900 text-white",
-      badgeColor: "bg-slate-100 text-slate-800 border-slate-300",
+      color: "emerald",
+      bgGradient: "from-emerald-500 to-emerald-800 text-white",
+      badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
     },
   ];
 

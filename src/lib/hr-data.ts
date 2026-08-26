@@ -459,3 +459,11 @@ export function deleteLeave(id: string): boolean {
   mockLeaves = mockLeaves.filter((l) => l.id !== id);
   return true;
 }
+
+export function resetHrData() {
+  mockEmployeeRoles = [];
+  mockEmployees = [];
+  mockAttendance = [];
+  mockWages = [];
+  mockLeaves = [];
+}

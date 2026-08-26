@@ -190,7 +190,7 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
                   className={`inline-block px-3 py-1 text-xs font-black tracking-wider uppercase rounded-md shadow-xs ${
                     isSales
                       ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
-                      : "bg-blue-100 text-blue-900 border border-blue-300"
+                      : "bg-emerald-100 text-emerald-900 border border-emerald-300/80"
                   }`}
                 >
                   {isSales ? "OFFICIAL SALES VOUCHER" : "OFFICIAL PURCHASE VOUCHER"}
@@ -220,7 +220,7 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
                         ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                         : voucher.paymentStatus === "PENDING"
                         ? "bg-amber-100 text-amber-800 border border-amber-200"
-                        : "bg-blue-100 text-blue-800 border border-blue-200"
+                        : "bg-emerald-50 text-emerald-800 border border-emerald-200/50"
                     }`}
                   >
                     {voucher.paymentStatus === "PAID" && <CheckCircle2 className="w-2.5 h-2.5" />}

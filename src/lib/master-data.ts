@@ -145,3 +145,9 @@ export function deletePlotCrop(id: string) {
   mockPlotCrops = mockPlotCrops.filter((pc) => pc.id !== id);
 }
 
+export function resetMasterData() {
+  mockPlots = [];
+  mockCrops = [];
+  mockPlotCrops = [];
+}
+
