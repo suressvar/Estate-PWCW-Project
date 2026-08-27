@@ -94,9 +94,6 @@ export default function WagesRegisterPage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">HR: Wages & Salary Payment Register</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Track bank disbursements, pending pay slips, and historical worker wage payouts.
-          </p>
         </div>
 
         <Link
@@ -262,16 +259,7 @@ export default function WagesRegisterPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Settlement Notes</label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Notes..."
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
-                />
-              </div>
+
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button

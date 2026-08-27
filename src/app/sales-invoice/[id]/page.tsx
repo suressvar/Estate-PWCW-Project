@@ -74,16 +74,16 @@ export default function SalesInvoicePage() {
           <div>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-900 text-white flex items-center justify-center font-bold text-base">
-                R
+                E
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-emerald-950">RANGA ESTATE & FARMS</h1>
+              <h1 className="text-2xl font-black tracking-tight text-emerald-950">ESTATE & PWCW</h1>
             </div>
             <p className="text-xs text-slate-600 font-medium mt-1">
-              Integrated Livestock, Agro Breeding & Organic Farm Operations
+              Integrated Livestock, Agro Breeding & Organic PWCW Operations
             </p>
             <div className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-              Survey No. 44/2B, Ranga Valley Estate Road, Pollachi, TN — 642001<br />
-              Ph: +91 94430 88201 | Email: accounts@rangaestates.com | GSTIN: 33AABCR4912F1Z8
+              Survey No. 44/2B, Estate Valley Road, Pollachi, TN — 642001<br />
+              Ph: +91 94430 88201 | Email: accounts@estatepwcw.com | GSTIN: 33AABCR4912F1Z8
             </div>
           </div>
 
@@ -167,7 +167,7 @@ export default function SalesInvoicePage() {
             <div className="font-bold text-slate-700">Terms & Conditions:</div>
             <div>1. All livestock inspected and handed over in prime healthy condition.</div>
             <div>2. Health and vaccination certificates verified at dispatch point.</div>
-            <div>3. This is a computer-generated tax invoice issued by Ranga Estate Farm Management System.</div>
+            <div>3. This is a computer-generated tax invoice issued by Estate PWCW Management System.</div>
           </div>
         </div>
 
@@ -179,7 +179,7 @@ export default function SalesInvoicePage() {
           </div>
 
           <div className="text-center">
-            <div className="w-48 border-b border-slate-400 pb-1 font-bold text-slate-900 text-xs">For RANGA ESTATE & FARMS</div>
+            <div className="w-48 border-b border-slate-400 pb-1 font-bold text-slate-900 text-xs">For ESTATE & PWCW</div>
             <span className="text-[10px] text-slate-500 mt-1 block">Authorized Signatory</span>
           </div>
         </div>

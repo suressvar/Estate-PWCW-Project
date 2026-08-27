@@ -40,9 +40,6 @@ export default function ReportsPage() {
             <BarChart3 className="w-5 h-5 text-emerald-700" />
             <h1 className="text-xl font-bold text-slate-900">Financial & Operational Reports</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Exportable estate audit reports, P&L breakdowns, and resource consumption summaries.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -87,7 +84,7 @@ export default function ReportsPage() {
           subtitle="Labor, Fertilizer & Gen Purchases"
         />
         <StatCard
-          title="Net Farm Profit"
+          title="Net PWCW Profit"
           value={`₹${kpis.netProfit.toLocaleString()}`}
           isPositive={kpis.netProfit >= 0}
           change={kpis.netProfit >= 0 ? "NET PROFIT" : "NET LOSS"}

@@ -83,7 +83,7 @@ export const navItems: NavItem[] = [
     children: [
       { title: "Vouchers Hub", href: "/vouchers", icon: ShoppingBag },
       { title: "Feed & Nutrition", href: "/vouchers/feed", icon: Layers },
-      { title: "Farm Medicine & Care", href: "/vouchers/medicine", icon: ReceiptText },
+      { title: "PWCW Medicine & Care", href: "/vouchers/medicine", icon: ReceiptText },
       { title: "Biologics & Immunity", href: "/vouchers/vaccine", icon: ReceiptText },
       { title: "Other Vouchers", href: "/vouchers/other", icon: Receipt },
     ],
@@ -108,14 +108,6 @@ export const navItems: NavItem[] = [
       { title: "Wages Register", href: "/wages", icon: DollarSign },
       { title: "Leave Management", href: "/leaves", icon: Calendar },
       { title: "Employee Roles", href: "/employee-roles", icon: ShieldCheck },
-    ],
-  },
-  {
-    title: "Inventory & Stocks",
-    icon: Layers,
-    children: [
-      { title: "Stock Inventory Report", href: "/reports/stock-inventory", icon: Layers },
-      { title: "Periodic Valuations", href: "/stock-valuations", icon: FileText },
     ],
   },
   {
@@ -206,14 +198,14 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         <div className="h-16 flex items-center justify-between px-5 border-b border-[#0E3D20]">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-8 h-8 rounded-lg bg-[#1E6C36] group-hover:bg-[#2E7D32] flex items-center justify-center text-white font-bold text-lg shadow-sm transition-colors">
-              R
+              E
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-base tracking-tight text-white leading-none">
-                RANGA ESTATE
+                ESTATE
               </span>
               <span className="text-[11px] text-emerald-300 font-medium tracking-wider uppercase mt-0.5">
-                Farm Management
+                PWCW Management
               </span>
             </div>
           </Link>

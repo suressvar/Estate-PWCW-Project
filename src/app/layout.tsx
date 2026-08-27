@@ -3,7 +3,7 @@ import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
-  title: "Ranga Estate - PWCW Management System",
+  title: "Estate - PWCW Management System",
   description: "Plot, Crop, Water, and Labor Management Application",
 };
 

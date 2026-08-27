@@ -29,9 +29,6 @@ export default function FertilizerPage() {
             <FlaskConical className="w-5 h-5 text-emerald-700" />
             <h1 className="text-xl font-bold text-slate-900">Fertilizer Logs & Stock Management</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Log fertilizer purchases and field applications tied to specific plot-crop associations.
-          </p>
         </div>
 
         <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-300 shadow-xs">

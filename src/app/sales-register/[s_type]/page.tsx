@@ -109,11 +109,8 @@ export default function SalesRegisterPage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-slate-900">
-              Harvest & Farm Produce Sales Register
+              Harvest & PWCW Produce Sales Register
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Verified crop sales vouchers, buyer mandates, and dispatches.
-            </p>
           </div>
         </div>
 

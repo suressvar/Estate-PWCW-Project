@@ -50,9 +50,6 @@ export default function SalesDashboardPage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">Estate Harvest & Produce Sales Analytics</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Real-time revenue metrics, harvest batch realization, and multi-channel buyer analytics.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -94,7 +91,7 @@ export default function SalesDashboardPage() {
           icon={TrendingUp}
         />
         <StatCard
-          title="Top Farm Product"
+          title="Top PWCW Product"
           value={kpis.topProduct}
           subtitle="Leading revenue contributor"
           icon={Award}
@@ -136,7 +133,7 @@ export default function SalesDashboardPage() {
 
           <div className="flex items-center justify-center gap-6 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-600">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-emerald-800" /> Farm Harvest & Crops Realization
+              <span className="w-3 h-3 rounded-full bg-emerald-800" /> PWCW Harvest & Crops Realization
             </div>
           </div>
         </div>
@@ -174,7 +171,6 @@ export default function SalesDashboardPage() {
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h2 className="text-sm font-bold text-slate-900">Recent Harvest & Produce Dispatches</h2>
-            <p className="text-xs text-slate-500">Commercial sales operations across all estate plots</p>
           </div>
           <Link
             href="/sales-register/other"

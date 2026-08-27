@@ -1,0 +1,169 @@
+{
+  "plots": [
+    {
+      "name": "Plot A",
+      "location": "Coimbatore",
+      "areaAcres": 10,
+      "status": "ACTIVE",
+      "id": "p_1787849516331",
+      "createdAt": "2026-08-27"
+    }
+  ],
+  "crops": [
+    {
+      "name": "Potato",
+      "type": "FRUIT CROPS",
+      "id": "c_1787849597159",
+      "createdAt": "2026-08-27"
+    },
+    {
+      "name": "Tomato",
+      "type": "VEGETABLES",
+      "id": "c_1787849583657",
+      "createdAt": "2026-08-27"
+    },
+    {
+      "name": "Bringal",
+      "type": "VEGETABLES",
+      "id": "c_1787849575249",
+      "createdAt": "2026-08-27"
+    },
+    {
+      "name": "Onion",
+      "type": "VEGETABLES",
+      "id": "c_1787849562204",
+      "createdAt": "2026-08-27"
+    },
+    {
+      "name": "Banana",
+      "type": "FRUIT CROPS",
+      "id": "c_1787849548027",
+      "createdAt": "2026-08-27"
+    },
+    {
+      "name": "Apple",
+      "type": "FRUIT CROPS",
+      "id": "c_1787849539189",
+      "createdAt": "2026-08-27"
+    },
+    {
+      "name": "Watermelon",
+      "type": "FRUIT CROPS",
+      "id": "c_1787849529693",
+      "createdAt": "2026-08-27"
+    }
+  ],
+  "plotCrops": [
+    {
+      "id": "pc_1787849620631_6_16at",
+      "plotId": "p_1787849516331",
+      "plotName": "Plot A",
+      "cropActivityId": "c_1787849539189",
+      "cropActivityName": "Apple",
+      "startDate": "2026-08-27",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_1787849620631_5_ps1l",
+      "plotId": "p_1787849516331",
+      "plotName": "Plot A",
+      "cropActivityId": "c_1787849529693",
+      "cropActivityName": "Watermelon",
+      "startDate": "2026-08-27",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_1787849620631_4_l1fw",
+      "plotId": "p_1787849516331",
+      "plotName": "Plot A",
+      "cropActivityId": "c_1787849548027",
+      "cropActivityName": "Banana",
+      "startDate": "2026-08-27",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_1787849620631_3_kif0",
+      "plotId": "p_1787849516331",
+      "plotName": "Plot A",
+      "cropActivityId": "c_1787849562204",
+      "cropActivityName": "Onion",
+      "startDate": "2026-08-27",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_1787849620631_2_q2pr",
+      "plotId": "p_1787849516331",
+      "plotName": "Plot A",
+      "cropActivityId": "c_1787849575249",
+      "cropActivityName": "Bringal",
+      "startDate": "2026-08-27",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_1787849620631_1_oeru",
+      "plotId": "p_1787849516331",
+      "plotName": "Plot A",
+      "cropActivityId": "c_1787849583657",
+      "cropActivityName": "Tomato",
+      "startDate": "2026-08-27",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_1787849620631_0_wbcq",
+      "plotId": "p_1787849516331",
+      "plotName": "Plot A",
+      "cropActivityId": "c_1787849597159",
+      "cropActivityName": "Potato",
+      "startDate": "2026-08-27",
+      "status": "ACTIVE"
+    }
+  ],
+  "fertilizerLogs": [],
+  "dieselLogs": [],
+  "machineryLogs": [],
+  "laborLogs": [],
+  "productionLogs": [],
+  "salesLogs": [],
+  "generalPurchaseLogs": [],
+  "employeeRoles": [],
+  "employees": [],
+  "attendance": [],
+  "wages": [],
+  "leaves": [],
+  "expenseUnits": [],
+  "feedPurchases": [],
+  "medicinePurchases": [],
+  "vaccinePurchases": [],
+  "otherVouchers": [],
+  "otherSales": [],
+  "feedInventory": [],
+  "medicineInventory": [],
+  "vaccineInventory": [],
+  "stockValuations": [],
+  "ledgerGroups": [
+    {
+      "groupName": "Direct Expenses",
+      "groupType": "EXPENSE",
+      "pnlSide": "DEBIT",
+      "description": "",
+      "linkedCategory": "Direct Expenses",
+      "id": "lg_1787843008291",
+      "createdAt": "2026-08-27"
+    }
+  ],
+  "expenseLedgers": [
+    {
+      "ledgerName": "REPAIR ",
+      "groupId": "lg_1787843008291",
+      "description": "",
+      "id": "el_1787843033342",
+      "groupName": "Direct Expenses",
+      "groupType": "EXPENSE",
+      "createdAt": "2026-08-27"
+    }
+  ],
+  "cropCategories": [
+    "FRUIT CROPS",
+    "VEGETABLES"
+  ]
+}

@@ -75,7 +75,6 @@ export default function AttendanceSummaryPage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Attendance Summary & Performance Report</h1>
-            <p className="text-xs text-slate-500 font-medium">Aggregated staff working day percentages for payroll verification.</p>
           </div>
         </div>
 

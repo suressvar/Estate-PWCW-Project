@@ -140,9 +140,6 @@ export default function LeaveManagementPage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">HR: Leave Management & Authorizations</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Track sanctioned leaves, auto-sync with matrix attendance grid, and monitor absences.
-          </p>
         </div>
 
         <button

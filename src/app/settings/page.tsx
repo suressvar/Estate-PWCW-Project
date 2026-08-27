@@ -45,18 +45,12 @@ export default function SettingsPage() {
           <Settings className="w-5 h-5 text-emerald-700" />
           <h1 className="text-xl font-bold text-slate-900">System Settings</h1>
         </div>
-        <p className="text-xs text-slate-500 mt-1">
-          Manage system configurations, data stores, and application reset parameters.
-        </p>
       </div>
 
       {/* Main Settings Panel */}
       <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-xs space-y-6">
         <div>
           <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Database & Storage</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Configure how the estate management system stores operational records.
-          </p>
         </div>
 
         <div className="border-t border-slate-100 pt-6">

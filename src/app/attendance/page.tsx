@@ -118,7 +118,7 @@ export default function AttendanceGridPage() {
   };
 
   const handleBulkMark = async () => {
-    if (!confirm(`Mark ALL active farm employees as PRESENT for ${bulkDate}?`)) return;
+    if (!confirm(`Mark ALL active PWCW employees as PRESENT for ${bulkDate}?`)) return;
     try {
       const res = await fetch("/api/attendance/bulk", {
         method: "POST",
@@ -154,9 +154,6 @@ export default function AttendanceGridPage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">HR: Monthly Attendance Matrix Grid</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Click any cell to log or adjust daily present, half-day, absent or leave status.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -374,16 +371,7 @@ export default function AttendanceGridPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Remarks / Notes</label>
-                <input
-                  type="text"
-                  value={modalData.notes}
-                  onChange={(e) => setModalData({ ...modalData, notes: e.target.value })}
-                  placeholder="Task, illness, reason..."
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
-                />
-              </div>
+
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button

@@ -49,18 +49,9 @@ export default function ProfitAndLossReportPage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">Profit & Loss (P&L) Statement</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Standard T-Format double-entry commercial financial statement with livestock & stock valuation adjustments.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/stock-valuations"
-            className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl shadow-xs transition-all"
-          >
-            Adjust Stock Valuations
-          </Link>
           <button
             onClick={() => window.print()}
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
@@ -140,7 +131,7 @@ export default function ProfitAndLossReportPage() {
       <div className="bg-white p-8 sm:p-10 rounded-2xl border border-slate-200 shadow-sm print:border-none print:shadow-none print:p-0 space-y-6 text-slate-900 text-xs">
         {/* Printable Header */}
         <div className="text-center border-b-2 border-emerald-900 pb-4 space-y-1">
-          <h2 className="text-xl font-black text-emerald-950 uppercase tracking-wide">RANGA ESTATE & FARMS</h2>
+          <h2 className="text-xl font-black text-emerald-950 uppercase tracking-wide">ESTATE & PWCW</h2>
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
             PROFIT & LOSS ACCOUNT STATEMENT
           </h3>
@@ -242,7 +233,7 @@ export default function ProfitAndLossReportPage() {
           </div>
           <div className="text-right">
             <div className="font-bold text-slate-900">Managing Partner / Trustee</div>
-            <div className="text-[10px] text-slate-400">Ranga Estate & Livestock Breeding LLP</div>
+            <div className="text-[10px] text-slate-400">Estate & Livestock Breeding LLP</div>
           </div>
         </div>
       </div>

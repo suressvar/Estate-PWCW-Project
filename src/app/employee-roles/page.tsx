@@ -77,7 +77,6 @@ export default function EmployeeRolesPage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Employee Roles & Designations</h1>
-            <p className="text-xs text-slate-500 font-medium">Standardized operational job titles for estate personnel.</p>
           </div>
         </div>
       </div>
@@ -92,7 +91,7 @@ export default function EmployeeRolesPage() {
       {/* Inline Add Form */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Add New Designation</h2>
-        <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div>
             <input
               type="text"
@@ -101,15 +100,6 @@ export default function EmployeeRolesPage() {
               onChange={(e) => setRoleName(e.target.value)}
               placeholder="e.g. Milking Operator, Watchman"
               className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 focus:outline-emerald-600"
-            />
-          </div>
-          <div>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Role description & duties..."
-              className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900"
             />
           </div>
           <div>
@@ -129,7 +119,6 @@ export default function EmployeeRolesPage() {
           <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
             <tr>
               <th className="p-3.5">Role Designation</th>
-              <th className="p-3.5">Description</th>
               <th className="p-3.5 text-right">Actions</th>
             </tr>
           </thead>
@@ -137,7 +126,6 @@ export default function EmployeeRolesPage() {
             {roles.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="p-3.5 font-bold text-slate-900">{r.roleName}</td>
-                <td className="p-3.5 text-slate-600">{r.description || "-"}</td>
                 <td className="p-3.5 text-right">
                   <button
                     onClick={() => handleDelete(r.id, r.roleName)}

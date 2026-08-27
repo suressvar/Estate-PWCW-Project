@@ -29,9 +29,6 @@ export default function LaborPage() {
             <Users className="w-5 h-5 text-emerald-700" />
             <h1 className="text-xl font-bold text-slate-900">Labor Usage & Wage Costs</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Log daily labor attendance with automated wage calculation: (Men × M.Wage + Women × W.Wage).
-          </p>
         </div>
 
         <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-md border border-slate-200">

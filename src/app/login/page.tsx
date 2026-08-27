@@ -51,15 +51,14 @@ export default function LoginPage() {
           <div className="inline-flex p-3 bg-emerald-500/20 rounded-full text-emerald-400 border border-emerald-400/30 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-transform duration-500 group-hover:scale-110">
             <Trees className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-wide drop-shadow-sm">Ranga Estate</h1>
-          <p className="text-xs text-emerald-300 font-semibold tracking-wider uppercase">PWCW Farm Management Portal</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-wide drop-shadow-sm">Estate</h1>
+          <p className="text-xs text-emerald-300 font-semibold tracking-wider uppercase">PWCW Management Portal</p>
         </div>
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="p-8 space-y-5">
           <div className="text-center pb-2">
             <h2 className="text-xl font-bold text-slate-800 tracking-wide">Account Sign In</h2>
-            <p className="text-xs text-slate-500 mt-1">Enter your credentials to access the system</p>
           </div>
 
           {error && (

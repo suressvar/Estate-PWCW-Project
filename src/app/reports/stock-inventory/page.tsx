@@ -140,9 +140,6 @@ export default function StockInventoryReportPage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">Stock Inventory & Valuation Report</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Real-time feed, medicine, and vaccine stocks with automated depletion and threshold alert monitoring.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">

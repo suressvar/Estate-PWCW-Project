@@ -39,7 +39,7 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
 
   // Stock Valuations
   const valuations = getStockValuations();
-  const currentValuation = valuations[0] || { openingStock: 450000, closingStock: 680000, periodName: "FY 2026-27" };
+  const currentValuation = valuations[0] || { openingStock: 0, closingStock: 0, periodName: "FY 2026-27" };
   const openingStock = currentValuation.openingStock;
   const closingStock = currentValuation.closingStock;
 
@@ -87,7 +87,7 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
   const debitItems: PnLLineItem[] = [
     { name: "To Opening Stock (Produce & Nursery)", amount: openingStock },
     {
-      name: "To Farm Inputs & Nutritional Feed",
+      name: "To PWCW Inputs & Nutritional Feed",
       amount: totalFeedPurchases,
       subItems: feedPurchases.map((f: any) => ({ name: f.feedName, amount: f.cost })),
     },
@@ -101,8 +101,8 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
       amount: totalVacPurchases,
       subItems: vacPurchases.map((v: any) => ({ name: v.vaccineName, amount: v.cost })),
     },
-    { name: "To Farm Worker Wages & Labor Settlements", amount: paidWages },
-    { name: "To Direct Operational Farm Expenses", amount: directExpenses },
+    { name: "To PWCW Worker Wages & Labor Settlements", amount: paidWages },
+    { name: "To Direct Operational PWCW Expenses", amount: directExpenses },
     { name: "To Electricity, Irrigation & Administration", amount: adminExpenses },
     { name: "To Equipment & Maintenance Procurement", amount: equipmentPurchases },
   ];

@@ -29,9 +29,6 @@ export default function MachineryPage() {
             <Tractor className="w-5 h-5 text-emerald-700" />
             <h1 className="text-xl font-bold text-slate-900">Machinery Usage & Fuel Consumption</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Log machinery runtime hours with automated running time and diesel fuel consumption calculations.
-          </p>
         </div>
 
         <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-md border border-slate-200">

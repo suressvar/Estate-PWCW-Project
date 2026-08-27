@@ -119,9 +119,6 @@ export default function StockValuationsPage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Periodic Stock Valuations</h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Opening & closing livestock/produce valuations applied directly to Profit & Loss statements.
-            </p>
           </div>
         </div>
 

@@ -7,7 +7,7 @@ test.describe("Login Authentication & Password Toggle Flow", () => {
     await page.goto("http://localhost:3000/login");
 
     // Verify Login page components
-    await expect(page.locator("h1")).toContainText("Ranga Estate");
+    await expect(page.locator("h1")).toContainText("Estate");
     await expect(page.locator("h2")).toContainText("Account Sign In");
   });
 

@@ -81,9 +81,6 @@ export default function SalaryCalculatePage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">Salary & Wages Calculation Engine</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Automated computation reading from monthly attendance logs with bonus/deduction overrides.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">

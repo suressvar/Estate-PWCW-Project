@@ -173,7 +173,7 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
                 </div>
                 <div>
                   <h1 className="text-2xl font-black tracking-tight text-emerald-950 uppercase">
-                    Ranga Estate
+                    Estate
                   </h1>
                   <p className="text-xs font-semibold text-emerald-800 tracking-wide uppercase">
                     PWCW Agro & Plantation Enterprises
@@ -354,15 +354,6 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
                   {formattedAmountWords}
                 </p>
               </div>
-
-              {voucher.notes && (
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Special Remarks / Dispatch Notes:
-                  </span>
-                  <p className="text-slate-700 mt-0.5">{voucher.notes}</p>
-                </div>
-              )}
             </div>
 
             {/* Right: Calculations Summary Table */}
@@ -436,7 +427,7 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
 
           {/* Footer Note */}
           <div className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-3">
-            Computer generated official voucher record from Ranga Estate PWCW Management System • Valid without physical seal
+            Computer generated official voucher record from Estate PWCW Management System • Valid without physical seal
           </div>
         </div>
       </div>

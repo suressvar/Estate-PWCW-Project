@@ -249,9 +249,6 @@ export default function SalesPage() {
               <h1 className="text-xl font-bold text-slate-900">
                 Crop Sales & Revenue Logs (Voucher Format)
               </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Generate official Estate Sales Vouchers, record harvest dispatches, track client receivables & print tax slips
-              </p>
             </div>
           </div>
         </div>
@@ -337,9 +334,6 @@ export default function SalesPage() {
                   <h2 className="text-base font-bold text-slate-900">
                     Official Estate Sales Voucher Studio
                   </h2>
-                  <p className="text-xs text-slate-500">
-                    Produce dispatch, buyer accounting & itemized line calculation
-                  </p>
                 </div>
               </div>
 
@@ -623,19 +617,7 @@ export default function SalesPage() {
 
             {/* Calculations & Submit Footer */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 items-end">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700 text-xs">
-                  Field Remarks / Delivery Notes
-                </label>
-                <input
-                  id="form-notes-input"
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. Dispatched via truck TN-22-AX-8910"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs"
-                />
-              </div>
+              <div />
 
               <div className="p-4 bg-emerald-950 text-white rounded-xl space-y-2 text-xs font-mono">
                 <div className="flex justify-between text-emerald-300">
@@ -680,9 +662,6 @@ export default function SalesPage() {
               <Receipt className="w-4 h-4 text-emerald-700" />
               Sales Vouchers Register ({filteredLogs.length})
             </h2>
-            <p className="text-xs text-slate-500">
-              Official archive of all produce dispatches, invoices, and payment receipts
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

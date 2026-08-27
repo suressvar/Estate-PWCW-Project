@@ -166,9 +166,6 @@ export default function PlotsPage() {
             <MapPin className="w-5 h-5 text-emerald-700" />
             <h1 className="text-xl font-bold text-slate-900">Plot Master Data Management</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Configure land plots, acreages, geographical bounds, and active operational status.
-          </p>
         </div>
 
         {/* Dynamic Role Simulation Toggle */}
@@ -308,9 +305,6 @@ export default function PlotsPage() {
                 <h3 className="text-base font-bold text-slate-900">
                   Assign Crops to {targetAssignPlot.name}
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Select multiple crops or activities to assign to this plot.
-                </p>
               </div>
               <button
                 type="button"

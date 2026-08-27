@@ -195,11 +195,8 @@ export default function EmployeesPage() {
             <div className="p-2 bg-emerald-900 text-white rounded-xl shadow-xs">
               <Users className="w-5 h-5 text-emerald-300" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900">HR: Farm Staff & Employee Management</h1>
+            <h1 className="text-xl font-bold text-slate-900">HR: PWCW Staff & Employee Management</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Staff roster, compensation structures, emergency contacts, and banking details.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -382,7 +379,7 @@ export default function EmployeesPage() {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-sm">
-                {editingId ? "Edit Employee Profile" : "Register New Farm Employee"}
+                {editingId ? "Edit Employee Profile" : "Register New PWCW Employee"}
               </h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-700 text-sm font-bold">✕</button>
             </div>

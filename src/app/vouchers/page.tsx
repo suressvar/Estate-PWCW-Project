@@ -107,9 +107,6 @@ export default function VouchersHubPage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">Purchase Vouchers Hub</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Centralized purchase ledger recording for livestock, feed, health supplies, and farm operating costs.
-          </p>
         </div>
 
         <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
@@ -146,7 +143,6 @@ export default function VouchersHubPage() {
                   <h2 className="text-sm font-bold text-slate-900 group-hover:text-emerald-800 transition-colors">
                     {card.title}
                   </h2>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">{card.subtitle}</p>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">

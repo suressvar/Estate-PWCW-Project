@@ -12,34 +12,38 @@ div[class*="nextjs-portal"] {
 
 /* Glassmorphism Structural Tokens */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(203, 243, 187, 0.7);
+  box-shadow: 0 4px 20px -2px rgba(147, 191, 199, 0.2), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
 }
 
 .glass-sidebar {
   background: rgba(6, 78, 59, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(203, 243, 187, 0.2);
 }
 
 .glass-modal {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(171, 231, 178, 0.8);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(147, 191, 199, 0.1);
 }
 
 /* Ambient Estate Light Background Gradient Wash */
 .bg-ambient-estate {
-  background: #FAFAFA;
+  background: linear-gradient(135deg, #ECF4E8 0%, #FAFAF8 40%, #ECF4E8 100%);
 }
 
 @theme inline {
+  --color-estate-soft: #ECF4E8;
+  --color-estate-light: #CBF3BB;
+  --color-estate-mint: #ABE7B2;
+  --color-estate-teal: #93BFC7;
 
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;

@@ -49,7 +49,7 @@ test.describe("Epic: Sales & Purchases Voucher Format System", () => {
     // Verify modal elements
     const voucherModal = page.locator("#voucher-printable-area");
     await expect(voucherModal).toBeVisible();
-    await expect(voucherModal).toContainText("Ranga Estate");
+    await expect(voucherModal).toContainText("Estate");
     await expect(voucherModal).toContainText("OFFICIAL SALES VOUCHER");
     await expect(voucherModal).toContainText("Billed To / Buyer Details");
     await expect(voucherModal).toContainText("Amount Chargeable in Words");
@@ -77,7 +77,7 @@ test.describe("Epic: Sales & Purchases Voucher Format System", () => {
 
     const voucherModal = page.locator("#voucher-printable-area");
     await expect(voucherModal).toBeVisible();
-    await expect(voucherModal).toContainText("Ranga Estate");
+    await expect(voucherModal).toContainText("Estate");
     await expect(voucherModal).toContainText("OFFICIAL PURCHASE VOUCHER");
     await expect(voucherModal).toContainText("Vendor / Supplier Details");
   });

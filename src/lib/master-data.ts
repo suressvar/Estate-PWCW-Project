@@ -1,100 +1,113 @@
-export interface PlotItem {
-  id: string;
-  name: string;
-  location: string;
-  areaAcres: number;
-  status: "ACTIVE" | "INACTIVE";
-  createdAt: string;
+import { getDatabase, saveDatabase, PlotItem, CropItem, PlotCropAssociation } from "./db-storage";
+
+export type { PlotItem, CropItem, PlotCropAssociation };
+
+export function getPlots(): PlotItem[] {
+  return getDatabase().plots;
 }
 
-export interface CropItem {
-  id: string;
-  name: string;
-  type: "CROP" | "ACTIVITY";
-  createdAt: string;
-}
-
-export interface PlotCropAssociation {
-  id: string;
-  plotId: string;
-  plotName: string;
-  cropActivityId: string;
-  cropActivityName: string;
-  startDate: string;
-  endDate?: string;
-  status: "ACTIVE" | "COMPLETED";
-}
-
-// Initial In-Memory Store for Master Data Management
-let mockPlots: PlotItem[] = [
-  { id: "p1", name: "Plot A - North Field", location: "North Sector", areaAcres: 12.5, status: "ACTIVE", createdAt: "2026-01-10" },
-  { id: "p2", name: "Plot B - Coconut Grove", location: "East Sector", areaAcres: 8.0, status: "ACTIVE", createdAt: "2026-01-12" },
-  { id: "p3", name: "Plot C - South Pasture", location: "South Sector", areaAcres: 15.2, status: "INACTIVE", createdAt: "2026-02-01" },
-];
-
-let mockCrops: CropItem[] = [
-  { id: "c1", name: "Tomato", type: "CROP", createdAt: "2026-01-05" },
-  { id: "c2", name: "Coconut", type: "CROP", createdAt: "2026-01-05" },
-  { id: "c3", name: "Fertilizer Application", type: "ACTIVITY", createdAt: "2026-01-15" },
-  { id: "c4", name: "Weeding & Tying", type: "ACTIVITY", createdAt: "2026-01-20" },
-];
-
-let mockPlotCrops: PlotCropAssociation[] = [
-  { id: "pc1", plotId: "p1", plotName: "Plot A - North Field", cropActivityId: "c1", cropActivityName: "Tomato", startDate: "2026-06-01", status: "ACTIVE" },
-  { id: "pc2", plotId: "p1", plotName: "Plot A - North Field", cropActivityId: "c3", cropActivityName: "Fertilizer Application", startDate: "2026-06-15", status: "ACTIVE" },
-  { id: "pc3", plotId: "p2", plotName: "Plot B - Coconut Grove", cropActivityId: "c2", cropActivityName: "Coconut", startDate: "2026-01-01", status: "ACTIVE" },
-];
-
-export function getPlots() {
-  return mockPlots;
-}
-
-export function createPlot(data: Omit<PlotItem, "id" | "createdAt">) {
+export function createPlot(data: Omit<PlotItem, "id" | "createdAt">): PlotItem {
+  const db = getDatabase();
   const newPlot: PlotItem = {
     ...data,
     id: `p_${Date.now()}`,
     createdAt: new Date().toISOString().split("T")[0],
   };
-  mockPlots.unshift(newPlot);
+  db.plots.unshift(newPlot);
+  saveDatabase(db);
   return newPlot;
 }
 
-export function updatePlot(id: string, data: Partial<PlotItem>) {
-  mockPlots = mockPlots.map((p) => (p.id === id ? { ...p, ...data } : p));
-  return mockPlots.find((p) => p.id === id);
+export function updatePlot(id: string, data: Partial<PlotItem>): PlotItem | undefined {
+  const db = getDatabase();
+  db.plots = db.plots.map((p) => (p.id === id ? { ...p, ...data } : p));
+  saveDatabase(db);
+  return db.plots.find((p) => p.id === id);
 }
 
 export function deletePlot(id: string) {
-  mockPlots = mockPlots.filter((p) => p.id !== id);
-  mockPlotCrops = mockPlotCrops.filter((pc) => pc.plotId !== id);
+  const db = getDatabase();
+  db.plots = db.plots.filter((p) => p.id !== id);
+  db.plotCrops = db.plotCrops.filter((pc) => pc.plotId !== id);
+  saveDatabase(db);
 }
 
-export function getCrops() {
-  return mockCrops;
+export function getCropCategories(): string[] {
+  const db = getDatabase();
+  if (!db.cropCategories || !Array.isArray(db.cropCategories) || db.cropCategories.length === 0) {
+    db.cropCategories = ["CROP", "ACTIVITY", "FRUIT CROPS", "VEGETABLES", "TIMBER & TREES", "FODDER CROPS", "INTER-CROP", "FIELD ACTIVITY", "IRRIGATION & WATER", "SOIL & FERTILIZATION"];
+    saveDatabase(db);
+  }
+  return db.cropCategories;
 }
 
-export function createCrop(data: Omit<CropItem, "id" | "createdAt">) {
+export function createCropCategory(category: string): string {
+  const trimmed = category.trim().toUpperCase();
+  if (!trimmed) return "";
+  const db = getDatabase();
+  if (!db.cropCategories) {
+    db.cropCategories = [];
+  }
+  if (!db.cropCategories.includes(trimmed)) {
+    db.cropCategories.push(trimmed);
+    saveDatabase(db);
+  }
+  return trimmed;
+}
+
+export function deleteCropCategory(category: string) {
+  const db = getDatabase();
+  if (db.cropCategories) {
+    db.cropCategories = db.cropCategories.filter((c) => c !== category);
+    saveDatabase(db);
+  }
+}
+
+export function getCrops(): CropItem[] {
+  return getDatabase().crops;
+}
+
+export function createCrop(data: Omit<CropItem, "id" | "createdAt">): CropItem {
+  const db = getDatabase();
+  const categoryType = data.type ? data.type.trim().toUpperCase() : "CROP";
+  
+  if (categoryType && db.cropCategories && !db.cropCategories.includes(categoryType)) {
+    db.cropCategories.push(categoryType);
+  }
+
   const newCrop: CropItem = {
-    ...data,
+    name: data.name,
+    type: categoryType,
     id: `c_${Date.now()}`,
     createdAt: new Date().toISOString().split("T")[0],
   };
-  mockCrops.unshift(newCrop);
+  db.crops.unshift(newCrop);
+  saveDatabase(db);
   return newCrop;
 }
 
-export function updateCrop(id: string, data: Partial<CropItem>) {
-  mockCrops = mockCrops.map((c) => (c.id === id ? { ...c, ...data } : c));
-  return mockCrops.find((c) => c.id === id);
+export function updateCrop(id: string, data: Partial<CropItem>): CropItem | undefined {
+  const db = getDatabase();
+  const categoryType = data.type ? data.type.trim().toUpperCase() : undefined;
+
+  if (categoryType && db.cropCategories && !db.cropCategories.includes(categoryType)) {
+    db.cropCategories.push(categoryType);
+  }
+
+  db.crops = db.crops.map((c) => (c.id === id ? { ...c, ...data, ...(categoryType ? { type: categoryType } : {}) } : c));
+  saveDatabase(db);
+  return db.crops.find((c) => c.id === id);
 }
 
 export function deleteCrop(id: string) {
-  mockCrops = mockCrops.filter((c) => c.id !== id);
-  mockPlotCrops = mockPlotCrops.filter((pc) => pc.cropActivityId !== id);
+  const db = getDatabase();
+  db.crops = db.crops.filter((c) => c.id !== id);
+  db.plotCrops = db.plotCrops.filter((pc) => pc.cropActivityId !== id);
+  saveDatabase(db);
 }
 
-export function getPlotCrops() {
-  return mockPlotCrops;
+export function getPlotCrops(): PlotCropAssociation[] {
+  return getDatabase().plotCrops;
 }
 
 export function createPlotCrop(plotId: string, cropActivityId: string, startDate: string) {
@@ -103,51 +116,60 @@ export function createPlotCrop(plotId: string, cropActivityId: string, startDate
 }
 
 export function createPlotCrops(plotId: string, cropActivityIds: string[], startDate: string) {
-  const plot = mockPlots.find((p) => p.id === plotId);
+  const db = getDatabase();
+  const plot = db.plots.find((p) => p.id === plotId || p.name === plotId);
   const plotName = plot ? plot.name : "Unknown Plot";
+  const actualPlotId = plot ? plot.id : plotId;
   const created: PlotCropAssociation[] = [];
 
   cropActivityIds.forEach((cropActivityId, index) => {
-    // Check if active association already exists for this plot and crop
-    const existingActive = mockPlotCrops.find(
-      (pc) => pc.plotId === plotId && pc.cropActivityId === cropActivityId && pc.status === "ACTIVE"
+    const crop = db.crops.find((c) => c.id === cropActivityId || c.name === cropActivityId);
+    const actualCropId = crop ? crop.id : cropActivityId;
+    const cropName = crop ? crop.name : "Unknown Crop";
+
+    const existingActive = db.plotCrops.find(
+      (pc) => (pc.plotId === actualPlotId || pc.plotId === plotId) && (pc.cropActivityId === actualCropId || pc.cropActivityId === cropActivityId) && pc.status === "ACTIVE"
     );
 
     if (existingActive) {
-      // Return existing active association or skip duplicate
       created.push(existingActive);
       return;
     }
 
-    const crop = mockCrops.find((c) => c.id === cropActivityId);
     const newAssoc: PlotCropAssociation = {
       id: `pc_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 6)}`,
-      plotId,
+      plotId: actualPlotId,
       plotName,
-      cropActivityId,
-      cropActivityName: crop ? crop.name : "Unknown Crop",
+      cropActivityId: actualCropId,
+      cropActivityName: cropName,
       startDate: startDate || new Date().toISOString().split("T")[0],
       status: "ACTIVE",
     };
 
-    mockPlotCrops.unshift(newAssoc);
+    db.plotCrops.unshift(newAssoc);
     created.push(newAssoc);
   });
 
+  saveDatabase(db);
   return created;
 }
 
 export function updatePlotCropStatus(id: string, status: "ACTIVE" | "COMPLETED") {
-  mockPlotCrops = mockPlotCrops.map((pc) => (pc.id === id ? { ...pc, status } : pc));
+  const db = getDatabase();
+  db.plotCrops = db.plotCrops.map((pc) => (pc.id === id ? { ...pc, status } : pc));
+  saveDatabase(db);
 }
 
 export function deletePlotCrop(id: string) {
-  mockPlotCrops = mockPlotCrops.filter((pc) => pc.id !== id);
+  const db = getDatabase();
+  db.plotCrops = db.plotCrops.filter((pc) => pc.id !== id);
+  saveDatabase(db);
 }
 
 export function resetMasterData() {
-  mockPlots = [];
-  mockCrops = [];
-  mockPlotCrops = [];
+  const db = getDatabase();
+  db.plots = [];
+  db.crops = [];
+  db.plotCrops = [];
+  saveDatabase(db);
 }
-

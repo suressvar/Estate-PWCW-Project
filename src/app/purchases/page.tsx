@@ -264,9 +264,6 @@ export default function PurchasesPage() {
               <h1 className="text-xl font-bold text-slate-900">
                 Estate Purchases & Procurement (Voucher Format)
               </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Generate official Estate Purchase Vouchers, record input supplies (Fertilizer, Diesel, Spares, Seeds) & print expense receipts
-              </p>
             </div>
           </div>
         </div>
@@ -650,18 +647,7 @@ export default function PurchasesPage() {
 
             {/* Calculations & Submit Footer */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 items-end">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700 text-xs">
-                  Field Remarks / Usage Intent Notes
-                </label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. Replaced damaged drip laterals in North sector block"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 text-xs"
-                />
-              </div>
+              <div />
 
               <div className="p-4 bg-slate-900 text-white rounded-xl space-y-2 text-xs font-mono">
                 <div className="flex justify-between text-slate-300">
@@ -701,13 +687,10 @@ export default function PurchasesPage() {
         {/* Table Filter Header */}
         <div className="p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-emerald-700" />
               Purchase Vouchers Register ({filteredLogs.length})
             </h2>
-            <p className="text-xs text-slate-500">
-              Official archive of all farm procurement vouchers, supplier invoices, and input expenses
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

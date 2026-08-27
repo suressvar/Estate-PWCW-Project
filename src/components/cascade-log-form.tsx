@@ -89,7 +89,6 @@ export function CascadeLogForm({
     <form onSubmit={handleSubmit} className="glass-panel rounded-xl p-5 shadow-xs space-y-4 max-w-xl">
       <div className="border-b border-slate-200/80 pb-3">
         <h3 className="text-sm font-bold text-slate-900">New {moduleTitle} Entry</h3>
-        <p className="text-xs text-slate-600 font-medium">Immutable transaction log bound to current user session</p>
       </div>
 
 
@@ -147,19 +146,6 @@ export function CascadeLogForm({
 
         {/* Category Specific Fields */}
         {renderExtraFields(extraState, setExtraState)}
-
-        {/* Notes */}
-        <div className="space-y-1 sm:col-span-2">
-          <label className="font-semibold text-slate-700">Notes / Field Remarks</label>
-          <input
-            id="form-notes-input"
-            type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Optional transaction notes..."
-            className="w-full p-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-          />
-        </div>
       </div>
 
       <div className="pt-2 flex justify-end">

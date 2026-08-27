@@ -123,9 +123,6 @@ export default function ExpenseLedgersPage() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">Chart of Accounts: Particulars & Ledgers</h1>
           </div>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Accounts used in all Purchase Vouchers and Sales transactions with automated group links.
-          </p>
         </div>
 
         <button
@@ -181,7 +178,6 @@ export default function ExpenseLedgersPage() {
                 <th className="p-3.5">Ledger Name</th>
                 <th className="p-3.5">Parent Ledger Group</th>
                 <th className="p-3.5">Account Type</th>
-                <th className="p-3.5">Description</th>
                 <th className="p-3.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -204,7 +200,6 @@ export default function ExpenseLedgersPage() {
                         {l.groupType}
                       </span>
                     </td>
-                    <td className="p-3.5 text-slate-500 max-w-xs truncate">{l.description || "-"}</td>
                     <td className="p-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
@@ -269,16 +264,7 @@ export default function ExpenseLedgersPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Description</label>
-                <textarea
-                  rows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Account purpose or notes..."
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900"
-                />
-              </div>
+
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button

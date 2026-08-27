@@ -328,9 +328,6 @@ export default function VoucherRegisterPage() {
             <h1 className="text-xl font-bold text-slate-900 capitalize">
               {titleMap[v_type] || v_type} Voucher Register
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Verified purchase invoices and transaction ledger entries.
-            </p>
           </div>
         </div>
 
@@ -581,7 +578,7 @@ export default function VoucherRegisterPage() {
             {/* Form Header */}
             <div className="bg-emerald-900 text-white p-4 -m-6 mb-4 rounded-t-2xl flex items-center justify-between">
               <div>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-300">RANGA FARMS VOUCHER ENTRY</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-300">ESTATE PWCW VOUCHER ENTRY</span>
                 <h2 className="text-base font-bold capitalize">{v_type} Purchase Record</h2>
               </div>
               <button onClick={() => setShowModal(false)} className="text-white/80 hover:text-white font-bold text-sm">✕</button>
@@ -879,16 +876,7 @@ export default function VoucherRegisterPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Notes / Description</label>
-                <textarea
-                  rows={2}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Additional delivery remarks or lot details..."
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900"
-                />
-              </div>
+
 
               {/* Submit Buttons */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">

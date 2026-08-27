@@ -177,13 +177,12 @@ export default function EmployeeDetailPage() {
                     <th className="p-3">Date</th>
                     <th className="p-3">Status</th>
                     <th className="p-3">Check-in / Out</th>
-                    <th className="p-3">Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {attendance.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-6 text-center text-slate-400">No attendance entries recorded for this employee.</td>
+                      <td colSpan={3} className="p-6 text-center text-slate-400">No attendance entries recorded for this employee.</td>
                     </tr>
                   ) : (
                     attendance.map((a) => (
@@ -195,7 +194,6 @@ export default function EmployeeDetailPage() {
                           </span>
                         </td>
                         <td className="p-3 text-slate-600 font-mono">{a.checkInTime || "-"} → {a.checkOutTime || "-"}</td>
-                        <td className="p-3 text-slate-500">{a.notes || "-"}</td>
                       </tr>
                     ))
                   )}

@@ -68,13 +68,6 @@ export function PlotsCropsNav({ stats }: PlotsCropsNavProps) {
                 </div>
                 <div className="truncate text-left">
                   <div className="font-bold truncate">{tab.title}</div>
-                  <div
-                    className={`text-[10px] font-normal truncate hidden sm:block ${
-                      isActive ? "text-emerald-200" : "text-slate-500"
-                    }`}
-                  >
-                    {tab.description}
-                  </div>
                 </div>
               </div>
 

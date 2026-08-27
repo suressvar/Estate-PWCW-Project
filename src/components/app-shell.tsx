@@ -21,11 +21,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="h-16 bg-[#14532D] border-b border-[#0E3D20] px-4 flex items-center justify-between md:hidden sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#1E6C36] flex items-center justify-center text-white font-bold text-lg">
-            R
+            E
           </div>
           <div>
-            <span className="font-bold text-base text-white block leading-none">RANGA ESTATE</span>
-            <span className="text-xs text-emerald-300 font-medium tracking-wider uppercase mt-0.5 block">Farm Management</span>
+            <span className="font-bold text-base text-white block leading-none">ESTATE</span>
+            <span className="text-xs text-emerald-300 font-medium tracking-wider uppercase mt-0.5 block">PWCW Management</span>
           </div>
         </div>
 

@@ -40,7 +40,7 @@ export default function PlotCropsPage() {
   const [selectedPlotId, setSelectedPlotId] = useState("");
   const [selectedCropIds, setSelectedCropIds] = useState<string[]>([]);
   const [cropSearchTerm, setCropSearchTerm] = useState("");
-  const [cropTypeFilter, setCropTypeFilter] = useState<"ALL" | "CROP" | "ACTIVITY">("ALL");
+  const [cropTypeFilter, setCropTypeFilter] = useState<string>("ALL");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
 
   const fetchData = async () => {
@@ -167,6 +167,11 @@ export default function PlotCropsPage() {
     });
   }, [associations, searchTerm, statusFilter]);
 
+  // Available categories from loaded crops
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(crops.map((c) => c.type).filter(Boolean)));
+  }, [crops]);
+
   // Modal crop search & filter
   const filteredCropsInModal = useMemo(() => {
     return crops.filter((crop) => {
@@ -174,7 +179,7 @@ export default function PlotCropsPage() {
         .toLowerCase()
         .includes(cropSearchTerm.toLowerCase());
       const matchesType =
-        cropTypeFilter === "ALL" || crop.type === cropTypeFilter;
+        cropTypeFilter === "ALL" || crop.type.toUpperCase() === cropTypeFilter.toUpperCase();
       return matchesSearch && matchesType;
     });
   }, [crops, cropSearchTerm, cropTypeFilter]);
@@ -200,9 +205,6 @@ export default function PlotCropsPage() {
             <Link2 className="w-5 h-5 text-emerald-700" />
             <h1 className="text-xl font-bold text-slate-900">Plot-Crop Active Tracking Associations</h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Assign single or multiple crops & activities to land plots for comprehensive agricultural tracking.
-          </p>
         </div>
 
         {/* Dynamic Role Simulation Toggle */}
@@ -508,9 +510,6 @@ export default function PlotCropsPage() {
                 <h3 className="text-base font-bold text-slate-900">
                   Assign Crop(s) to Plot
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Select one plot and choose multiple crops or activities to assign simultaneously.
-                </p>
               </div>
               <button
                 type="button"
@@ -603,21 +602,19 @@ export default function PlotCropsPage() {
                       className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-emerald-600"
                     />
                   </div>
-                  <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[11px]">
-                    {(["ALL", "CROP", "ACTIVITY"] as const).map((t) => (
-                      <button
-                        type="button"
-                        key={t}
-                        onClick={() => setCropTypeFilter(t)}
-                        className={`px-2 py-1 rounded font-semibold transition-colors ${
-                          cropTypeFilter === t
-                            ? "bg-white text-emerald-800 shadow-xs"
-                            : "text-slate-500 hover:text-slate-900"
-                        }`}
-                      >
-                        {t === "ALL" ? "All" : t}
-                      </button>
-                    ))}
+                  <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[11px] max-w-[200px] overflow-x-auto">
+                    <select
+                      value={cropTypeFilter}
+                      onChange={(e) => setCropTypeFilter(e.target.value)}
+                      className="bg-transparent text-xs font-semibold text-slate-700 px-1 py-0.5 focus:outline-none"
+                    >
+                      <option value="ALL">All Categories</option>
+                      {availableCategories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
