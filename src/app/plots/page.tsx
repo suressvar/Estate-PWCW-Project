@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PlotItem, PlotCropAssociation, CropItem } from "@/lib/master-data";
+import type { PlotItem, PlotCropAssociation, CropItem } from "@/types/estate";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { PlotsCropsNav } from "@/components/plots-crops-nav";
 import {

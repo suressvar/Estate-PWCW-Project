@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export interface VoucherSlipData {
-  voucherType: "SALES" | "PURCHASE";
+  voucherType: "SALES" | "PURCHASE" | "OTHER";
   voucherNo: string;
   date: string;
   title?: string;
@@ -141,7 +141,7 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
           <div className="flex items-center gap-2">
             <FileCheck className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-200">
-              {isSales ? "Estate Sales Voucher Preview" : "Estate Purchase Voucher Preview"}
+              {isSales ? "Estate Sales Voucher Preview" : voucher.voucherType === "OTHER" ? "Estate Other Purchase Voucher Preview" : "Estate Purchase Voucher Preview"}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
                       : "bg-emerald-100 text-emerald-900 border border-emerald-300/80"
                   }`}
                 >
-                  {isSales ? "OFFICIAL SALES VOUCHER" : "OFFICIAL PURCHASE VOUCHER"}
+                  {isSales ? "OFFICIAL SALES VOUCHER" : voucher.voucherType === "OTHER" ? "OTHER PURCHASES VOUCHER" : "OFFICIAL PURCHASE VOUCHER"}
                 </span>
                 <div className="mt-2 text-xs text-slate-700 font-mono font-bold">
                   VOUCHER NO: <span className="text-slate-950 font-black">{voucher.voucherNo}</span>

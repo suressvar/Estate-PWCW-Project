@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGeneralPurchaseLogs, addGeneralPurchaseLog, deleteGeneralPurchaseLog } from "@/lib/transaction-logs";
+import { inwardPurchasedItems } from "@/lib/godown-data";
 
 export async function GET() {
   return NextResponse.json(getGeneralPurchaseLogs());
@@ -41,6 +42,22 @@ export async function POST(request: Request) {
     loggedBy: body.loggedBy || "Estate Admin",
     notes: body.notes || "",
   });
+
+  // Automatically store purchased items in the Godown
+  try {
+    if (newLog.items && newLog.items.length > 0) {
+      inwardPurchasedItems(newLog.items, {
+        voucherId: newLog.id,
+        voucherNo: newLog.voucherNo,
+        category: newLog.category,
+        vendorName: newLog.vendorName,
+        date: newLog.date,
+      });
+    }
+  } catch (err) {
+    console.error("Error auto-inwarding to godown:", err);
+  }
+
   return NextResponse.json(newLog, { status: 201 });
 }
 

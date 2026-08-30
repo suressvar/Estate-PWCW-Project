@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  webpack: (config) => {
+    config.watchOptions = {
+      ...(config.watchOptions || {}),
+      ignored: ["**/data/**", "**/node_modules/**", "**/.git/**"],
+    };
+    return config;
+  },
 };
 
 export default nextConfig;

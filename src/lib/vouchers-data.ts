@@ -17,6 +17,25 @@ export function getExpenseUnits(): ExpenseUnit[] {
   return getDatabase().expenseUnits;
 }
 
+export function createExpenseUnit(payload: { unitName: string; unitSymbol: string }): ExpenseUnit {
+  const db = getDatabase();
+  const newUnit: ExpenseUnit = {
+    id: `u_${Date.now()}`,
+    unitName: payload.unitName,
+    unitSymbol: payload.unitSymbol,
+  };
+  db.expenseUnits.push(newUnit);
+  saveDatabase(db);
+  return newUnit;
+}
+
+export function deleteExpenseUnit(id: string): boolean {
+  const db = getDatabase();
+  db.expenseUnits = db.expenseUnits.filter((u) => u.id !== id);
+  saveDatabase(db);
+  return true;
+}
+
 export function getVouchersSummary() {
   const db = getDatabase();
   return {
@@ -83,6 +102,74 @@ export function createVoucher(type: VoucherType | string, payload: any) {
     default:
       break;
   }
+
+  // Auto-inward into Godown
+  try {
+    const itemName =
+      record.feedName ||
+      record.medicineName ||
+      record.vaccineName ||
+      record.notes ||
+      particularName ||
+      "Procured Estate Item";
+    const qty = Number(record.quantity) || 1;
+    const amount = Number(record.amount) || Number(record.cost) || 0;
+    const rate = qty > 0 ? Math.round((amount / qty) * 100) / 100 : amount;
+    const category =
+      type === "feed"
+        ? "Feed & Nutrition"
+        : type === "medicine"
+        ? "Medicine & Veterinary"
+        : type === "vaccine"
+        ? "Vaccines & Bio"
+        : "General Purchases";
+
+    if (!db.godownItems) db.godownItems = [];
+    if (!db.godownMovements) db.godownMovements = [];
+
+    const gdnItem = {
+      id: `gdn_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      name: itemName,
+      category,
+      sourceVoucherId: record.id,
+      sourceVoucherNo: record.billNo || `VCH-${record.id}`,
+      vendorName: record.supplier || record.supplierName || "Vendor Procurement",
+      receivedDate: record.purchaseDate || record.voucherDate || new Date().toISOString().split("T")[0],
+      totalReceivedQuantity: qty,
+      availableQuantity: qty,
+      unit: record.unit || record.unitName || record.doseUnit || "units",
+      ratePerUnit: rate,
+      totalValue: amount,
+      location: type === "feed" ? "Fodder & Feed Godown" : "Main Godown Store",
+      minStockAlert: Math.max(1, Math.round(qty * 0.2)),
+      status: "IN_STOCK" as const,
+      notes: record.notes || `Procured via ${type} voucher`,
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+    };
+    db.godownItems.unshift(gdnItem);
+
+    db.godownMovements.unshift({
+      id: `mov_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      godownItemId: gdnItem.id,
+      itemName: gdnItem.name,
+      category: gdnItem.category,
+      movementType: "INWARD_PURCHASE",
+      quantity: qty,
+      unit: gdnItem.unit,
+      ratePerUnit: rate,
+      totalCost: amount,
+      source: gdnItem.vendorName ? `Vendor Purchase (${gdnItem.vendorName})` : "Purchase Voucher",
+      destinationMenu: "Godown Central Store",
+      destinationRoute: "/godown",
+      date: gdnItem.receivedDate,
+      notes: `Inward from ${gdnItem.sourceVoucherNo}`,
+      createdAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("Error inwarding voucher to godown:", e);
+  }
+
   saveDatabase(db);
   return record;
 }

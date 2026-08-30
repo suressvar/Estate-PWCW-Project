@@ -16,12 +16,17 @@ export function getSaleById(type: string, id: string) {
 
 export function getSalesByInvoiceGroup(invoiceGroupId: string) {
   const db = getDatabase();
-  const otherItems = db.otherSales.filter((s) => s.invoiceGroupId === invoiceGroupId);
+  let otherItems = db.otherSales.filter((s) => s.invoiceGroupId === invoiceGroupId);
+  if (otherItems.length === 0) {
+    const single = db.otherSales.find((s) => s.id === invoiceGroupId || s.srNo === invoiceGroupId);
+    if (single) otherItems = [single];
+  }
 
   const buyerName = otherItems[0]?.buyerName || "Walk-in Customer";
   const buyerCity = otherItems[0]?.buyerCity || "";
   const buyerContact = otherItems[0]?.buyerContact || "";
   const dateOfSale = otherItems[0]?.dateOfSale || new Date().toISOString().split("T")[0];
+  const category = otherItems[0]?.category || "General Estate Sales";
 
   const totalAmount = otherItems.reduce((acc, i) => acc + i.totalAmount, 0);
 
@@ -31,9 +36,34 @@ export function getSalesByInvoiceGroup(invoiceGroupId: string) {
     buyerName,
     buyerCity,
     buyerContact,
+    category,
     otherItems,
     totalAmount,
   };
+}
+
+export function getSalesCategories(): string[] {
+  const db = getDatabase();
+  return db.salesCategories || [];
+}
+
+export function addSalesCategory(category: string): string[] {
+  const db = getDatabase();
+  if (!db.salesCategories) db.salesCategories = [];
+  const trimmed = category.trim();
+  if (trimmed && !db.salesCategories.includes(trimmed)) {
+    db.salesCategories.push(trimmed);
+    saveDatabase(db);
+  }
+  return db.salesCategories;
+}
+
+export function deleteSalesCategory(category: string): string[] {
+  const db = getDatabase();
+  if (!db.salesCategories) return [];
+  db.salesCategories = db.salesCategories.filter((c) => c !== category.trim());
+  saveDatabase(db);
+  return db.salesCategories;
 }
 
 export function createMultiItemSale(type: string, payload: any) {
@@ -41,11 +71,14 @@ export function createMultiItemSale(type: string, payload: any) {
   const invoiceGroupId = `inv_${Date.now()}`;
   const ledger = payload.ledgerId ? getExpenseLedgerById(payload.ledgerId) : undefined;
   const particularName = ledger ? ledger.ledgerName : payload.particularName || "Crop & Produce Sales";
+  const category = payload.category?.trim() || "General Estate Sales";
 
   const created: OtherSaleItem[] = [];
   const items = payload.items || [];
   items.forEach((item: any, idx: number) => {
-    const srNo = `OSR-${String(db.otherSales.length + 1 + idx).padStart(4, "0")}`;
+    const srNo = payload.recordNo
+      ? String(payload.recordNo)
+      : `OSR-${String(db.otherSales.length + 1 + idx).padStart(4, "0")}`;
     const qty = Number(item.quantity) || 1;
     const rate = Number(item.pricePerUnit) || 0;
     const record: OtherSaleItem = {
@@ -62,6 +95,7 @@ export function createMultiItemSale(type: string, payload: any) {
       buyerContact: payload.buyerContact,
       ledgerId: payload.ledgerId,
       particularName,
+      category: item.category?.trim() || category,
       pnlCategory: "Sales",
       notes: payload.notes || item.notes,
       invoiceGroupId,
@@ -154,5 +188,9 @@ export const deleteSaleItem = deleteSale;
 export function resetSalesData() {
   const db = getDatabase();
   db.otherSales = [];
+  db.salesLogs = [];
   saveDatabase(db);
+  return true;
 }
+
+export const clearAllSales = resetSalesData;

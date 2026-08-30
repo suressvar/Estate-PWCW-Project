@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PurchaseVoucherItem, VoucherLineItem } from "@/lib/transaction-logs";
-import { PlotItem, PlotCropAssociation } from "@/lib/master-data";
+import type { PurchaseVoucherItem, VoucherLineItem, PlotItem, PlotCropAssociation } from "@/types/estate";
+import { DEFAULT_PURCHASE_CATEGORIES } from "@/types/estate";
 import {
   ShoppingBag,
   ShieldAlert,
   SlidersHorizontal,
   PlusCircle,
+  Plus,
   Search,
   Printer,
   FileText,
@@ -21,21 +22,11 @@ import {
   Layers,
   Tag,
   DollarSign,
+  Check,
 } from "lucide-react";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { VoucherSlipModal, VoucherSlipData } from "@/components/voucher-slip-modal";
-
-const PURCHASE_CATEGORIES = [
-  "Fertilizer & Nutrition",
-  "Diesel & Fuel",
-  "Machinery Spares & Repairs",
-  "Irrigation & Piping",
-  "Seeds & Saplings",
-  "Pesticides & Bio",
-  "Tools & Hardware",
-  "General Estate Supplies",
-] as const;
 
 export default function PurchasesPage() {
   const [logs, setLogs] = useState<PurchaseVoucherItem[]>([]);
@@ -46,31 +37,35 @@ export default function PurchasesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [showCreateForm, setShowCreateForm] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeModalVoucher, setActiveModalVoucher] = useState<VoucherSlipData | null>(null);
+
+  // Categories state (with create new category capability)
+  const [categories, setCategories] = useState<string[]>([...DEFAULT_PURCHASE_CATEGORIES]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   // Form State for Purchase Voucher
   const [voucherNo, setVoucherNo] = useState("PUR-VCH-2026-003");
-  const [category, setCategory] = useState<PurchaseVoucherItem["category"]>("Irrigation & Piping");
+  const [category, setCategory] = useState<string>("Fertilizer & Nutrition");
   const [selectedPlotId, setSelectedPlotId] = useState("");
   const [selectedPlotCropId, setSelectedPlotCropId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [vendorName, setVendorName] = useState("Kavery Drip & Hardware Enterprises");
-  const [vendorBillNo, setVendorBillNo] = useState("KD-INV-9901");
-  const [vendorContact, setVendorContact] = useState("+91 97890 11223");
-  const [vendorGstin, setVendorGstin] = useState("33AABCK8921F1ZX");
-  const [description, setDescription] = useState("Drip lateral pipe replacement & valve spares");
-  const [paymentMode, setPaymentMode] = useState<"Cash" | "Bank Transfer" | "UPI / QR" | "Cheque" | "Credit">("Bank Transfer");
+  const [vendorName, setVendorName] = useState("");
+  const [vendorBillNo, setVendorBillNo] = useState("");
+  const [vendorContact, setVendorContact] = useState("");
+  const [vendorGstin, setVendorGstin] = useState("");
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "Bank Transfer" | "UPI / QR" | "Cheque" | "Credit">("Cash");
   const [paymentStatus, setPaymentStatus] = useState<"PAID" | "PENDING" | "PARTIAL">("PAID");
-  const [notes, setNotes] = useState("Procured for seasonal maintenance");
 
   // Dynamic Line Items in Voucher
   const [items, setItems] = useState<VoucherLineItem[]>([
-    { id: "1", description: "16mm Drip Lateral Line (500m Coil)", quantity: 2, unit: "coils", rate: 2200, amount: 4400 },
-    { id: "2", description: "Screen Filter 2-inch Flushing Valves", quantity: 3, unit: "pieces", rate: 700, amount: 2100 },
+    { id: "1", description: "", quantity: 1, unit: "units", rate: 0, amount: 0 },
   ]);
   const [taxPercent] = useState<number>(0);
   const [discount] = useState<number>(0);
+
+  const [availableUnits, setAvailableUnits] = useState<any[]>([]);
 
   const fetchLogs = async () => {
     const res = await fetch("/api/purchase-vouchers");
@@ -80,18 +75,28 @@ export default function PurchasesPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [logsRes, plotsRes, assocRes] = await Promise.all([
+      const [logsRes, plotsRes, assocRes, catsRes, unitsRes] = await Promise.all([
         fetch("/api/purchase-vouchers"),
         fetch("/api/plots"),
         fetch("/api/plot-crops"),
+        fetch("/api/purchase-categories"),
+        fetch("/api/units"),
       ]);
       const logsData: PurchaseVoucherItem[] = await logsRes.json();
       const plotsData: PlotItem[] = await plotsRes.json();
       const assocData: PlotCropAssociation[] = await assocRes.json();
+      const catsData: string[] = await catsRes.json().catch(() => []);
+      const unitsData: any[] = await unitsRes.json().catch(() => []);
 
       setLogs(logsData);
       setPlots(plotsData);
       setAssociations(assocData);
+      if (Array.isArray(catsData) && catsData.length > 0) {
+        setCategories(catsData);
+      }
+      if (Array.isArray(unitsData) && unitsData.length > 0) {
+        setAvailableUnits(unitsData);
+      }
 
       if (plotsData.length > 0) {
         setSelectedPlotId(plotsData[0].id);
@@ -101,6 +106,26 @@ export default function PurchasesPage() {
     }
     loadData();
   }, []);
+
+  const handleCreateCategory = async (catName: string) => {
+    const trimmed = catName.trim();
+    if (!trimmed) return;
+    if (!categories.includes(trimmed)) {
+      setCategories((prev) => [...prev, trimmed]);
+    }
+    setCategory(trimmed);
+    setShowAddCategory(false);
+    setNewCategoryName("");
+    try {
+      await fetch("/api/purchase-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: trimmed }),
+      });
+    } catch (e) {
+      console.error("Failed to save new purchase category", e);
+    }
+  };
 
   const handlePlotChange = (plotId: string) => {
     setSelectedPlotId(plotId);
@@ -128,12 +153,12 @@ export default function PurchasesPage() {
     setItems([
       ...items,
       {
-        id: `item_${items.length + 1}`,
-        description: `Estate ${category} Item`,
+        id: `item_${Date.now()}`,
+        description: "",
         quantity: 1,
         unit: "units",
-        rate: 1000,
-        amount: 1000,
+        rate: 0,
+        amount: 0,
       },
     ]);
   };
@@ -153,13 +178,16 @@ export default function PurchasesPage() {
     const activePlot = plots.find((p) => p.id === selectedPlotId);
     const activeAssoc = associations.find((a) => a.id === selectedPlotCropId);
 
+    const itemsDescription = items.map((it) => it.description).filter(Boolean).join(", ");
+    const voucherDescription = itemsDescription || `${category} Procurement`;
+
     const payload = {
       voucherNo,
       category,
       plotCropId: selectedPlotCropId || undefined,
       plotName: activePlot ? activePlot.name : "General Estate",
       cropActivityName: activeAssoc ? activeAssoc.cropActivityName : "N/A",
-      description: description || `${category} Procurement`,
+      description: voucherDescription,
       vendorName,
       vendorBillNo,
       vendorContact,
@@ -173,7 +201,7 @@ export default function PurchasesPage() {
       paymentMode,
       paymentStatus,
       date,
-      notes,
+      notes: "",
       loggedBy: roleName === "Admin" ? "Estate Admin" : "Field Staff",
     };
 
@@ -183,8 +211,14 @@ export default function PurchasesPage() {
       body: JSON.stringify(payload),
     });
 
-    // Reset voucher number for next entry
+    // Reset form fields for next entry
+    setVendorName("");
+    setVendorBillNo("");
+    setVendorContact("");
+    setVendorGstin("");
+    setItems([{ id: "1", description: "", quantity: 1, unit: "units", rate: 0, amount: 0 }]);
     setVoucherNo(`PUR-VCH-2026-${String(logs.length + 2).padStart(3, "0")}`);
+    setShowCreateForm(false);
     fetchLogs();
   };
 
@@ -285,11 +319,11 @@ export default function PurchasesPage() {
           </div>
 
           <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            onClick={() => setShowCreateForm(true)}
+            className="px-4 py-2 text-xs font-bold text-white bg-emerald-800 hover:bg-emerald-900 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer hover:shadow-md active:scale-98"
           >
             <PlusCircle className="w-4 h-4" />
-            {showCreateForm ? "Hide Voucher Form" : "Create Purchase Voucher"}
+            New Entry
           </button>
         </div>
       </div>
@@ -335,39 +369,56 @@ export default function PurchasesPage() {
         </div>
       ) : (
         showCreateForm && (
-          <form
-            onSubmit={handleSubmitVoucher}
-            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6"
-          >
-            {/* Voucher Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">
-                    Official Estate Purchase Voucher Studio
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Input procurement, vendor invoice recording & itemized costing
-                  </p>
-                </div>
-              </div>
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-w-4xl w-full my-auto transition-all animate-in zoom-in-95 duration-200">
+              <form
+                onSubmit={handleSubmitVoucher}
+                className="space-y-6"
+              >
+                {/* Signature Green Banner Header matching Photo */}
+                <div className="bg-[#38764B] text-white px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-white/95">
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 2H5c-1.1 0-2 .9-2 2v18l3-2 3 2 3-2 3 2 3-2 3 2V4c0-1.1-.9-2-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V6h10v2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-black uppercase tracking-wide text-white leading-tight">
+                        ESTATE VOUCHERS
+                      </h2>
+                      <div className="text-xs text-emerald-100/90 font-medium">
+                        Voucher Type: PURCHASE
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="flex items-center gap-3">
-                <div className="text-xs bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 font-mono font-bold text-slate-700 flex items-center gap-2">
-                  <span>VOUCHER NO:</span>
-                  <input
-                    type="text"
-                    required
-                    value={voucherNo}
-                    onChange={(e) => setVoucherNo(e.target.value)}
-                    className="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-mono font-bold text-emerald-900"
-                  />
+                  <div className="flex items-center gap-3">
+                    <div className="text-xs bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 font-mono font-bold text-white flex items-center gap-2">
+                      <span className="text-emerald-200 text-[10px] uppercase">VOUCHER NO:</span>
+                      <input
+                        type="text"
+                        required
+                        value={voucherNo}
+                        onChange={(e) => setVoucherNo(e.target.value)}
+                        className="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-mono font-bold text-emerald-950 focus:outline-none"
+                      />
+                    </div>
+                    <span className="bg-white/20 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg uppercase tracking-wider select-none shadow-2xs">
+                      NEW ENTRY
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateForm(false)}
+                      className="p-1.5 text-white/80 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Close Voucher Modal"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
+
+                <div className="p-6 sm:p-7 pt-0 space-y-6">
 
             {/* Grid 1: Category, Vendor & Allocation */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
@@ -378,18 +429,75 @@ export default function PurchasesPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Procurement Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as PurchaseVoucherItem["category"])}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-medium"
-                  >
-                    {PURCHASE_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-slate-700">Procurement Category</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCategory(!showAddCategory)}
+                      className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-0.5 hover:underline cursor-pointer"
+                      title="Create a new procurement category"
+                    >
+                      <Plus className="w-3 h-3" />
+                      {showAddCategory ? "Select Existing" : "Create Category"}
+                    </button>
+                  </div>
+
+                  {!showAddCategory ? (
+                    <select
+                      value={category}
+                      onChange={(e) => {
+                        if (e.target.value === "__NEW__") {
+                          setShowAddCategory(true);
+                        } else {
+                          setCategory(e.target.value);
+                        }
+                      }}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-medium text-xs focus:ring-1 focus:ring-emerald-500"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="__NEW__" className="font-semibold text-emerald-700">
+                        + Create New Category...
                       </option>
-                    ))}
-                  </select>
+                    </select>
+                  ) : (
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder="Enter category name..."
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleCreateCategory(newCategoryName);
+                          }
+                        }}
+                        className="flex-1 p-2 bg-white border border-emerald-500 rounded-lg text-slate-900 font-medium text-xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 shadow-2xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleCreateCategory(newCategoryName)}
+                        className="px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddCategory(false);
+                          setNewCategoryName("");
+                        }}
+                        className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -440,7 +548,6 @@ export default function PurchasesPage() {
                     required
                     value={vendorName}
                     onChange={(e) => setVendorName(e.target.value)}
-                    placeholder="e.g. Sri Murugan Agro Agencies"
                     className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-medium"
                   />
                 </div>
@@ -452,7 +559,6 @@ export default function PurchasesPage() {
                       type="text"
                       value={vendorBillNo}
                       onChange={(e) => setVendorBillNo(e.target.value)}
-                      placeholder="SMA-88910"
                       className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono"
                     />
                   </div>
@@ -463,7 +569,6 @@ export default function PurchasesPage() {
                       type="text"
                       value={vendorContact}
                       onChange={(e) => setVendorContact(e.target.value)}
-                      placeholder="+91 98412 00000"
                       className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900"
                     />
                   </div>
@@ -475,7 +580,6 @@ export default function PurchasesPage() {
                     type="text"
                     value={vendorGstin}
                     onChange={(e) => setVendorGstin(e.target.value)}
-                    placeholder="33AAMFS4431E1Z8"
                     className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono"
                   />
                 </div>
@@ -527,18 +631,6 @@ export default function PurchasesPage() {
                     </select>
                   </div>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Summary Expense Description</label>
-                  <input
-                    type="text"
-                    required
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="e.g. Drip Irrigation Pipe Fittings"
-                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 text-xs"
-                  />
-                </div>
               </div>
             </div>
 
@@ -562,7 +654,7 @@ export default function PurchasesPage() {
               <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs divide-y divide-slate-100 bg-white">
                 <div className="bg-slate-100 p-3 grid grid-cols-12 gap-2 text-slate-700 font-bold uppercase text-xs">
                   <div className="col-span-1 text-center">#</div>
-                  <div className="col-span-4">Material / Service Description</div>
+                  <div className="col-span-4">Material / Service</div>
                   <div className="col-span-2">Quantity</div>
                   <div className="col-span-2">Unit</div>
                   <div className="col-span-1">Rate (₹)</div>
@@ -580,7 +672,6 @@ export default function PurchasesPage() {
                         required
                         value={item.description}
                         onChange={(e) => handleItemChange(idx, "description", e.target.value)}
-                        placeholder="Material description e.g. 16mm Drip Pipes"
                         className="w-full p-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 font-medium"
                       />
                     </div>
@@ -600,14 +691,14 @@ export default function PurchasesPage() {
                         onChange={(e) => handleItemChange(idx, "unit", e.target.value)}
                         className="w-full p-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 font-medium"
                       >
-                        <option value="units">units</option>
-                        <option value="kg">kg</option>
-                        <option value="liters">liters</option>
-                        <option value="bags">bags</option>
-                        <option value="pieces">pieces</option>
-                        <option value="coils">coils</option>
-                        <option value="cans">cans</option>
-                        <option value="sets">sets</option>
+                        {availableUnits.map((u) => (
+                          <option key={u.id} value={u.unitSymbol}>
+                            {u.unitName} ({u.unitSymbol})
+                          </option>
+                        ))}
+                        {availableUnits.length === 0 && (
+                          <option value="units">units</option>
+                        )}
                       </select>
                     </div>
                     <div className="col-span-1">
@@ -669,17 +760,27 @@ export default function PurchasesPage() {
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end gap-3 border-t border-slate-100">
+            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                className="px-6 py-2 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-colors cursor-pointer shadow-2xs"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                className="px-6 py-2 rounded-full bg-[#38764B] hover:bg-[#2D603D] text-white text-sm font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <FileText className="w-4 h-4" />
-                Generate & Save Official Purchase Voucher
+                <Check className="w-4 h-4" />
+                Save Voucher
               </button>
             </div>
+            </div>
           </form>
-        )
+        </div>
+      </div>
+    )
       )}
 
       {/* Purchase Vouchers Register (Ledger View) */}
@@ -713,7 +814,7 @@ export default function PurchasesPage() {
               className="py-1.5 px-2 bg-slate-100 border border-slate-300 rounded-lg text-xs text-slate-800 font-semibold"
             >
               <option value="ALL">All Categories</option>
-              {PURCHASE_CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

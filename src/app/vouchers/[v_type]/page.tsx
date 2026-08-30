@@ -94,8 +94,12 @@ export default function VoucherRegisterPage() {
   };
 
   useEffect(() => {
+    if (params.v_type === "other") {
+      router.replace("/purchases/other");
+      return;
+    }
     fetchData();
-  }, [v_type]);
+  }, [v_type, params.v_type, router]);
 
   const handleLedgerChange = (lId: string) => {
     setLedgerId(lId);

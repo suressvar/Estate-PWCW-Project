@@ -11,6 +11,7 @@ import {
   SalesLogItem,
   PurchaseVoucherItem,
   GeneralPurchaseLogItem,
+  DEFAULT_PURCHASE_CATEGORIES,
 } from "./db-storage";
 
 export type {
@@ -26,13 +27,7 @@ export type {
   GeneralPurchaseLogItem,
 };
 
-// Machine Consumption Rates (Liters per hour)
-export const MACHINE_RATES: Record<string, number> = {
-  "John Deere Tractor": 4.5,
-  "VST Tillers": 2.0,
-  "Rotavator": 3.5,
-  "Water Pump Generator": 1.5,
-};
+export { MACHINE_RATES } from "@/types/estate";
 
 export function getFertilizerLogs(): FertilizerLogItem[] {
   return getDatabase().fertilizerLogs;
@@ -146,6 +141,30 @@ export function deleteGeneralPurchaseLog(id: string): boolean {
   db.generalPurchaseLogs = db.generalPurchaseLogs.filter((g) => g.id !== id);
   saveDatabase(db);
   return true;
+}
+
+export function getPurchaseCategories(): string[] {
+  const db = getDatabase();
+  if (!db.purchaseCategories || !Array.isArray(db.purchaseCategories) || db.purchaseCategories.length === 0) {
+    const existingVoucherCats = (db.generalPurchaseLogs || []).map((v) => v.category).filter(Boolean);
+    db.purchaseCategories = Array.from(new Set([...DEFAULT_PURCHASE_CATEGORIES, ...existingVoucherCats]));
+    saveDatabase(db);
+  }
+  return db.purchaseCategories;
+}
+
+export function createPurchaseCategory(category: string): string {
+  const db = getDatabase();
+  const trimmed = category.trim();
+  if (!trimmed) return "";
+  if (!db.purchaseCategories) {
+    db.purchaseCategories = [...DEFAULT_PURCHASE_CATEGORIES];
+  }
+  if (!db.purchaseCategories.includes(trimmed)) {
+    db.purchaseCategories.push(trimmed);
+    saveDatabase(db);
+  }
+  return trimmed;
 }
 
 export function resetTransactionLogs() {

@@ -11,7 +11,6 @@ import {
   Fuel,
   Tractor,
   Users,
-  Wheat,
   BarChart3,
   ShieldCheck,
   Trees,
@@ -33,6 +32,11 @@ import {
   X,
   LogOut,
   Settings,
+  Warehouse,
+  PackageCheck,
+  Send,
+  History,
+  Scale,
 } from "lucide-react";
 
 export interface SubNavItem {
@@ -66,7 +70,6 @@ export const navItems: NavItem[] = [
       { title: "Fertilizer", href: "/fertilizer", icon: FlaskConical },
       { title: "Diesel", href: "/diesel", icon: Fuel },
       { title: "Machinery", href: "/machinery", icon: Tractor },
-      { title: "Production", href: "/production", icon: Wheat },
     ],
   },
   {
@@ -75,26 +78,32 @@ export const navItems: NavItem[] = [
     children: [
       { title: "Ledger Groups", href: "/ledger-groups", icon: FolderTree },
       { title: "Ledger Accounts", href: "/expense-ledgers", icon: BookOpen },
+      { title: "Units", href: "/units", icon: Scale },
     ],
   },
   {
-    title: "Vouchers (Purchases)",
+    title: "Purchases",
     icon: ShoppingBag,
     children: [
-      { title: "Vouchers Hub", href: "/vouchers", icon: ShoppingBag },
-      { title: "Feed & Nutrition", href: "/vouchers/feed", icon: Layers },
-      { title: "PWCW Medicine & Care", href: "/vouchers/medicine", icon: ReceiptText },
-      { title: "Biologics & Immunity", href: "/vouchers/vaccine", icon: ReceiptText },
-      { title: "Other Vouchers", href: "/vouchers/other", icon: Receipt },
+      { title: "Purchase Voucher", href: "/purchases", icon: Receipt },
+      { title: "Other Purchases Voucher", href: "/purchases/other", icon: ReceiptText },
+    ],
+  },
+  {
+    title: "Godown",
+    icon: Warehouse,
+    children: [
+      { title: "Godown Inventory", href: "/godown", icon: PackageCheck },
+      { title: "Issue to Menus", href: "/godown/issue", icon: Send },
+      { title: "Stock Movements", href: "/godown/movements", icon: History },
     ],
   },
   {
     title: "Sales Module",
     icon: TrendingUp,
     children: [
-      { title: "Sales Entry", href: "/sales", icon: TrendingUp },
-      { title: "Harvest Sales Register", href: "/sales-register/other", icon: Layers },
-      { title: "Sales Analytics Dashboard", href: "/sales-dashboard", icon: Award },
+      { title: "Sales Entry", href: "/sales", icon: ReceiptText },
+      { title: "Sales Register", href: "/sales-register", icon: Layers },
     ],
   },
   {
@@ -190,13 +199,13 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
 
       {/* Sidebar Drawer */}
       <aside
-        className={`w-64 bg-[#14532D] border-r border-[#0E3D20] flex flex-col h-screen fixed top-0 left-0 z-50 text-emerald-100 transition-transform duration-300 ease-in-out md:translate-x-0 ${
+        className={`w-64 bg-[#14532D] border-r border-[#0E3D20] flex flex-col h-screen fixed top-0 left-0 z-50 text-emerald-100 transition-transform duration-300 ease-in-out md:translate-x-0 print:hidden ${
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
         }`}
       >
         {/* Brand / Logo */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-[#0E3D20]">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" prefetch={false} className="flex items-center gap-3 group">
             <div className="w-8 h-8 rounded-lg bg-[#1E6C36] group-hover:bg-[#2E7D32] flex items-center justify-center text-white font-bold text-lg shadow-sm transition-colors">
               E
             </div>
@@ -269,6 +278,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                           <Link
                             key={child.href}
                             href={child.href}
+                            prefetch={false}
                             className={`flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                               isChildActive
                                 ? "bg-[#1E6C36] text-white font-bold shadow-xs border border-[#2E7D32]/40"
@@ -291,6 +301,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
               <Link
                 key={item.title}
                 href={item.href || "#"}
+                prefetch={false}
                 className={`flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                   isActive
                     ? "bg-[#1E6C36] text-white font-bold shadow-xs border border-[#2E7D32]/40"

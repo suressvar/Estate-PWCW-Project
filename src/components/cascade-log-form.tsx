@@ -1,23 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PlotItem, PlotCropAssociation } from "@/lib/master-data";
+import type { PlotItem, PlotCropAssociation } from "@/types/estate";
 
-interface CascadeLogFormProps {
+interface CascadeLogFormProps<T = Record<string, unknown>> {
   moduleTitle: string;
   submitEndpoint: string;
   onSuccess: () => void;
-  renderExtraFields: (formState: any, setFormState: React.Dispatch<React.SetStateAction<any>>) => React.ReactNode;
-  initialExtraState?: any;
+  renderExtraFields: (formState: T, setFormState: React.Dispatch<React.SetStateAction<T>>) => React.ReactNode;
+  initialExtraState?: T;
 }
 
-export function CascadeLogForm({
+export function CascadeLogForm<T = Record<string, unknown>>({
   moduleTitle,
   submitEndpoint,
   onSuccess,
   renderExtraFields,
-  initialExtraState = {},
-}: CascadeLogFormProps) {
+  initialExtraState = {} as T,
+}: CascadeLogFormProps<T>) {
   const [plots, setPlots] = useState<PlotItem[]>([]);
   const [associations, setAssociations] = useState<PlotCropAssociation[]>([]);
   const [selectedPlotId, setSelectedPlotId] = useState<string>("");
@@ -25,7 +25,8 @@ export function CascadeLogForm({
   const [selectedPlotCropId, setSelectedPlotCropId] = useState<string>("");
   const [date, setDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState<string>("");
-  const [extraState, setExtraState] = useState<any>(initialExtraState);
+  const [extraState, setExtraState] = useState<T>(initialExtraState);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadMasterData() {
@@ -63,26 +64,36 @@ export function CascadeLogForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const activeAssoc = associations.find((a) => a.id === selectedPlotCropId);
-    const activePlot = plots.find((p) => p.id === selectedPlotId);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const activeAssoc = associations.find((a) => a.id === selectedPlotCropId);
+      const activePlot = plots.find((p) => p.id === selectedPlotId);
 
-    const payload = {
-      plotCropId: selectedPlotCropId || undefined,
-      plotName: activePlot ? activePlot.name : "General Estate",
-      cropActivityName: activeAssoc ? activeAssoc.cropActivityName : "N/A",
-      date,
-      notes,
-      ...extraState,
-    };
+      const payload = {
+        plotCropId: selectedPlotCropId || undefined,
+        plotName: activePlot ? activePlot.name : "General Estate",
+        cropActivityName: activeAssoc ? activeAssoc.cropActivityName : "N/A",
+        date,
+        notes,
+        ...extraState,
+      };
 
-    await fetch(submitEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch(submitEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    setNotes("");
-    onSuccess();
+      if (res.ok) {
+        setNotes("");
+        onSuccess();
+      }
+    } catch (err) {
+      console.error("Failed to submit entry", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -152,9 +163,20 @@ export function CascadeLogForm({
         <button
           id="form-submit-btn"
           type="submit"
-          className="w-full sm:w-auto px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-md shadow-xs transition-colors"
+          disabled={isSubmitting}
+          className="w-full sm:w-auto px-5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-700/60 disabled:cursor-not-allowed text-white font-semibold text-xs rounded-md shadow-xs transition-colors flex items-center justify-center gap-2"
         >
-          Submit Immutable Log Entry
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <span>Submitting Entry...</span>
+            </>
+          ) : (
+            "Submit Immutable Log Entry"
+          )}
         </button>
       </div>
     </form>

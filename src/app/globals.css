@@ -146,3 +146,19 @@ svg [fill="#ef4444"] {
     @apply bg-[#FAFAFA] text-slate-900 antialiased;
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}
