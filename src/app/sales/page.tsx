@@ -121,6 +121,8 @@ export default function SalesEntryPage() {
     loadData();
   }, []);
 
+
+
   // Update item field and recalculate row total
   const handleItemChange = (index: number, field: keyof SaleLineItem, value: any) => {
     const updated = [...items];
@@ -529,9 +531,10 @@ export default function SalesEntryPage() {
               </label>
               <input
                 type="text"
+                placeholder="Name of buyer or retail establishment"
                 value={buyerName}
                 onChange={(e) => setBuyerName(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
+                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
               />
             </div>
 
@@ -543,6 +546,7 @@ export default function SalesEntryPage() {
                 </label>
                 <input
                   type="text"
+                  placeholder="City / Market town"
                   value={buyerCity}
                   onChange={(e) => setBuyerCity(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
@@ -555,9 +559,10 @@ export default function SalesEntryPage() {
                 </label>
                 <input
                   type="text"
+                  placeholder="Mobile / Phone number"
                   value={buyerContact}
                   onChange={(e) => setBuyerContact(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all font-mono"
                 />
               </div>
             </div>

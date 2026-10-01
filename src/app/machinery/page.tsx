@@ -375,9 +375,9 @@ export default function MachineryPage() {
             </div>
 
             <form onSubmit={handleRecordRun} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Machine Selection */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <label className="text-xs font-bold text-slate-700">Machine / Tractor *</label>
                   <select
                     value={machineName}
@@ -385,7 +385,7 @@ export default function MachineryPage() {
                       setMachineName(e.target.value);
                       handleTimeChange(startTime, endTime, e.target.value);
                     }}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   >
                     {MACHINES.map((m) => (
                       <option key={m} value={m}>
@@ -396,39 +396,18 @@ export default function MachineryPage() {
                 </div>
 
                 {/* Target Plot */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <label className="text-xs font-bold text-slate-700">Operating Plot *</label>
                   <select
                     value={selectedPlotId}
                     onChange={(e) => handlePlotSelect(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   >
                     {plots.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name} ({p.location})
                       </option>
                     ))}
-                  </select>
-                </div>
-
-                {/* Target Crop / Activity */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Field Activity *</label>
-                  <select
-                    value={selectedCropActivityId}
-                    onChange={(e) => setSelectedCropActivityId(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  >
-                    {associations
-                      .filter((a) => a.plotId === selectedPlotId)
-                      .map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.cropActivityName}
-                        </option>
-                      ))}
-                    {associations.filter((a) => a.plotId === selectedPlotId).length === 0 && (
-                      <option value="">Ploughing / Land Preparation</option>
-                    )}
                   </select>
                 </div>
               </div>
@@ -489,7 +468,7 @@ export default function MachineryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
                 {/* Date */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Operation Date *</label>
@@ -499,17 +478,6 @@ export default function MachineryPage() {
                     value={logDate}
                     onChange={(e) => setLogDate(e.target.value)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  />
-                </div>
-
-                {/* Operator */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Driver / Equipment Operator</label>
-                  <input
-                    type="text"
-                    value={operatorName}
-                    onChange={(e) => setOperatorName(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   />
                 </div>
               </div>

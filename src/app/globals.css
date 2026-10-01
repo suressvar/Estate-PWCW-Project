@@ -145,6 +145,45 @@ svg [fill="#ef4444"] {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
     @apply bg-[#FAFAFA] text-slate-900 antialiased;
   }
+
+  /* Consistent input, select, and textarea base interaction styles */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  input[type="password"],
+  input[type="email"],
+  input[type="search"],
+  select,
+  textarea {
+    @apply transition-colors duration-150 outline-none;
+  }
+
+  /* Dropdown selects: ensure proper icon alignment and height normalization */
+  select {
+    cursor: pointer;
+  }
+
+  /* Consistent button touch & hover feedback */
+  button {
+    cursor: pointer;
+  }
+}
+
+/* Custom slick scrollbar styling */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(20, 83, 45, 0.4);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 83, 45, 0.7);
 }
 
 @media print {

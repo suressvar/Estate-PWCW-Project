@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import type { PurchaseVoucherItem, VoucherLineItem, PlotItem, PlotCropAssociation } from "@/types/estate";
+import Link from "next/link";
 import { DEFAULT_PURCHASE_CATEGORIES } from "@/types/estate";
 import {
   ShoppingBag,
+  Store,
   ShieldAlert,
   SlidersHorizontal,
   PlusCircle,
@@ -24,6 +25,7 @@ import {
   DollarSign,
   Check,
 } from "lucide-react";
+import type { PurchaseVoucherItem, VoucherLineItem, PlotItem, PlotCropAssociation } from "@/types/estate";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { VoucherSlipModal, VoucherSlipData } from "@/components/voucher-slip-modal";
@@ -66,6 +68,7 @@ export default function PurchasesPage() {
   const [discount] = useState<number>(0);
 
   const [availableUnits, setAvailableUnits] = useState<any[]>([]);
+  const [parties, setParties] = useState<any[]>([]);
 
   const fetchLogs = async () => {
     const res = await fetch("/api/purchase-vouchers");
@@ -75,18 +78,20 @@ export default function PurchasesPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [logsRes, plotsRes, assocRes, catsRes, unitsRes] = await Promise.all([
+      const [logsRes, plotsRes, assocRes, catsRes, unitsRes, partiesRes] = await Promise.all([
         fetch("/api/purchase-vouchers"),
         fetch("/api/plots"),
         fetch("/api/plot-crops"),
         fetch("/api/purchase-categories"),
         fetch("/api/units"),
+        fetch("/api/parties"),
       ]);
       const logsData: PurchaseVoucherItem[] = await logsRes.json();
       const plotsData: PlotItem[] = await plotsRes.json();
       const assocData: PlotCropAssociation[] = await assocRes.json();
       const catsData: string[] = await catsRes.json().catch(() => []);
       const unitsData: any[] = await unitsRes.json().catch(() => []);
+      const partiesData: any[] = await partiesRes.json().catch(() => []);
 
       setLogs(logsData);
       setPlots(plotsData);
@@ -97,15 +102,36 @@ export default function PurchasesPage() {
       if (Array.isArray(unitsData) && unitsData.length > 0) {
         setAvailableUnits(unitsData);
       }
+      if (Array.isArray(partiesData) && partiesData.length > 0) {
+        setParties(partiesData);
+      }
 
       if (plotsData.length > 0) {
         setSelectedPlotId(plotsData[0].id);
         const filtered = assocData.filter((a) => a.plotId === plotsData[0].id);
         if (filtered.length > 0) setSelectedPlotCropId(filtered[0].id);
       }
+
+      if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const vendorParam = urlParams.get("vendor");
+        if (vendorParam) {
+          setVendorName(vendorParam);
+          const matched = partiesData.find(
+            (p: any) => p.name?.toLowerCase() === vendorParam.toLowerCase()
+          );
+          if (matched) {
+            if (matched.phone) setVendorContact(matched.phone);
+            if (matched.gstin) setVendorGstin(matched.gstin);
+          }
+          setShowCreateForm(true);
+        }
+      }
     }
     loadData();
   }, []);
+
+
 
   const handleCreateCategory = async (catName: string) => {
     const trimmed = catName.trim();
@@ -317,6 +343,14 @@ export default function PurchasesPage() {
               Toggle RBAC
             </button>
           </div>
+
+          <Link
+            href="/purchases/retailers"
+            className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Store className="w-3.5 h-3.5 text-emerald-700" />
+            Retailers / Purchaser
+          </Link>
 
           <button
             onClick={() => setShowCreateForm(true)}
@@ -542,14 +576,39 @@ export default function PurchasesPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Supplier / Dealer Name</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-slate-700">Supplier / Dealer Name</label>
+                    <Link
+                      href="/purchases/retailers"
+                      className="text-xs text-emerald-700 hover:text-emerald-800 font-medium hover:underline flex items-center gap-1"
+                    >
+                      <Store className="w-3 h-3" /> Manage Directory
+                    </Link>
+                  </div>
                   <input
                     type="text"
+                    list="registered-vendors"
                     required
+                    placeholder="Enter or select vendor / supplier name"
                     value={vendorName}
-                    onChange={(e) => setVendorName(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setVendorName(val);
+                      const matched = parties.find((p) => p.name?.toLowerCase() === val.toLowerCase());
+                      if (matched) {
+                        if (matched.phone && !vendorContact) setVendorContact(matched.phone);
+                        if (matched.gstin && !vendorGstin) setVendorGstin(matched.gstin);
+                      }
+                    }}
                     className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-medium"
                   />
+                  <datalist id="registered-vendors">
+                    {parties.map((p) => (
+                      <option key={p.id} value={p.name}>
+                        {p.type} {p.city ? `(${p.city})` : ""}
+                      </option>
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -948,6 +1007,7 @@ export default function PurchasesPage() {
         onClose={() => setActiveModalVoucher(null)}
         voucher={activeModalVoucher}
       />
+
     </div>
   );
 }

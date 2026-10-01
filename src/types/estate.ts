@@ -141,4 +141,22 @@ export interface PurchaseVoucherItem extends BaseLog {
 
 export type GeneralPurchaseLogItem = PurchaseVoucherItem;
 
+export type PartyType = "Customer" | "Retailer" | "Vendor" | "Both";
+
+export interface PartyItem {
+  id: string;
+  name: string;
+  type: PartyType;
+  phone?: string;
+  email?: string;
+  city?: string;
+  address?: string;
+  gstin?: string;
+  status?: "ACTIVE" | "INACTIVE";
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export type { GodownItem, GodownStockMovement } from "@/lib/db-storage";
+

@@ -38,7 +38,6 @@ export default function CropsPage() {
     "TIMBER & TREES",
     "FODDER CROPS",
     "INTER-CROP",
-    "FIELD ACTIVITY",
     "IRRIGATION & WATER",
     "SOIL & FERTILIZATION",
   ]);

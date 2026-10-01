@@ -2,13 +2,14 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Link2, MapPin, Sprout } from "lucide-react";
+import { Link2, MapPin, Sprout, CircleDollarSign } from "lucide-react";
 
 interface PlotsCropsNavProps {
   stats?: {
     plotsCount?: number;
     cropsCount?: number;
     associationsCount?: number;
+    cyclesCount?: number;
   };
 }
 
@@ -22,6 +23,13 @@ export function PlotsCropsNav({ stats }: PlotsCropsNavProps) {
       href: "/plot-crops",
       icon: Link2,
       count: stats?.associationsCount,
+    },
+    {
+      title: "Crop Cycles & P&L",
+      description: "Seed-to-harvest financials per plot",
+      href: "/crop-cycles",
+      icon: CircleDollarSign,
+      count: stats?.cyclesCount,
     },
     {
       title: "Land Plots Master",

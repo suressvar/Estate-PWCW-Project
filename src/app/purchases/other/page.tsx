@@ -19,6 +19,7 @@ import {
   Check,
   TrendingUp,
   FileSpreadsheet,
+  Store,
 } from "lucide-react";
 import { ExpenseLedgerItem, LedgerGroupItem } from "@/lib/accounting-data";
 import { ExpenseUnit, OtherVoucher } from "@/lib/vouchers-data";
@@ -332,6 +333,13 @@ export default function OtherPurchasesVoucherPage() {
 
         {/* Action Buttons: New Entry & Print */}
         <div className="flex items-center gap-2.5">
+          <Link
+            href="/purchases/retailers"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-2xs"
+          >
+            <Store className="w-3.5 h-3.5 text-emerald-700" /> Retailers / Purchaser
+          </Link>
+
           <button
             onClick={() => window.print()}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-2xs"

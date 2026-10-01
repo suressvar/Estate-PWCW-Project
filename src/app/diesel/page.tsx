@@ -391,19 +391,19 @@ export default function DieselPage() {
             </div>
 
             <form onSubmit={handleDispenseFuel} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Source: Fuel Yard Tank */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>Source Fuel Storage *</span>
-                    <span className="text-[11px] text-emerald-700 font-semibold">
+                    <span className="text-[11px] text-emerald-700 font-semibold truncate ml-2">
                       {selectedGodownItem ? `${selectedGodownItem.availableQuantity} L in tank` : ""}
                     </span>
                   </label>
                   <select
                     value={selectedGodownItemId}
                     onChange={(e) => setSelectedGodownItemId(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   >
                     <option value="">-- Select from Godown Fuel Tank --</option>
                     {stockSummary.items.map((item: GodownItem) => (
@@ -420,12 +420,12 @@ export default function DieselPage() {
                 </div>
 
                 {/* Target Machine */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <label className="text-xs font-bold text-slate-700">Target Machine / Equipment *</label>
                   <select
                     value={selectedMachine}
                     onChange={(e) => setSelectedMachine(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   >
                     {ESTATE_MACHINES.map((m) => (
                       <option key={m} value={m}>
@@ -434,25 +434,9 @@ export default function DieselPage() {
                     ))}
                   </select>
                 </div>
-
-                {/* Target Plot */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Operating Plot Location</label>
-                  <select
-                    value={selectedPlotId}
-                    onChange={(e) => handlePlotSelect(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  >
-                    {plots.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.location})
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Dispense Liters */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Dispense Volume (Liters) *</label>
@@ -483,18 +467,6 @@ export default function DieselPage() {
                     value={dispenseDate}
                     onChange={(e) => setDispenseDate(e.target.value)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  />
-                </div>
-
-                {/* Driver / Operator */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Driver / Machine Operator</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Ramasamy V."
-                    value={driverName}
-                    onChange={(e) => setDriverName(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   />
                 </div>
               </div>

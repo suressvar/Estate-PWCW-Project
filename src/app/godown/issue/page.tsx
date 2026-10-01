@@ -422,52 +422,20 @@ export default function GodownIssuePage() {
               </div>
             </div>
 
-            {/* Step 4: Plot & Crop Activity Target */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-800">Target Land Plot</label>
-                <select
-                  value={selectedPlotId}
-                  onChange={(e) => setSelectedPlotId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900"
-                >
-                  {plots.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.location})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-800">Crop / Activity Track</label>
-                <select
-                  value={selectedPlotCropId}
-                  onChange={(e) => setSelectedPlotCropId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900"
-                >
-                  {plotCrops
-                    .filter((pc) => !selectedPlotId || pc.plotId === selectedPlotId)
-                    .map((pc) => (
-                      <option key={pc.id} value={pc.id}>
-                        {pc.cropActivityName} ({pc.status})
-                      </option>
-                    ))}
-                  <option value="">General Estate (Unassigned)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Step 5: Recipient */}
+            {/* Step 4: Target Land Plot */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">Dispatched To / Recipient</label>
-              <input
-                type="text"
-                value={issuedTo}
-                onChange={(e) => setIssuedTo(e.target.value)}
-                placeholder="e.g. Field Staff, Tractor Driver"
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900"
-              />
+              <label className="text-xs font-bold text-slate-800">Target Land Plot</label>
+              <select
+                value={selectedPlotId}
+                onChange={(e) => setSelectedPlotId(e.target.value)}
+                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600"
+              >
+                {plots.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.location})
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Action Bar */}

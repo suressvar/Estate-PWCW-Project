@@ -796,36 +796,6 @@ export default function GodownPage() {
                     ))}
                   </select>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Crop / Activity</label>
-                  <select
-                    value={selectedPlotCropId}
-                    onChange={(e) => setSelectedPlotCropId(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900"
-                  >
-                    {plotCrops
-                      .filter((pc) => !selectedPlotId || pc.plotId === selectedPlotId)
-                      .map((pc) => (
-                        <option key={pc.id} value={pc.id}>
-                          {pc.cropActivityName}
-                        </option>
-                      ))}
-                    <option value="">General Estate (Unassigned)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Issued To / Recipient */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Issued To / Recipient</label>
-                <input
-                  type="text"
-                  value={issuedTo}
-                  onChange={(e) => setIssuedTo(e.target.value)}
-                  placeholder="e.g. Field Supervisor, Tractor Driver, Irrigation Crew"
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900"
-                />
               </div>
 
               {/* Modal Buttons */}

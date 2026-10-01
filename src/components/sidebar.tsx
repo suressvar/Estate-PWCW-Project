@@ -37,6 +37,11 @@ import {
   Send,
   History,
   Scale,
+  Store,
+  CalendarCheck,
+  CircleDollarSign,
+  Wallet,
+  ClipboardList,
 } from "lucide-react";
 
 export interface SubNavItem {
@@ -54,11 +59,13 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard },
+  { title: "Daily Work Log", href: "/daily-log", icon: CalendarCheck },
   {
     title: "Plots & Crops",
     icon: Trees,
     children: [
       { title: "Plot-Crops Tracking", href: "/plot-crops", icon: Link2 },
+      { title: "Crop Cycles & P&L", href: "/crop-cycles", icon: CircleDollarSign },
       { title: "Plots Master", href: "/plots", icon: MapPin },
       { title: "Crops & Activities", href: "/crops", icon: Sprout },
     ],
@@ -67,9 +74,17 @@ export const navItems: NavItem[] = [
     title: "Plot Operations",
     icon: Wrench,
     children: [
+      { title: "Machinery Register & Logs", href: "/machines", icon: Tractor },
       { title: "Fertilizer", href: "/fertilizer", icon: FlaskConical },
       { title: "Diesel", href: "/diesel", icon: Fuel },
-      { title: "Machinery", href: "/machinery", icon: Tractor },
+      { title: "Machinery Old Logs", href: "/machinery", icon: Tractor },
+    ],
+  },
+  {
+    title: "Expenses & Cash",
+    icon: Wallet,
+    children: [
+      { title: "Expenses & Petty Cash", href: "/expenses", icon: Wallet },
     ],
   },
   {
@@ -87,6 +102,7 @@ export const navItems: NavItem[] = [
     children: [
       { title: "Purchase Voucher", href: "/purchases", icon: Receipt },
       { title: "Other Purchases Voucher", href: "/purchases/other", icon: ReceiptText },
+      { title: "Retailers/Purchaser", href: "/purchases/retailers", icon: Store },
     ],
   },
   {
@@ -110,6 +126,7 @@ export const navItems: NavItem[] = [
     title: "HR & Payroll",
     icon: Users,
     children: [
+      { title: "Worker Wages & Attendance", href: "/workers", icon: Users },
       { title: "Employees Roster", href: "/employees", icon: Users },
       { title: "Attendance Grid", href: "/attendance", icon: Calendar },
       { title: "Attendance Summary", href: "/attendance/summary", icon: UserCheck },
@@ -123,6 +140,7 @@ export const navItems: NavItem[] = [
     title: "Financial Reports",
     icon: BarChart3,
     children: [
+      { title: "Consolidated Master Report", href: "/reports/consolidated", icon: ClipboardList },
       { title: "Profit & Loss (P&L)", href: "/reports/pnl", icon: FileText },
       { title: "Estate Crop Analytics", href: "/reports", icon: BarChart3 },
     ],

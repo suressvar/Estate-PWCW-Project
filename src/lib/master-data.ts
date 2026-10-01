@@ -35,10 +35,10 @@ export function deletePlot(id: string) {
 export function getCropCategories(): string[] {
   const db = getDatabase();
   if (!db.cropCategories || !Array.isArray(db.cropCategories) || db.cropCategories.length === 0) {
-    db.cropCategories = ["CROP", "ACTIVITY", "FRUIT CROPS", "VEGETABLES", "TIMBER & TREES", "FODDER CROPS", "INTER-CROP", "FIELD ACTIVITY", "IRRIGATION & WATER", "SOIL & FERTILIZATION"];
+    db.cropCategories = ["CROP", "ACTIVITY", "FRUIT CROPS", "VEGETABLES", "TIMBER & TREES", "FODDER CROPS", "INTER-CROP", "IRRIGATION & WATER", "SOIL & FERTILIZATION"];
     saveDatabase(db);
   }
-  return db.cropCategories;
+  return db.cropCategories.filter((c) => c !== "FIELD ACTIVITY");
 }
 
 export function createCropCategory(category: string): string {

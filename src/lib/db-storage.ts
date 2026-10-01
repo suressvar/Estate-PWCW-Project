@@ -19,7 +19,6 @@ export const DEFAULT_CROP_CATEGORIES = [
   "TIMBER & TREES",
   "FODDER CROPS",
   "INTER-CROP",
-  "FIELD ACTIVITY",
   "IRRIGATION & WATER",
   "SOIL & FERTILIZATION",
 ];
@@ -428,6 +427,270 @@ export interface GodownStockMovement {
   createdAt: string;
 }
 
+export type PartyType = "Customer" | "Retailer" | "Vendor" | "Both";
+
+export interface PartyItem {
+  id: string;
+  name: string;
+  type: PartyType;
+  phone?: string;
+  email?: string;
+  city?: string;
+  address?: string;
+  gstin?: string;
+  status?: "ACTIVE" | "INACTIVE";
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// Daily Work Tracking Types
+export type DailyLogStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "NOT_DONE";
+
+export type ActivityType =
+  | "SOWING"
+  | "WEEDING"
+  | "IRRIGATION"
+  | "SPRAYING"
+  | "HARVESTING"
+  | "FERTILIZER_APPLICATION"
+  | "LAND_PREPARATION"
+  | "PRUNING"
+  | "MAINTENANCE"
+  | "OTHER";
+
+export interface WorkActivityItem {
+  id: string;
+  dailyLogId: string;
+  activityType: ActivityType;
+  customActivity?: string;
+  description?: string;
+  plannedFlag: boolean;
+  completedFlag: boolean;
+  reasonIfNotDone?: string | null;
+  carriedForwardFromId?: string | null;
+  assignedWorkerIds?: string[];
+  assignedWorkerNames?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DailyLogItem {
+  id: string;
+  date: string; // YYYY-MM-DD
+  plotId: string;
+  plotName?: string;
+  status: DailyLogStatus;
+  createdBy?: string;
+  notes?: string;
+  activities: WorkActivityItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Crop Cycle & Financial Ledger Types
+export type CropCycleStatus = "SOWN" | "GROWING" | "HARVESTED" | "SOLD" | "CLOSED";
+
+export type CropExpenseCategory =
+  | "SEEDS"
+  | "FERTILIZER"
+  | "PESTICIDE"
+  | "LABOR"
+  | "MACHINERY"
+  | "IRRIGATION"
+  | "TRANSPORT"
+  | "MISC";
+
+export type CropIncomeSource =
+  | "MARKET_SALE"
+  | "DIRECT_BUYER"
+  | "GOVERNMENT_SCHEME"
+  | "OTHER";
+
+export interface CropExpenseItem {
+  id: string;
+  cropCycleId: string;
+  category: CropExpenseCategory;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  description: string;
+  linkedDailyLogId?: string | null;
+  sourceRefId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CropIncomeItem {
+  id: string;
+  cropCycleId: string;
+  source: CropIncomeSource;
+  quantitySold: number;
+  unit: string;
+  ratePerUnit: number;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  buyerName?: string;
+  invoiceNo?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CropCycleItem {
+  id: string;
+  plotId: string;
+  plotName?: string;
+  cropName: string;
+  cropType?: string;
+  sowingDate: string; // YYYY-MM-DD
+  expectedHarvestDate: string; // YYYY-MM-DD
+  actualHarvestDate?: string | null;
+  status: CropCycleStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Worker Management & Wage Ledger Types
+export type WorkerAttendanceStatus = "PRESENT" | "ABSENT" | "HALF_DAY" | "LEAVE";
+export type WagePaidStatus = "UNPAID" | "PAID" | "PARTIAL";
+
+export interface WorkerItem {
+  id: string;
+  name: string;
+  phone?: string;
+  role?: string;
+  dailyWageRate: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkerAttendanceItem {
+  id: string;
+  workerId: string;
+  workerName?: string;
+  date: string; // YYYY-MM-DD
+  status: WorkerAttendanceStatus;
+  checkInTime?: string;
+  checkOutTime?: string;
+  hoursWorked: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkerActivityLogItem {
+  id: string;
+  workerId: string;
+  workerName?: string;
+  dailyLogId: string;
+  plotId: string;
+  plotName?: string;
+  cropCycleId?: string | null;
+  cropName?: string;
+  activityDescription: string;
+  timeSpentHours: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WageEntryItem {
+  id: string;
+  workerId: string;
+  workerName?: string;
+  date: string; // YYYY-MM-DD
+  computedAmount: number;
+  paidStatus: WagePaidStatus;
+  paidAmount: number;
+  paidDate?: string | null;
+  cropCycleId?: string | null;
+  paymentNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Machinery & Vehicle Register Types
+export type MachineType =
+  | "TRACTOR"
+  | "TILLER"
+  | "SPRAYER"
+  | "PUMP"
+  | "HARVESTER"
+  | "VEHICLE"
+  | "DRONE"
+  | "OTHER";
+
+export interface MachineItem {
+  id: string;
+  name: string;
+  type: MachineType;
+  registrationNumber?: string;
+  fuelType?: string; // Diesel, Petrol, Electric
+  active: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MachineUsageLogItem {
+  id: string;
+  machineId: string;
+  machineName?: string;
+  machineType?: MachineType;
+  date: string; // YYYY-MM-DD
+  plotId?: string | null;
+  plotName?: string | null;
+  dailyLogId?: string | null;
+  workerId?: string | null;
+  operatorName?: string;
+  startTime?: string;
+  endTime?: string;
+  hoursUsed: number;
+  workDescription: string;
+  fuelCost?: number | null;
+  maintenanceCost?: number | null;
+  cropCycleId?: string | null;
+  cropName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// General & Petty Cash Farm Expense Types
+export type ExpenseCategory =
+  | "GENERAL"
+  | "PETTY_CASH"
+  | "MAINTENANCE"
+  | "ADMIN"
+  | "OTHER";
+
+export interface GeneralExpenseItem {
+  id: string;
+  category: ExpenseCategory;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  description: string;
+  plotId?: string | null;
+  plotName?: string | null;
+  cropCycleId?: string | null;
+  cropName?: string | null;
+  paidBy?: string | null;
+  receiptRef?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PettyCashLedgerItem {
+  id: string;
+  date: string; // YYYY-MM-DD
+  openingBalance: number;
+  amountIn: number;
+  amountOut: number;
+  closingBalance: number;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Complete Database Schema
 export interface EstateDatabase {
   plots: PlotItem[];
@@ -457,8 +720,21 @@ export interface EstateDatabase {
   stockValuations: ManualStockValuationItem[];
   ledgerGroups: LedgerGroupItem[];
   expenseLedgers: ExpenseLedgerItem[];
+  parties?: PartyItem[];
   godownItems?: GodownItem[];
   godownMovements?: GodownStockMovement[];
+  dailyLogs?: DailyLogItem[];
+  cropCycles?: CropCycleItem[];
+  cropExpenses?: CropExpenseItem[];
+  cropIncomes?: CropIncomeItem[];
+  workers?: WorkerItem[];
+  workerAttendances?: WorkerAttendanceItem[];
+  workerActivityLogs?: WorkerActivityLogItem[];
+  wageEntries?: WageEntryItem[];
+  machines?: MachineItem[];
+  machineUsageLogs?: MachineUsageLogItem[];
+  generalExpenses?: GeneralExpenseItem[];
+  pettyCashLedger?: PettyCashLedgerItem[];
   cropCategories?: string[];
   groupTypes?: string[];
   purchaseCategories?: string[];
@@ -493,11 +769,15 @@ export const DEFAULT_UNITS: ExpenseUnit[] = [
   { id: "u-16", unitName: "Tons", unitSymbol: "T" },
 ];
 
+export const DEFAULT_SEED_PARTIES: PartyItem[] = [];
+
+
 const defaultSeedData: EstateDatabase = {
   cropCategories: [...DEFAULT_CROP_CATEGORIES],
   groupTypes: [...DEFAULT_GROUP_TYPES],
   purchaseCategories: [...DEFAULT_PURCHASE_CATEGORIES],
   salesCategories: [...DEFAULT_SALES_CATEGORIES],
+  parties: [],
   plots: [
     { id: "p1", name: "Plot A - North Field", location: "North Sector", areaAcres: 12.5, status: "ACTIVE", createdAt: "2026-01-10" },
     { id: "p2", name: "Plot B - Coconut Grove", location: "East Sector", areaAcres: 8.0, status: "ACTIVE", createdAt: "2026-01-12" },
@@ -683,6 +963,123 @@ const defaultSeedData: EstateDatabase = {
   expenseLedgers: [],
   godownItems: [],
   godownMovements: [],
+  dailyLogs: [
+    {
+      id: "dl-1",
+      date: "2026-08-01",
+      plotId: "p1",
+      plotName: "Plot A - North Field",
+      status: "COMPLETED",
+      createdBy: "Kuppusamy M.",
+      notes: "Fertigation and drip lateral check",
+      activities: [
+        {
+          id: "act-1",
+          dailyLogId: "dl-1",
+          activityType: "IRRIGATION",
+          description: "Morning 2hr drip cycle North field zone 1",
+          plannedFlag: false,
+          completedFlag: true,
+          assignedWorkerIds: ["emp-1"],
+          assignedWorkerNames: ["Murugan K."],
+          createdAt: "2026-08-01T07:30:00Z",
+          updatedAt: "2026-08-01T11:00:00Z",
+        },
+        {
+          id: "act-2",
+          dailyLogId: "dl-1",
+          activityType: "WEEDING",
+          description: "Manual weeding between rows 1 to 15",
+          plannedFlag: false,
+          completedFlag: true,
+          assignedWorkerIds: ["emp-2"],
+          assignedWorkerNames: ["Selvi Murugan"],
+          createdAt: "2026-08-01T08:00:00Z",
+          updatedAt: "2026-08-01T15:30:00Z",
+        },
+      ],
+      createdAt: "2026-08-01T07:00:00Z",
+      updatedAt: "2026-08-01T17:00:00Z",
+    },
+  ],
+  cropCycles: [
+    {
+      id: "cc-1",
+      plotId: "p1",
+      plotName: "Plot A - North Field",
+      cropName: "Tomato (Hybrid Shivam)",
+      cropType: "Vegetables",
+      sowingDate: "2026-06-01",
+      expectedHarvestDate: "2026-08-30",
+      actualHarvestDate: "2026-08-25",
+      status: "HARVESTED",
+      notes: "Monsoon hybrid tomato plantation with drip fertigation",
+      createdAt: "2026-06-01T08:00:00Z",
+      updatedAt: "2026-08-25T18:00:00Z",
+    },
+    {
+      id: "cc-2",
+      plotId: "p2",
+      plotName: "Plot B - Coconut Grove",
+      cropName: "Coconut (Chowghat Orange Dwarf)",
+      cropType: "Trees & Palms",
+      sowingDate: "2026-01-15",
+      expectedHarvestDate: "2026-12-15",
+      actualHarvestDate: null,
+      status: "GROWING",
+      notes: "Annual maintenance and harvest cycle",
+      createdAt: "2026-01-15T08:00:00Z",
+      updatedAt: "2026-07-01T10:00:00Z",
+    },
+  ],
+  cropExpenses: [
+    {
+      id: "ce-1",
+      cropCycleId: "cc-1",
+      category: "SEEDS",
+      amount: 4500,
+      date: "2026-06-01",
+      description: "Shivam F1 Hybrid Tomato Seeds (500g)",
+      createdAt: "2026-06-01T10:00:00Z",
+      updatedAt: "2026-06-01T10:00:00Z",
+    },
+    {
+      id: "ce-2",
+      cropCycleId: "cc-1",
+      category: "FERTILIZER",
+      amount: 8200,
+      date: "2026-06-15",
+      description: "Basal dose DAP & Potash application",
+      createdAt: "2026-06-15T11:00:00Z",
+      updatedAt: "2026-06-15T11:00:00Z",
+    },
+    {
+      id: "ce-3",
+      cropCycleId: "cc-1",
+      category: "LABOR",
+      amount: 6300,
+      date: "2026-07-15",
+      description: "Inter-row weeding & trellising labor",
+      createdAt: "2026-07-15T16:00:00Z",
+      updatedAt: "2026-07-15T16:00:00Z",
+    },
+  ],
+  cropIncomes: [
+    {
+      id: "ci-1",
+      cropCycleId: "cc-1",
+      source: "MARKET_SALE",
+      quantitySold: 1800,
+      unit: "kg",
+      ratePerUnit: 22,
+      amount: 39600,
+      date: "2026-08-20",
+      buyerName: "Global Agritech Mandi",
+      invoiceNo: "INV-TOM-2026-01",
+      createdAt: "2026-08-20T12:00:00Z",
+      updatedAt: "2026-08-20T12:00:00Z",
+    },
+  ],
 };
 
 const emptyDatabaseState: EstateDatabase = {
@@ -713,8 +1110,21 @@ const emptyDatabaseState: EstateDatabase = {
   stockValuations: [],
   ledgerGroups: [],
   expenseLedgers: [],
+  parties: [],
   godownItems: [],
   godownMovements: [],
+  dailyLogs: [],
+  cropCycles: [],
+  cropExpenses: [],
+  cropIncomes: [],
+  workers: [],
+  workerAttendances: [],
+  workerActivityLogs: [],
+  wageEntries: [],
+  machines: [],
+  machineUsageLogs: [],
+  generalExpenses: [],
+  pettyCashLedger: [],
   cropCategories: [...DEFAULT_CROP_CATEGORIES],
   groupTypes: [...DEFAULT_GROUP_TYPES],
   purchaseCategories: [...DEFAULT_PURCHASE_CATEGORIES],
@@ -737,15 +1147,17 @@ function ensureDataDirectory() {
   }
 }
 
-export function getDatabase(): EstateDatabase {
-  if (cachedDb) {
-    return cachedDb;
-  }
+let lastStorageMtime = 0;
 
+export function getDatabase(): EstateDatabase {
   ensureDataDirectory();
 
   if (fs.existsSync(STORAGE_FILE)) {
     try {
+      const stat = fs.statSync(STORAGE_FILE);
+      if (cachedDb && stat.mtimeMs <= lastStorageMtime) {
+        return cachedDb;
+      }
       const raw = fs.readFileSync(STORAGE_FILE, "utf8");
       if (raw && raw.trim().length > 0) {
         const parsed = JSON.parse(raw);
@@ -768,13 +1180,140 @@ export function getDatabase(): EstateDatabase {
         if (!dbObj.godownMovements || !Array.isArray(dbObj.godownMovements)) {
           dbObj.godownMovements = [];
         }
+        if (!dbObj.dailyLogs || !Array.isArray(dbObj.dailyLogs)) {
+          dbObj.dailyLogs = [];
+        }
+        if (!dbObj.cropCycles || !Array.isArray(dbObj.cropCycles)) {
+          dbObj.cropCycles = [];
+        }
+        if (!dbObj.cropExpenses || !Array.isArray(dbObj.cropExpenses)) {
+          dbObj.cropExpenses = [];
+        }
+        if (!dbObj.cropIncomes || !Array.isArray(dbObj.cropIncomes)) {
+          dbObj.cropIncomes = [];
+        }
+        if (!dbObj.workers || !Array.isArray(dbObj.workers) || dbObj.workers.length === 0) {
+          dbObj.workers = [
+            {
+              id: "w_murugan",
+              name: "Murugan S",
+              phone: "9876543210",
+              role: "Field Supervisor & Pruning",
+              dailyWageRate: 600,
+              active: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: "w_kavitha",
+              name: "Kavitha R",
+              phone: "9876543211",
+              role: "Harvest & Weeding Specialist",
+              dailyWageRate: 500,
+              active: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: "w_palaniswamy",
+              name: "Palaniswamy K",
+              phone: "9876543212",
+              role: "Irrigation & Sprayer",
+              dailyWageRate: 550,
+              active: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ];
+        }
+        if (!dbObj.workerAttendances || !Array.isArray(dbObj.workerAttendances)) {
+          dbObj.workerAttendances = [];
+        }
+        if (!dbObj.workerActivityLogs || !Array.isArray(dbObj.workerActivityLogs)) {
+          dbObj.workerActivityLogs = [];
+        }
+        if (!dbObj.wageEntries || !Array.isArray(dbObj.wageEntries)) {
+          dbObj.wageEntries = [];
+        }
+        if (!dbObj.machines || !Array.isArray(dbObj.machines) || dbObj.machines.length === 0) {
+          dbObj.machines = [
+            {
+              id: "m_jd_5050",
+              name: "John Deere 5050 D",
+              type: "TRACTOR",
+              registrationNumber: "TN-38-BZ-4412",
+              fuelType: "Diesel",
+              active: true,
+              notes: "Main farm tractor with rotavator and trolley attachments",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: "m_vst_shakti",
+              name: "VST Shakti 130DI Tiller",
+              type: "TILLER",
+              registrationNumber: "TN-38-TR-1029",
+              fuelType: "Diesel",
+              active: true,
+              notes: "Power tiller for inter-cultivation and weeding",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: "m_aspee_sprayer",
+              name: "Aspee HTP Tractor Sprayer",
+              type: "SPRAYER",
+              registrationNumber: "ASPEE-HTP-50",
+              fuelType: "Diesel / PTO",
+              active: true,
+              notes: "High pressure orchard and field sprayer",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: "m_kirloskar_pump",
+              name: "Kirloskar 7.5HP Borewell Pump",
+              type: "PUMP",
+              registrationNumber: "KIRL-75-SUB",
+              fuelType: "Electric",
+              active: true,
+              notes: "Submersible pump connected to drip irrigation network",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: "m_bolero_pickup",
+              name: "Mahindra Bolero Maxi Truck Plus",
+              type: "VEHICLE",
+              registrationNumber: "TN-38-CB-8891",
+              fuelType: "Diesel",
+              active: true,
+              notes: "Estate produce transport and market dispatch vehicle",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ];
+        }
+        if (!dbObj.machineUsageLogs || !Array.isArray(dbObj.machineUsageLogs)) {
+          dbObj.machineUsageLogs = [];
+        }
+        if (!dbObj.generalExpenses || !Array.isArray(dbObj.generalExpenses)) {
+          dbObj.generalExpenses = [];
+        }
+        if (!dbObj.pettyCashLedger || !Array.isArray(dbObj.pettyCashLedger)) {
+          dbObj.pettyCashLedger = [];
+        }
         if (!dbObj.expenseUnits || !Array.isArray(dbObj.expenseUnits) || dbObj.expenseUnits.length === 0) {
           dbObj.expenseUnits = JSON.parse(JSON.stringify(DEFAULT_UNITS));
         }
         if (!dbObj.salesCategories || !Array.isArray(dbObj.salesCategories) || dbObj.salesCategories.length === 0) {
           dbObj.salesCategories = [...DEFAULT_SALES_CATEGORIES];
         }
+        if (!dbObj.parties || !Array.isArray(dbObj.parties)) {
+          dbObj.parties = [];
+        }
         cachedDb = dbObj;
+        lastStorageMtime = stat.mtimeMs;
         return cachedDb as EstateDatabase;
       }
     } catch (e) {
@@ -782,51 +1321,31 @@ export function getDatabase(): EstateDatabase {
     }
   }
 
+  if (cachedDb) {
+    return cachedDb;
+  }
+
   cachedDb = JSON.parse(JSON.stringify(defaultSeedData));
   try {
     fs.writeFileSync(STORAGE_FILE, JSON.stringify(cachedDb, null, 2), "utf8");
+    lastStorageMtime = fs.statSync(STORAGE_FILE).mtimeMs;
   } catch (e) {
     console.error("Error writing initial seed data", e);
   }
   return cachedDb as EstateDatabase;
 }
 
-let writeTimeout: NodeJS.Timeout | null = null;
-let isWriting = false;
-let pendingWriteData: EstateDatabase | null = null;
-
-async function performAtomicWrite(data: EstateDatabase) {
+export function saveDatabase(data: EstateDatabase) {
+  cachedDb = data;
   try {
     ensureDataDirectory();
-    const serialized = JSON.stringify(data, null, 2);
-    await fs.promises.writeFile(TMP_FILE, serialized, "utf8");
-    await fs.promises.rename(TMP_FILE, STORAGE_FILE);
+    fs.writeFileSync(STORAGE_FILE, JSON.stringify(data, null, 2), "utf8");
+    lastStorageMtime = fs.statSync(STORAGE_FILE).mtimeMs;
   } catch (e) {
-    console.error("Error saving database asynchronously", e);
-  } finally {
-    isWriting = false;
-    if (pendingWriteData) {
-      const nextData = pendingWriteData;
-      pendingWriteData = null;
-      isWriting = true;
-      performAtomicWrite(nextData);
-    }
+    console.error("Error saving database synchronously", e);
   }
 }
 
-export function saveDatabase(data: EstateDatabase) {
-  cachedDb = data;
-  pendingWriteData = data;
-  if (writeTimeout) clearTimeout(writeTimeout);
-  writeTimeout = setTimeout(() => {
-    if (!isWriting && pendingWriteData) {
-      const toWrite = pendingWriteData;
-      pendingWriteData = null;
-      isWriting = true;
-      performAtomicWrite(toWrite);
-    }
-  }, 40);
-}
 
 export function resetAllData(): EstateDatabase {
   const freshEmpty = JSON.parse(JSON.stringify(emptyDatabaseState));

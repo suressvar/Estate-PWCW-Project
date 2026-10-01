@@ -402,19 +402,19 @@ export default function FertilizerPage() {
             </div>
 
             <form onSubmit={handleApplyFertilizer} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Source: Godown Stock Item */}
-                <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+                <div className="space-y-1.5 min-w-0">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>Source Godown Stock *</span>
-                    <span className="text-[11px] text-emerald-700 font-semibold">
+                    <span className="text-[11px] text-emerald-700 font-semibold truncate ml-2">
                       {selectedGodownItem ? `${selectedGodownItem.availableQuantity} ${selectedGodownItem.unit} on hand` : ""}
                     </span>
                   </label>
                   <select
                     value={selectedGodownItemId}
                     onChange={(e) => setSelectedGodownItemId(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   >
                     <option value="">-- Select from Godown Available Stock --</option>
                     {stockSummary.items.map((item: GodownItem) => (
@@ -431,13 +431,13 @@ export default function FertilizerPage() {
                 </div>
 
                 {/* Target Plot */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <label className="text-xs font-bold text-slate-700">Target Estate Plot *</label>
                   <select
                     required
                     value={selectedPlotId}
                     onChange={(e) => handlePlotSelect(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   >
                     {plots.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -446,31 +446,9 @@ export default function FertilizerPage() {
                     ))}
                   </select>
                 </div>
-
-                {/* Target Crop / Activity */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Target Crop / Activity *</label>
-                  <select
-                    required
-                    value={selectedCropActivityId}
-                    onChange={(e) => setSelectedCropActivityId(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  >
-                    {associations
-                      .filter((a) => a.plotId === selectedPlotId)
-                      .map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.cropActivityName} ({a.status})
-                        </option>
-                      ))}
-                    {associations.filter((a) => a.plotId === selectedPlotId).length === 0 && (
-                      <option value="">General Plot Application</option>
-                    )}
-                  </select>
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Quantity to Apply */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">
@@ -503,18 +481,6 @@ export default function FertilizerPage() {
                     value={consumeDate}
                     onChange={(e) => setConsumeDate(e.target.value)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  />
-                </div>
-
-                {/* Logged / Applied By */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Applied By / Supervisor</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Murugan K. / Field Staff"
-                    value={issuedTo}
-                    onChange={(e) => setIssuedTo(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
                   />
                 </div>
               </div>

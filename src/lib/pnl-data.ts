@@ -83,8 +83,8 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
     .filter((o: any) => o.pnlCategory === "Direct Income")
     .reduce((acc: number, i: any) => acc + i.amount, 0);
 
-  // Build Left Side (DEBIT / EXPENSES)
-  const debitItems: PnLLineItem[] = [
+  // Build Left Side (DEBIT / EXPENSES) - only include items with transactions/amount > 0
+  const allDebitItems: PnLLineItem[] = [
     { name: "To Opening Stock (Produce & Nursery)", amount: openingStock },
     {
       name: "To PWCW Inputs & Nutritional Feed",
@@ -106,9 +106,10 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
     { name: "To Electricity, Irrigation & Administration", amount: adminExpenses },
     { name: "To Equipment & Maintenance Procurement", amount: equipmentPurchases },
   ];
+  const debitItems = allDebitItems.filter((i) => i.amount > 0 || (i.subItems && i.subItems.length > 0));
 
-  // Build Right Side (CREDIT / INCOME)
-  const creditItems: PnLLineItem[] = [
+  // Build Right Side (CREDIT / INCOME) - only include items with transactions/amount > 0
+  const allCreditItems: PnLLineItem[] = [
     {
       name: "By Crop Harvest & Produce Sales",
       amount: totalOtherSales,
@@ -117,6 +118,7 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
     { name: "By Direct Operational Receipts", amount: directIncome },
     { name: "By Closing Stock (Produce & Inventories)", amount: closingStock },
   ];
+  const creditItems = allCreditItems.filter((i) => i.amount > 0 || (i.subItems && i.subItems.length > 0));
 
   const totalDebitGross = debitItems.reduce((acc, i) => acc + i.amount, 0);
   const totalCreditGross = creditItems.reduce((acc, i) => acc + i.amount, 0);
