@@ -12,6 +12,7 @@ import {
   AttendanceRecord,
   WageRecord,
   LeaveRecord,
+  WorkerAttendanceStatus,
 } from "./db-storage";
 
 export type {
@@ -96,6 +97,27 @@ export function createEmployee(data: Omit<EmployeeItem, "id" | "createdAt">): Em
     createdAt: new Date().toISOString().split("T")[0],
   };
   db.employees.unshift(newEmp);
+
+  // Automatically sync to workers for attendance, field operations & daily logs
+  if (!db.workers) db.workers = [];
+  const dailyRate = newEmp.wageType === "MONTHLY" ? Math.round(newEmp.wageRate / 26) : Number(newEmp.wageRate) || 500;
+  const workerIdx = db.workers.findIndex((w) => w.id === newEmp.id);
+  const workerRecord = {
+    id: newEmp.id,
+    name: newEmp.name,
+    phone: newEmp.phone,
+    role: newEmp.roleName || "General Field Worker",
+    dailyWageRate: dailyRate,
+    active: newEmp.status === "ACTIVE",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  if (workerIdx >= 0) {
+    db.workers[workerIdx] = workerRecord;
+  } else {
+    db.workers.push(workerRecord);
+  }
+
   saveDatabase(db);
   return newEmp;
 }
@@ -112,16 +134,62 @@ export function updateEmployee(id: string, data: Partial<EmployeeItem>): Employe
         }
       : e
   );
+
+  // Sync to db.workers
+  if (!db.workers) db.workers = [];
+  const updatedEmp = db.employees.find((e) => e.id === id);
+  if (updatedEmp) {
+    const dailyRate = updatedEmp.wageType === "MONTHLY" ? Math.round(updatedEmp.wageRate / 26) : Number(updatedEmp.wageRate) || 500;
+    const workerIdx = db.workers.findIndex((w) => w.id === id || w.name.trim().toLowerCase() === updatedEmp.name.trim().toLowerCase());
+    const workerRecord = {
+      id: updatedEmp.id,
+      name: updatedEmp.name,
+      phone: updatedEmp.phone,
+      role: updatedEmp.roleName || "General Field Worker",
+      dailyWageRate: dailyRate,
+      active: updatedEmp.status === "ACTIVE",
+      updatedAt: new Date().toISOString(),
+    };
+    if (workerIdx >= 0) {
+      db.workers[workerIdx] = { ...db.workers[workerIdx], ...workerRecord };
+    } else {
+      db.workers.push({ ...workerRecord, createdAt: new Date().toISOString() });
+    }
+  }
+
   saveDatabase(db);
   return getEmployeeById(id);
 }
 
-export function deleteEmployee(id: string): boolean {
+export function deleteEmployee(id: string, force: boolean = true): boolean {
   const db = getDatabase();
-  const hasAttendance = db.attendance.some((a) => a.employeeId === id);
-  const hasWages = db.wages.some((w) => w.employeeId === id);
-  if (hasAttendance || hasWages) return false;
+  const exists = db.employees.some((e) => e.id === id);
+  if (!exists) return false;
+
+  if (!force) {
+    const hasAttendance = db.attendance.some((a) => a.employeeId === id);
+    const hasWages = db.wages.some((w) => w.employeeId === id);
+    if (hasAttendance || hasWages) return false;
+  }
+
   db.employees = db.employees.filter((e) => e.id !== id);
+  db.attendance = db.attendance.filter((a) => a.employeeId !== id);
+  db.wages = db.wages.filter((w) => w.employeeId !== id);
+  db.leaves = db.leaves.filter((l) => l.employeeId !== id);
+
+  if (db.workers) {
+    db.workers = db.workers.filter((w) => w.id !== id);
+  }
+  if (db.workerAttendances) {
+    db.workerAttendances = db.workerAttendances.filter((wa) => wa.workerId !== id);
+  }
+  if (db.wageEntries) {
+    db.wageEntries = db.wageEntries.filter((we) => we.workerId !== id);
+  }
+  if (db.workerActivityLogs) {
+    db.workerActivityLogs = db.workerActivityLogs.filter((al) => al.workerId !== id);
+  }
+
   saveDatabase(db);
   return true;
 }
@@ -138,38 +206,113 @@ export function getAttendanceForMonth(year: number, month: number): AttendanceRe
     });
 }
 
-export function markAttendance(payload: { employeeId: string; attendanceDate: string; status: AttendanceStatus; notes?: string; checkInTime?: string; checkOutTime?: string }): AttendanceRecord {
+export function markAttendance(payload: {
+  employeeId: string;
+  attendanceDate: string;
+  status: AttendanceStatus;
+  notes?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+}): AttendanceRecord {
   const db = getDatabase();
+  if (!db.attendance) db.attendance = [];
+  if (!db.workerAttendances) db.workerAttendances = [];
+  if (!db.wageEntries) db.wageEntries = [];
+
   const existingIdx = db.attendance.findIndex(
     (a) => a.employeeId === payload.employeeId && a.attendanceDate === payload.attendanceDate
   );
 
   const emp = db.employees.find((e) => e.id === payload.employeeId);
+  const employeeName = emp?.name || "Unknown";
 
+  let record: AttendanceRecord;
   if (existingIdx >= 0) {
-    db.attendance[existingIdx] = {
+    record = {
       ...db.attendance[existingIdx],
       ...payload,
-      employeeName: emp?.name || "Unknown",
+      employeeName,
     };
-    saveDatabase(db);
-    return db.attendance[existingIdx];
+    db.attendance[existingIdx] = record;
   } else {
-    const record: AttendanceRecord = {
+    record = {
       id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       ...payload,
-      employeeName: emp?.name || "Unknown",
+      employeeName,
       createdAt: new Date().toISOString(),
     };
     db.attendance.push(record);
-    saveDatabase(db);
-    return record;
   }
+
+  // Bidirectional sync to db.workerAttendances & db.wageEntries
+  const workerStatus: WorkerAttendanceStatus = payload.status === "HOLIDAY" ? "LEAVE" : (payload.status as WorkerAttendanceStatus);
+  const hours = payload.status === "PRESENT" ? 8 : payload.status === "HALF_DAY" ? 4 : 0;
+  const existingWorkerAttIdx = db.workerAttendances.findIndex(
+    (wa) => wa.workerId === payload.employeeId && wa.date === payload.attendanceDate
+  );
+  if (existingWorkerAttIdx >= 0) {
+    db.workerAttendances[existingWorkerAttIdx] = {
+      ...db.workerAttendances[existingWorkerAttIdx],
+      workerName: employeeName,
+      status: workerStatus,
+      hoursWorked: hours,
+      notes: payload.notes,
+      checkInTime: payload.checkInTime,
+      checkOutTime: payload.checkOutTime,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    db.workerAttendances.push({
+      id: `wa_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      workerId: payload.employeeId,
+      workerName: employeeName,
+      date: payload.attendanceDate,
+      status: workerStatus,
+      hoursWorked: hours,
+      notes: payload.notes,
+      checkInTime: payload.checkInTime,
+      checkOutTime: payload.checkOutTime,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  const dailyRate = emp ? (emp.wageType === "MONTHLY" ? Math.round(emp.wageRate / 26) : Number(emp.wageRate) || 500) : 500;
+  const computedWage = payload.status === "PRESENT" ? dailyRate : payload.status === "HALF_DAY" ? Math.round(dailyRate * 0.5) : 0;
+  const existingWageIdx = db.wageEntries.findIndex(
+    (w) => w.workerId === payload.employeeId && w.date === payload.attendanceDate
+  );
+  if (existingWageIdx >= 0) {
+    db.wageEntries[existingWageIdx] = {
+      ...db.wageEntries[existingWageIdx],
+      workerName: employeeName,
+      computedAmount: computedWage,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    db.wageEntries.push({
+      id: `we_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      workerId: payload.employeeId,
+      workerName: employeeName,
+      date: payload.attendanceDate,
+      computedAmount: computedWage,
+      paidStatus: "UNPAID",
+      paidAmount: 0,
+      paidDate: null,
+      cropCycleId: null,
+      paymentNotes: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  saveDatabase(db);
+  return record;
 }
 
 export function bulkMarkAttendance(attendanceDate: string, status: AttendanceStatus) {
   const db = getDatabase();
-  const activeEmps = db.employees.filter((e) => e.status === "ACTIVE");
+  const activeEmps = (db.employees || []).filter((e) => e.status === "ACTIVE");
   activeEmps.forEach((emp) => {
     markAttendance({
       employeeId: emp.id,
@@ -184,40 +327,104 @@ export function getAttendanceSummary(year: number, month: number, workingDays: n
   const db = getDatabase();
   const activeEmps = getEmployees();
   const prefix = `${year}-${String(month).padStart(2, "0")}`;
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+
+  // Only count elapsed days when calculating unrecorded weekly offs (never future dates)
+  let maxDayToCheck = daysInMonth;
+  if (year > currentYear || (year === currentYear && month > currentMonth)) {
+    maxDayToCheck = 0;
+  } else if (year === currentYear && month === currentMonth) {
+    maxDayToCheck = currentDay;
+  }
+
+  const allAttendance = db.attendance || [];
+  const allWorkerAtts = db.workerAttendances || [];
 
   return activeEmps.map((emp) => {
-    const records = db.attendance.filter(
-      (a) => a.employeeId === emp.id && a.attendanceDate.startsWith(prefix)
-    );
+    // Merge records from both attendance tables deduplicated by date
+    const dateMap = new Map<string, { status: AttendanceStatus; hoursWorked: number }>();
+
+    allAttendance
+      .filter((a) => (a.employeeId === emp.id || a.employeeName?.trim().toLowerCase() === emp.name.trim().toLowerCase()) && a.attendanceDate.startsWith(prefix))
+      .forEach((a) => {
+        dateMap.set(a.attendanceDate, {
+          status: a.status,
+          hoursWorked: a.status === "PRESENT" ? 8 : a.status === "HALF_DAY" ? 4 : 0,
+        });
+      });
+
+    allWorkerAtts
+      .filter((wa) => (wa.workerId === emp.id || wa.workerName?.trim().toLowerCase() === emp.name.trim().toLowerCase()) && wa.date.startsWith(prefix))
+      .forEach((wa) => {
+        dateMap.set(wa.date, {
+          status: wa.status as AttendanceStatus,
+          hoursWorked: Number(wa.hoursWorked) || (wa.status === "PRESENT" ? 8 : wa.status === "HALF_DAY" ? 4 : 0),
+        });
+      });
 
     let present = 0;
     let absent = 0;
     let halfDay = 0;
     let leave = 0;
     let holiday = 0;
+    let totalHoursWorked = 0;
 
-    records.forEach((r) => {
-      if (r.status === "PRESENT") present += 1;
-      else if (r.status === "ABSENT") absent += 1;
-      else if (r.status === "HALF_DAY") halfDay += 1;
-      else if (r.status === "LEAVE") leave += 1;
-      else if (r.status === "HOLIDAY") holiday += 1;
+    dateMap.forEach((rec) => {
+      if (rec.status === "PRESENT") {
+        present += 1;
+        totalHoursWorked += rec.hoursWorked || 8;
+      } else if (rec.status === "ABSENT") {
+        absent += 1;
+      } else if (rec.status === "HALF_DAY") {
+        halfDay += 1;
+        totalHoursWorked += rec.hoursWorked || 4;
+      } else if (rec.status === "LEAVE") {
+        leave += 1;
+      } else if (rec.status === "HOLIDAY") {
+        holiday += 1;
+      }
     });
 
+    // Unrecorded Sundays that have occurred in the month calculate as leave / weekly off
+    let unrecordedSundays = 0;
+    for (let d = 1; d <= maxDayToCheck; d++) {
+      const dObj = new Date(year, month - 1, d);
+      if (dObj.getDay() === 0) {
+        const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        if (!dateMap.has(dateStr)) {
+          unrecordedSundays++;
+        }
+      }
+    }
+    leave += unrecordedSundays;
+
     const effectivePresentDays = present + halfDay * 0.5;
-    const attendancePercent = workingDays > 0 ? Math.min(100, Math.round((effectivePresentDays / workingDays) * 100)) : 0;
+    const totalRecordedDays = dateMap.size + unrecordedSundays;
+    const attendancePercent =
+      workingDays > 0
+        ? Math.min(100, Math.round((effectivePresentDays / workingDays) * 100))
+        : totalRecordedDays > 0
+        ? Math.min(100, Math.round((effectivePresentDays / totalRecordedDays) * 100))
+        : 0;
 
     return {
       employeeId: emp.id,
       employeeName: emp.name,
       roleName: emp.roleName,
       wageType: emp.wageType,
-      wageRate: emp.wageRate,
-      presentDays: present,
+      wageRate: Number(emp.wageRate) || 0,
+      presentDays: effectivePresentDays,
+      rawPresentDays: present,
       halfDays: halfDay,
       absentDays: absent,
       leaveDays: leave,
       holidays: holiday,
+      totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,
       effectivePresentDays,
       workingDays,
       attendancePercent,
@@ -228,11 +435,12 @@ export function getAttendanceSummary(year: number, month: number, workingDays: n
 // =================== WAGES & SALARY ===================
 export function getWages(year?: number, month?: number): WageRecord[] {
   const db = getDatabase();
-  let list = db.wages;
+  let list = db.wages || [];
   if (year) list = list.filter((w) => w.year === year);
   if (month) list = list.filter((w) => w.month === month);
+  const emps = db.employees || [];
   return list.map((w) => {
-    const emp = db.employees.find((e) => e.id === w.employeeId);
+    const emp = emps.find((e) => e.id === w.employeeId);
     return {
       ...w,
       employeeName: emp?.name || w.employeeName || "Employee",
@@ -241,32 +449,48 @@ export function getWages(year?: number, month?: number): WageRecord[] {
   });
 }
 
-export function calculateSalariesForMonth(year: number, month: number, workingDays: number = 26) {
+export function calculateSalariesForMonth(year: number, month: number, workingDays: number = 26): WageRecord[] {
   const db = getDatabase();
   const summary = getAttendanceSummary(year, month, workingDays);
+  if (!db.wages) db.wages = [];
   const calculatedList: WageRecord[] = [];
 
   summary.forEach((item) => {
     let gross = 0;
     if (item.wageType === "DAILY") {
-      gross = item.effectivePresentDays * item.wageRate;
+      gross = Math.round(item.effectivePresentDays * item.wageRate);
     } else if (item.wageType === "MONTHLY") {
-      gross = workingDays > 0 ? (item.effectivePresentDays / workingDays) * item.wageRate : item.wageRate;
+      if (item.effectivePresentDays === 0 && item.absentDays === 0) {
+        // No attendance logged for this employee this month
+        gross = 0;
+      } else if (item.absentDays > 0 && workingDays > 0) {
+        // Deduction proportional to unexcused absent days
+        const perDayRate = item.wageRate / workingDays;
+        gross = Math.max(0, Math.round(item.wageRate - item.absentDays * perDayRate));
+      } else {
+        // Full monthly salary
+        gross = Math.round(item.wageRate);
+      }
     } else {
-      gross = item.effectivePresentDays * 8 * item.wageRate;
+      // HOURLY / OTHER
+      if (item.totalHoursWorked > 0) {
+        gross = Math.round(item.totalHoursWorked * item.wageRate);
+      } else {
+        gross = Math.round(item.effectivePresentDays * 8 * item.wageRate);
+      }
     }
-
-    gross = Math.round(gross);
-    const deductions = 0;
-    const bonus = 0;
-    const net = gross + bonus - deductions;
 
     const existingIdx = db.wages.findIndex(
       (w) => w.employeeId === item.employeeId && w.year === year && w.month === month
     );
+    const existing = existingIdx >= 0 ? db.wages[existingIdx] : undefined;
+
+    const bonus = existing?.bonus !== undefined ? Number(existing.bonus) || 0 : 0;
+    const deductions = existing?.deductions !== undefined ? Number(existing.deductions) || 0 : 0;
+    const net = Math.max(0, gross + bonus - deductions);
 
     const wageObj: WageRecord = {
-      id: existingIdx >= 0 ? db.wages[existingIdx].id : `w_${Date.now()}_${item.employeeId}`,
+      id: existing ? existing.id : `w_${Date.now()}_${item.employeeId}`,
       employeeId: item.employeeId,
       employeeName: item.employeeName,
       roleName: item.roleName,
@@ -278,10 +502,14 @@ export function calculateSalariesForMonth(year: number, month: number, workingDa
       wageRate: item.wageRate,
       wageType: item.wageType,
       grossSalary: gross,
-      deductions: existingIdx >= 0 ? db.wages[existingIdx].deductions : deductions,
-      bonus: existingIdx >= 0 ? db.wages[existingIdx].bonus : bonus,
-      netSalary: existingIdx >= 0 ? (gross + db.wages[existingIdx].bonus - db.wages[existingIdx].deductions) : net,
-      status: existingIdx >= 0 ? db.wages[existingIdx].status : "PENDING",
+      deductions: deductions,
+      bonus: bonus,
+      netSalary: net,
+      status: existing?.status || "PENDING",
+      paymentDate: existing?.paymentDate,
+      paymentMode: existing?.paymentMode,
+      paymentReference: existing?.paymentReference,
+      notes: existing?.notes,
       calculatedAt: new Date().toISOString(),
     };
 
@@ -299,12 +527,13 @@ export function calculateSalariesForMonth(year: number, month: number, workingDa
 
 export function updateWageRecord(id: string, data: Partial<WageRecord>) {
   const db = getDatabase();
+  if (!db.wages) db.wages = [];
   db.wages = db.wages.map((w) => {
     if (w.id === id) {
-      const gross = data.grossSalary !== undefined ? data.grossSalary : w.grossSalary;
-      const bonus = data.bonus !== undefined ? data.bonus : w.bonus;
-      const deductions = data.deductions !== undefined ? data.deductions : w.deductions;
-      const net = gross + bonus - deductions;
+      const gross = data.grossSalary !== undefined ? Number(data.grossSalary) : w.grossSalary;
+      const bonus = data.bonus !== undefined ? Number(data.bonus) : w.bonus;
+      const deductions = data.deductions !== undefined ? Number(data.deductions) : w.deductions;
+      const net = Math.max(0, gross + bonus - deductions);
       return {
         ...w,
         ...data,

@@ -132,9 +132,6 @@ export default function SalesInvoicePage() {
               Invoice Layout & Spacing Options
             </h3>
           </div>
-          <p className="text-[11px] text-slate-500 -mt-1">
-            Adjust table size, margins, and bank details dynamically to fit perfectly in 1 A4 page.
-          </p>
 
           <div className="flex flex-wrap items-center gap-6 pt-1 text-xs">
             {/* Row Spacing */}

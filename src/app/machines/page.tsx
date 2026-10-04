@@ -350,9 +350,6 @@ export default function MachinesRegisterPage() {
             <Tractor className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             Machinery & Vehicle Register
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track farm equipment, log per-use fieldwork and hours, operator time, fuel, and automatic P&L sync.
-          </p>
         </div>
 
         {/* Action Buttons */}
@@ -701,9 +698,6 @@ export default function MachinesRegisterPage() {
             <h3 className="font-semibold text-foreground text-sm">
               Equipment Operating & Cost Summary
             </h3>
-            <p className="text-xs text-muted-foreground">
-              Total usage runs, hours operated, fuel and maintenance spend across registered equipment.
-            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -768,9 +762,6 @@ export default function MachinesRegisterPage() {
               <h3 className="font-semibold text-foreground text-sm">
                 Plot-Wise Machinery Consumption & Cost Allocation
               </h3>
-              <p className="text-xs text-muted-foreground">
-                Breakdown of equipment work hours and direct operating expenses deployed to each farm plot.
-              </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">

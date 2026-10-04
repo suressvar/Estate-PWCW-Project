@@ -470,6 +470,7 @@ export default function EmployeesPage() {
                         onChange={(e) => setRoleId(e.target.value)}
                         className="w-full p-2 bg-white border border-slate-300 rounded-lg font-medium text-slate-900"
                       >
+                        <option value="">-- Select Role --</option>
                         {roles.map((r) => (
                           <option key={r.id} value={r.id}>{r.roleName}</option>
                         ))}

@@ -26,7 +26,6 @@ import {
   DollarSign,
   Layers,
   FileText,
-  UserCheck,
   Receipt,
   Award,
   X,
@@ -101,7 +100,7 @@ export const navItems: NavItem[] = [
     icon: ShoppingBag,
     children: [
       { title: "Purchase Voucher", href: "/purchases", icon: Receipt },
-      { title: "Other Purchases Voucher", href: "/purchases/other", icon: ReceiptText },
+      { title: "Purchase Register", href: "/purchases/register", icon: BookOpen },
       { title: "Retailers/Purchaser", href: "/purchases/retailers", icon: Store },
     ],
   },
@@ -126,12 +125,9 @@ export const navItems: NavItem[] = [
     title: "HR & Payroll",
     icon: Users,
     children: [
-      { title: "Worker Wages & Attendance", href: "/workers", icon: Users },
       { title: "Employees Roster", href: "/employees", icon: Users },
-      { title: "Attendance Grid", href: "/attendance", icon: Calendar },
-      { title: "Attendance Summary", href: "/attendance/summary", icon: UserCheck },
+      { title: "Daily Attendance & Tracking", href: "/workers", icon: CalendarCheck },
       { title: "Salary Calculator", href: "/salary/calculate", icon: DollarSign },
-      { title: "Wages Register", href: "/wages", icon: DollarSign },
       { title: "Leave Management", href: "/leaves", icon: Calendar },
       { title: "Employee Roles", href: "/employee-roles", icon: ShieldCheck },
     ],
@@ -333,28 +329,16 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           })}
         </div>
 
-        {/* Footer Profile & Logout */}
+        {/* Footer Logout */}
         <div className="p-3 border-t border-[#0E3D20] bg-[#0E3D20]/30">
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#0E3D20]/50 border border-[#0E3D20]/60">
-            <div className="flex items-center gap-2.5 truncate">
-              <div className="w-8 h-8 rounded-full bg-[#1E6C36] border border-[#2E7D32]/40 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-xs">
-                A
-              </div>
-              <div className="flex flex-col truncate">
-                <span className="text-sm font-bold text-white truncate">Administrator</span>
-                <span className="text-xs text-emerald-300 font-medium truncate">All Modules Active</span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-lg text-emerald-100 hover:text-rose-300 hover:bg-rose-900/40 border border-transparent hover:border-rose-900/50 transition-all shrink-0 group flex items-center justify-center"
-              title="Log Out of Estate Application"
-              aria-label="Log Out"
-            >
-              <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform text-emerald-100 group-hover:text-rose-300" />
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold rounded-xl text-emerald-100 hover:text-white bg-[#0E3D20]/60 hover:bg-rose-900/50 border border-[#0E3D20]/80 hover:border-rose-700/50 transition-all shadow-xs group"
+            title="Log Out"
+          >
+            <LogOut className="w-4 h-4 text-emerald-300 group-hover:text-rose-300 transition-colors" />
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
     </>

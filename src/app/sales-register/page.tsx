@@ -240,14 +240,11 @@ export default function MainSalesRegisterPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Ranga Estate Sales Register</span>
+              <span>Sales Register</span>
               <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                 Official Ledger
               </span>
             </h1>
-            <p className="text-xs text-slate-600">
-              Audit ledger of all recorded estate produce & livestock sales with one-click official invoice printing.
-            </p>
           </div>
         </div>
 

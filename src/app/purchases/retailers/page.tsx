@@ -517,6 +517,13 @@ export default function RetailersPurchasersPage() {
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Link
+                            href={`/sales?buyer=${encodeURIComponent(party.name)}`}
+                            className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Create Sales Invoice Record for this buyer"
+                          >
+                            <Receipt className="w-4 h-4" />
+                          </Link>
+                          <Link
                             href={`/purchases?vendor=${encodeURIComponent(party.name)}`}
                             className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
                             title="Create Purchase Voucher with this entity"
@@ -561,11 +568,6 @@ export default function RetailersPurchasersPage() {
                   <h3 className="text-base font-bold text-slate-900">
                     {editingParty ? "Edit Retailer / Purchaser" : "Add Retailer / Purchaser"}
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    {editingParty
-                      ? "Update party and contact information"
-                      : "Register a new retailer, supplier, or procurement partner"}
-                  </p>
                 </div>
               </div>
               <button

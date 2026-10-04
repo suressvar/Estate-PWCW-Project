@@ -873,40 +873,11 @@ const defaultSeedData: EstateDatabase = {
       createdAt: "2026-07-08T10:00:00Z",
     },
   ],
-  employeeRoles: [
-    { id: "er-1", roleName: "PWCW Worker", description: "" },
-    { id: "er-2", roleName: "Supervisor", description: "" },
-    { id: "er-3", roleName: "Driver & Equipment Operator", description: "" },
-    { id: "er-4", roleName: "Veterinary Assistant", description: "" },
-    { id: "er-5", roleName: "Security Guard", description: "" },
-    { id: "er-6", roleName: "Admin & Accounts Staff", description: "" },
-    { id: "er-7", roleName: "Estate Manager", description: "" },
-  ],
-  employees: [
-    { id: "emp-1", name: "Murugan K.", phone: "+91 98421 22334", address: "North Colony, Estate Quarters", roleId: "er-1", roleName: "PWCW Worker", joinDate: "2024-03-01", wageType: "DAILY", wageRate: 550, status: "ACTIVE", notes: "", emergencyContact: "Selvi M. (Wife)", emergencyPhone: "+91 98421 22335", aadhaarNo: "XXXX-XXXX-4819", bankAccountNo: "330910123847", bankName: "State Bank of India", ifscCode: "SBIN0001234", createdAt: "2024-03-01" },
-    { id: "emp-2", name: "Selvi Murugan", phone: "+91 98421 22335", address: "North Colony, Estate Quarters", roleId: "er-1", roleName: "PWCW Worker", joinDate: "2024-03-01", wageType: "DAILY", wageRate: 450, status: "ACTIVE", notes: "", emergencyContact: "Murugan K. (Husband)", emergencyPhone: "+91 98421 22334", aadhaarNo: "XXXX-XXXX-9122", bankAccountNo: "330910123848", bankName: "State Bank of India", ifscCode: "SBIN0001234", createdAt: "2024-03-01" },
-    { id: "emp-3", name: "Ramasamy V.", phone: "+91 97890 33445", address: "South Gate Quarters", roleId: "er-3", roleName: "Driver & Equipment Operator", joinDate: "2024-05-15", wageType: "DAILY", wageRate: 650, status: "ACTIVE", notes: "", emergencyContact: "Kavitha R.", emergencyPhone: "+91 97890 33446", aadhaarNo: "XXXX-XXXX-5512", bankAccountNo: "910283746192", bankName: "Canara Bank", ifscCode: "CNRB0002345", createdAt: "2024-05-15" },
-    { id: "emp-4", name: "Kuppusamy M.", phone: "+91 94432 88776", address: "East Enclave", roleId: "er-2", roleName: "Supervisor", joinDate: "2023-11-01", wageType: "MONTHLY", wageRate: 22000, status: "ACTIVE", notes: "", emergencyContact: "Meena K.", emergencyPhone: "+91 94432 88777", aadhaarNo: "XXXX-XXXX-7731", bankAccountNo: "449018237461", bankName: "Indian Overseas Bank", ifscCode: "IOBA0003456", createdAt: "2023-11-01" },
-    { id: "emp-5", name: "Ganesan P.", phone: "+91 93601 55667", address: "Main Gate Cottage", roleId: "er-5", roleName: "Security Guard", joinDate: "2025-01-10", wageType: "MONTHLY", wageRate: 15000, status: "ACTIVE", notes: "", emergencyContact: "Latha G.", emergencyPhone: "+91 93601 55668", aadhaarNo: "XXXX-XXXX-8821", bankAccountNo: "550192837465", bankName: "HDFC Bank", ifscCode: "HDFC0004567", createdAt: "2025-01-10" },
-  ],
-  attendance: [
-    { id: "att-1", employeeId: "emp-1", employeeName: "Murugan K.", attendanceDate: "2026-08-01", status: "PRESENT", checkInTime: "07:00", checkOutTime: "17:00", notes: "", recordedBy: "Kuppusamy M.", createdAt: "2026-08-01T07:00:00Z" },
-    { id: "att-2", employeeId: "emp-2", employeeName: "Selvi Murugan", attendanceDate: "2026-08-01", status: "PRESENT", checkInTime: "07:30", checkOutTime: "16:30", notes: "", recordedBy: "Kuppusamy M.", createdAt: "2026-08-01T07:30:00Z" },
-    { id: "att-3", employeeId: "emp-3", employeeName: "Ramasamy V.", attendanceDate: "2026-08-01", status: "PRESENT", checkInTime: "08:00", checkOutTime: "18:00", notes: "", recordedBy: "Kuppusamy M.", createdAt: "2026-08-01T08:00:00Z" },
-    { id: "att-4", employeeId: "emp-4", employeeName: "Kuppusamy M.", attendanceDate: "2026-08-01", status: "PRESENT", checkInTime: "06:30", checkOutTime: "18:30", notes: "", recordedBy: "Estate Admin", createdAt: "2026-08-01T06:30:00Z" },
-    { id: "att-5", employeeId: "emp-5", employeeName: "Ganesan P.", attendanceDate: "2026-08-01", status: "PRESENT", checkInTime: "18:00", checkOutTime: "06:00", notes: "", recordedBy: "Estate Admin", createdAt: "2026-08-01T18:00:00Z" },
-  ],
-  wages: [
-    { id: "w-1", employeeId: "emp-1", employeeName: "Murugan K.", roleName: "PWCW Worker", month: 7, year: 2026, workingDays: 26, presentDays: 25, absentDays: 1, wageRate: 550, wageType: "DAILY", grossSalary: 13750, deductions: 250, bonus: 500, netSalary: 14000, status: "PAID", paymentDate: "2026-08-02", paymentMode: "Bank Transfer", paymentReference: "NEFT-SBIN-889123", calculatedAt: "2026-08-01" },
-    { id: "w-2", employeeId: "emp-2", employeeName: "Selvi Murugan", roleName: "PWCW Worker", month: 7, year: 2026, workingDays: 26, presentDays: 24, absentDays: 2, wageRate: 450, wageType: "DAILY", grossSalary: 10800, deductions: 0, bonus: 200, netSalary: 11000, status: "PAID", paymentDate: "2026-08-02", paymentMode: "Bank Transfer", paymentReference: "NEFT-SBIN-889124", calculatedAt: "2026-08-01" },
-    { id: "w-3", employeeId: "emp-3", employeeName: "Ramasamy V.", roleName: "Driver & Equipment Operator", month: 7, year: 2026, workingDays: 26, presentDays: 26, absentDays: 0, wageRate: 650, wageType: "DAILY", grossSalary: 16900, deductions: 0, bonus: 600, netSalary: 17500, status: "PAID", paymentDate: "2026-08-02", paymentMode: "Bank Transfer", paymentReference: "NEFT-CNRB-441290", calculatedAt: "2026-08-01" },
-    { id: "w-4", employeeId: "emp-4", employeeName: "Kuppusamy M.", roleName: "Supervisor", month: 7, year: 2026, workingDays: 26, presentDays: 26, absentDays: 0, wageRate: 22000, wageType: "MONTHLY", grossSalary: 22000, deductions: 500, bonus: 1000, netSalary: 22500, status: "PAID", paymentDate: "2026-08-02", paymentMode: "Bank Transfer", paymentReference: "NEFT-IOBA-901823", calculatedAt: "2026-08-01" },
-    { id: "w-5", employeeId: "emp-5", employeeName: "Ganesan P.", roleName: "Security Guard", month: 7, year: 2026, workingDays: 26, presentDays: 26, absentDays: 0, wageRate: 15000, wageType: "MONTHLY", grossSalary: 15000, deductions: 0, bonus: 0, netSalary: 15000, status: "PAID", paymentDate: "2026-08-02", paymentMode: "Bank Transfer", paymentReference: "NEFT-HDFC-220194", calculatedAt: "2026-08-01" },
-  ],
-  leaves: [
-    { id: "lv-1", employeeId: "emp-1", employeeName: "Murugan K.", leaveType: "CASUAL", fromDate: "2026-07-14", toDate: "2026-07-14", totalDays: 1, reason: "Family village temple function", status: "APPROVED", approvedBy: "Kuppusamy M.", appliedDate: "2026-07-10" },
-    { id: "lv-2", employeeId: "emp-2", employeeName: "Selvi Murugan", leaveType: "CASUAL", fromDate: "2026-07-14", toDate: "2026-07-15", totalDays: 2, reason: "Family function & personal work", status: "APPROVED", approvedBy: "Kuppusamy M.", appliedDate: "2026-07-10" },
-  ],
+  employeeRoles: [],
+  employees: [],
+  attendance: [],
+  wages: [],
+  leaves: [],
   expenseUnits: [...DEFAULT_UNITS],
   feedPurchases: [
     { id: "fp-1", feedName: "Maize Silage Dry Bales", quantity: 50, unit: "bags", cost: 22500, purchaseDate: "2026-06-01", billDate: "2026-06-01", billNo: "FF-440", supplier: "Supreme Silage & Agro", ledgerId: "el-1", particularName: "Feed Expenses", pnlCategory: "Purchase", notes: "", createdAt: "2026-06-01" },
@@ -1192,39 +1163,8 @@ export function getDatabase(): EstateDatabase {
         if (!dbObj.cropIncomes || !Array.isArray(dbObj.cropIncomes)) {
           dbObj.cropIncomes = [];
         }
-        if (!dbObj.workers || !Array.isArray(dbObj.workers) || dbObj.workers.length === 0) {
-          dbObj.workers = [
-            {
-              id: "w_murugan",
-              name: "Murugan S",
-              phone: "9876543210",
-              role: "Field Supervisor & Pruning",
-              dailyWageRate: 600,
-              active: true,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            {
-              id: "w_kavitha",
-              name: "Kavitha R",
-              phone: "9876543211",
-              role: "Harvest & Weeding Specialist",
-              dailyWageRate: 500,
-              active: true,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            {
-              id: "w_palaniswamy",
-              name: "Palaniswamy K",
-              phone: "9876543212",
-              role: "Irrigation & Sprayer",
-              dailyWageRate: 550,
-              active: true,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-          ];
+        if (!dbObj.workers || !Array.isArray(dbObj.workers)) {
+          dbObj.workers = [];
         }
         if (!dbObj.workerAttendances || !Array.isArray(dbObj.workerAttendances)) {
           dbObj.workerAttendances = [];

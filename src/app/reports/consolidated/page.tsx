@@ -134,9 +134,6 @@ export default function ConsolidatedReportPage() {
             <ClipboardList className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             Consolidated Estate Master Report
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            End-to-end operational and financial ledger unifying Daily Logs, Crop P&L, Workforce Wages, Machinery, and Expenses.
-          </p>
         </div>
 
         {/* Action Buttons */}
@@ -369,9 +366,6 @@ export default function ConsolidatedReportPage() {
               <h3 className="font-semibold text-foreground text-sm">
                 Chronological Master Consolidated Estate Ledger
               </h3>
-              <p className="text-xs text-muted-foreground">
-                All debits and credits across crop inputs, sales, worker wages, machinery operations, and farm overheads.
-              </p>
             </div>
             <div className="text-xs font-mono font-medium text-muted-foreground">
               Generated: {new Date(report.generatedAt).toLocaleString()}
@@ -456,9 +450,6 @@ export default function ConsolidatedReportPage() {
             <h3 className="font-semibold text-foreground text-sm">
               Crop Cycle Seed-to-Harvest Financial P&L
             </h3>
-            <p className="text-xs text-muted-foreground">
-              Direct profitability per plot crop cycle including labor, machinery, and material inputs.
-            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -591,9 +582,6 @@ export default function ConsolidatedReportPage() {
         <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm">
           <div className="p-4 border-b border-border/60 bg-muted/20">
             <h3 className="font-semibold text-foreground text-sm">Machinery & Fleet Utilization</h3>
-            <p className="text-xs text-muted-foreground">
-              Equipment hours and direct operating expenses incurred across farm plots.
-            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">

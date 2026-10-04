@@ -425,10 +425,6 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
             </div>
           </div>
 
-          {/* Footer Note */}
-          <div className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-3">
-            Computer generated official voucher record from Estate PWCW Management System • Valid without physical seal
-          </div>
         </div>
       </div>
     </div>

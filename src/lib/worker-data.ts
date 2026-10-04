@@ -34,6 +34,69 @@ export interface MonthlyWorkerSummaryRow {
  */
 export function getWorkers(filters?: { activeOnly?: boolean }): WorkerItem[] {
   const db = getDatabase();
+  let modified = false;
+
+  if (db.employees && db.employees.length > 0) {
+    if (!db.workers) db.workers = [];
+
+    for (const emp of db.employees) {
+      const dailyRate = emp.wageType === "MONTHLY" ? Math.round(emp.wageRate / 26) : Number(emp.wageRate) || 500;
+      const isActive = emp.status === "ACTIVE";
+      const existingIdx = db.workers.findIndex((w) => w.id === emp.id || w.name.trim().toLowerCase() === emp.name.trim().toLowerCase());
+      if (existingIdx === -1) {
+        db.workers.push({
+          id: emp.id,
+          name: emp.name,
+          phone: emp.phone,
+          role: emp.roleName || "General Field Worker",
+          dailyWageRate: dailyRate,
+          active: isActive,
+          createdAt: emp.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        modified = true;
+      } else {
+        const w = db.workers[existingIdx];
+        if (
+          w.id !== emp.id ||
+          w.name !== emp.name ||
+          w.dailyWageRate !== dailyRate ||
+          w.active !== isActive ||
+          w.role !== (emp.roleName || "General Field Worker") ||
+          w.phone !== emp.phone
+        ) {
+          db.workers[existingIdx] = {
+            ...w,
+            id: emp.id,
+            name: emp.name,
+            phone: emp.phone,
+            role: emp.roleName || "General Field Worker",
+            dailyWageRate: dailyRate,
+            active: isActive,
+            updatedAt: new Date().toISOString(),
+          };
+          modified = true;
+        }
+      }
+    }
+
+    // Clean up any in db.workers that are no longer in db.employees
+    const empIds = new Set(db.employees.map((e) => e.id));
+    const empNames = new Set(db.employees.map((e) => e.name.trim().toLowerCase()));
+    const initialWorkersCount = db.workers.length;
+    db.workers = db.workers.filter((w) => empIds.has(w.id) || empNames.has(w.name.trim().toLowerCase()));
+    if (db.workers.length !== initialWorkersCount) {
+      modified = true;
+    }
+
+    if (modified) {
+      saveDatabase(db);
+    }
+  } else if (db.workers && db.workers.length > 0) {
+    db.workers = [];
+    saveDatabase(db);
+  }
+
   let workers = db.workers || [];
   if (filters?.activeOnly) {
     workers = workers.filter((w) => w.active);
@@ -115,11 +178,27 @@ export function updateWorker(
  */
 export function deleteWorker(id: string): boolean {
   const db = getDatabase();
-  if (!db.workers) return false;
+  let modified = false;
 
-  const initialCount = db.workers.length;
-  db.workers = db.workers.filter((w) => w.id !== id);
-
+  if (db.workers) {
+    const initialCount = db.workers.length;
+    db.workers = db.workers.filter((w) => w.id !== id);
+    if (db.workers.length < initialCount) modified = true;
+  }
+  if (db.employees) {
+    const initialEmpCount = db.employees.length;
+    db.employees = db.employees.filter((e) => e.id !== id);
+    if (db.employees.length < initialEmpCount) modified = true;
+  }
+  if (db.attendance) {
+    db.attendance = db.attendance.filter((a) => a.employeeId !== id);
+  }
+  if (db.wages) {
+    db.wages = db.wages.filter((w) => w.employeeId !== id);
+  }
+  if (db.leaves) {
+    db.leaves = db.leaves.filter((l) => l.employeeId !== id);
+  }
   if (db.workerAttendances) {
     db.workerAttendances = db.workerAttendances.filter((a) => a.workerId !== id);
   }
@@ -131,7 +210,7 @@ export function deleteWorker(id: string): boolean {
   }
 
   saveDatabase(db);
-  return db.workers.length < initialCount;
+  return true;
 }
 
 /**
@@ -146,7 +225,7 @@ export function calculateWageForAttendance(
   if (status === "ABSENT" || status === "LEAVE") {
     return {
       hoursWorked: 0,
-      computedAmount: manualOverrideAmount !== undefined ? manualOverrideAmount : 0,
+      computedAmount: 0,
     };
   }
 
@@ -359,9 +438,37 @@ export function upsertWorkerAttendanceAndWage(data: {
     db.wageEntries.push(wage);
   }
 
+  // 4. Synchronize to db.attendance for HR & Salary Calculator
+  if (!db.attendance) db.attendance = [];
+  const existingAttRecordIdx = db.attendance.findIndex(
+    (a) => a.employeeId === data.workerId && a.attendanceDate === data.date
+  );
+  if (existingAttRecordIdx >= 0) {
+    db.attendance[existingAttRecordIdx] = {
+      ...db.attendance[existingAttRecordIdx],
+      employeeName: worker.name,
+      status: data.status,
+      notes: data.notes,
+      checkInTime: data.checkInTime,
+      checkOutTime: data.checkOutTime,
+    };
+  } else {
+    db.attendance.push({
+      id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      employeeId: data.workerId,
+      employeeName: worker.name,
+      attendanceDate: data.date,
+      status: data.status,
+      notes: data.notes,
+      checkInTime: data.checkInTime,
+      checkOutTime: data.checkOutTime,
+      createdAt: now,
+    });
+  }
+
   saveDatabase(db);
 
-  // 4. Auto-sync to CropExpense if linked to a crop cycle
+  // 5. Auto-sync to CropExpense if linked to a crop cycle
   syncWageToCropExpense(wage);
 
   return { attendance, wage };
@@ -381,10 +488,44 @@ export function getDailyAttendanceSheet(date: string) {
     return dl ? dl.date === date : false;
   });
 
+  // Calculate if the selected date is Sunday
+  const dObj = new Date(date + "T00:00:00");
+  const isSunday = dObj.getDay() === 0;
+
   const workerRows = allWorkers.map((w) => {
-    const att = attendances.find((a) => a.workerId === w.id);
-    const wage = wages.find((wg) => wg.workerId === w.id);
+    let att = attendances.find((a) => a.workerId === w.id);
+    let wage = wages.find((wg) => wg.workerId === w.id);
     const workerActivities = activities.filter((act) => act.workerId === w.id);
+
+    // Sundays are calculated as just leave (weekly off): no salary, no absent mark
+    if (!att && isSunday) {
+      att = {
+        id: `sunday_leave_${w.id}_${date}`,
+        workerId: w.id,
+        date: date,
+        status: "LEAVE",
+        hoursWorked: 0,
+        notes: "Sunday (Weekly Off / Leave)",
+        createdAt: date,
+        updatedAt: date,
+      };
+      if (!wage) {
+        wage = {
+          id: `sunday_wage_${w.id}_${date}`,
+          workerId: w.id,
+          workerName: w.name,
+          date: date,
+          computedAmount: 0,
+          paidStatus: "UNPAID",
+          paidAmount: 0,
+          paidDate: null,
+          cropCycleId: null,
+          paymentNotes: "Sunday Weekly Off (Leave)",
+          createdAt: date,
+          updatedAt: date,
+        };
+      }
+    }
 
     return {
       ...w,
@@ -417,6 +558,7 @@ export function getDailyAttendanceSheet(date: string) {
 
   return {
     date,
+    isSunday,
     workers: workerRows,
     summary: {
       totalWorkers: allWorkers.length,
@@ -635,20 +777,47 @@ export function getMonthlyWorkerSummary(year: number, month: number) {
     w.date.startsWith(monthPrefix)
   );
 
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+
+  let maxDayToCheck = daysInMonth;
+  if (year > currentYear || (year === currentYear && month > currentMonth)) {
+    maxDayToCheck = 0;
+  } else if (year === currentYear && month === currentMonth) {
+    maxDayToCheck = currentDay;
+  }
+
   const summaries: MonthlyWorkerSummaryRow[] = workers.map((w) => {
     const workerAtts = monthAttendances.filter((a) => a.workerId === w.id);
     const workerWages = monthWages.filter((wg) => wg.workerId === w.id);
 
-    const totalDaysRecorded = workerAtts.length;
+    // Calculate unrecorded Sundays for this worker (only elapsed Sundays)
+    let unrecordedSundays = 0;
+    for (let d = 1; d <= maxDayToCheck; d++) {
+      const dObj = new Date(year, month - 1, d);
+      if (dObj.getDay() === 0) {
+        const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        if (!workerAtts.some((a) => a.date === dateStr)) {
+          unrecordedSundays++;
+        }
+      }
+    }
+
     const presentDays = workerAtts.filter((a) => a.status === "PRESENT").length;
     const halfDays = workerAtts.filter((a) => a.status === "HALF_DAY").length;
     const absentDays = workerAtts.filter((a) => a.status === "ABSENT").length;
-    const leaveDays = workerAtts.filter((a) => a.status === "LEAVE").length;
+    // Sundays calculate as just leave; leaves receive no salary and are NOT marked absent
+    const leaveDays = workerAtts.filter((a) => a.status === "LEAVE").length + unrecordedSundays;
+    const totalDaysRecorded = workerAtts.length + unrecordedSundays;
 
-    // Attendance % formula: (Present + 0.5 * HalfDay) / Total Recorded * 100
+    // Attendance % formula: based on working days (present + half + absent), leaves do not penalize as absences
+    const workingDaysCount = presentDays + halfDays + absentDays;
     const attendancePercent =
-      totalDaysRecorded > 0
-        ? Math.round(((presentDays + halfDays * 0.5) / totalDaysRecorded) * 1000) / 10
+      workingDaysCount > 0
+        ? Math.round(((presentDays + halfDays * 0.5) / workingDaysCount) * 1000) / 10
         : 0;
 
     const totalHoursWorked = workerAtts.reduce(

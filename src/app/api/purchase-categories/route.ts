@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   getPurchaseCategories,
   createPurchaseCategory,
+  deletePurchaseCategory,
 } from "@/lib/transaction-logs";
 
 export async function GET() {
@@ -31,6 +32,26 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to create purchase category" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get("category");
+    if (!category) {
+      return NextResponse.json(
+        { error: "Category parameter is required" },
+        { status: 400 }
+      );
+    }
+    const updated = deletePurchaseCategory(category);
+    return NextResponse.json({ success: true, categories: updated });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to delete purchase category" },
       { status: 500 }
     );
   }

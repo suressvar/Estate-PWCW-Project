@@ -693,9 +693,6 @@ export default function GodownPage() {
                 <Send className="w-5 h-5 text-emerald-300" />
                 <div>
                   <h3 className="font-bold text-base">Issue Godown Item to Menu</h3>
-                  <p className="text-xs text-emerald-200">
-                    Dispatch stock to operational field logs
-                  </p>
                 </div>
               </div>
               <button
@@ -831,9 +828,6 @@ export default function GodownPage() {
                 <PlusCircle className="w-5 h-5 text-emerald-300" />
                 <div>
                   <h3 className="font-bold text-base">Direct Godown Inward</h3>
-                  <p className="text-xs text-emerald-200">
-                    Receive stock directly into warehouse inventory
-                  </p>
                 </div>
               </div>
               <button

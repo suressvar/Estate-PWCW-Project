@@ -423,9 +423,6 @@ export default function OtherPurchasesVoucherPage() {
               <FileSpreadsheet className="w-4 h-4 text-emerald-800" />
               Other Purchases Voucher Register ({filteredLogs.length})
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Official log of operational supplies, utilities & maintenance purchases
-            </p>
           </div>
 
           {/* Filter Bar */}

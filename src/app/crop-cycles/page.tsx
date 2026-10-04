@@ -172,33 +172,23 @@ function CropCyclesOverviewContent() {
       {/* Subnavigation Bar */}
       <PlotsCropsNav stats={{ cyclesCount: cycles.length }} />
 
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-[#14532D] to-teal-950 text-white p-6 sm:p-8 shadow-xl border border-emerald-800/60">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-                Seed-to-Harvest Financial Ledger
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
-              Crop Cycles Financial Performance
-            </h1>
-            <p className="text-sm text-emerald-200/80 max-w-2xl">
-              Track running expenses, sales income, and net profit/loss for every plot and crop cycle from sowing to harvest.
-            </p>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-5 rounded-lg border border-slate-200 shadow-xs gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <CircleDollarSign className="w-5 h-5 text-emerald-700" />
+            <h1 className="text-xl font-bold text-slate-900">Crop Cycles Financial Performance</h1>
           </div>
-
-          <button
-            id="new-crop-cycle-btn"
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-emerald-950 hover:bg-emerald-50 shadow-md transition-all hover:scale-[1.02] self-start md:self-auto"
-          >
-            <Plus className="w-4 h-4 text-emerald-700" />
-            <span>New Crop Cycle</span>
-          </button>
         </div>
+
+        <button
+          id="new-crop-cycle-btn"
+          onClick={() => setIsModalOpen(true)}
+          className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-md shadow-xs transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span>New Crop Cycle</span>
+        </button>
       </div>
 
       {/* Summary KPI Cards */}
@@ -235,7 +225,6 @@ function CropCyclesOverviewContent() {
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">Plot Lifetime Financial Rollups</h2>
-              <p className="text-xs text-slate-500">Cumulative performance across all historical cycles per land plot</p>
             </div>
           </div>
         </div>

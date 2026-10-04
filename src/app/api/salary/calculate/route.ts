@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server";
-import { calculateSalariesForMonth } from "@/lib/hr-data";
+import { calculateSalariesForMonth, getWages } from "@/lib/hr-data";
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const year = Number(searchParams.get("year")) || new Date().getFullYear();
+    const month = Number(searchParams.get("month")) || new Date().getMonth() + 1;
+    const wages = getWages(year, month);
+    return NextResponse.json(wages);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
+}
 
 export async function POST(req: Request) {
   try {

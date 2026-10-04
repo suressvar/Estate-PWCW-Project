@@ -167,6 +167,16 @@ export function createPurchaseCategory(category: string): string {
   return trimmed;
 }
 
+export function deletePurchaseCategory(category: string): string[] {
+  const db = getDatabase();
+  if (!db.purchaseCategories) {
+    db.purchaseCategories = [...DEFAULT_PURCHASE_CATEGORIES];
+  }
+  db.purchaseCategories = db.purchaseCategories.filter((c) => c !== category.trim());
+  saveDatabase(db);
+  return db.purchaseCategories;
+}
+
 export function resetTransactionLogs() {
   const db = getDatabase();
   db.fertilizerLogs = [];

@@ -60,9 +60,23 @@ export default function AttendanceGridPage() {
     fetchGrid();
   }, [year, month]);
 
+  const isSunday = (day: number) => {
+    return new Date(year, month - 1, day).getDay() === 0;
+  };
+
   const getRecordForCell = (empId: string, day: number) => {
     const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return records.find((r) => r.employeeId === empId && r.attendanceDate === dayStr);
+    const found = records.find((r) => r.employeeId === empId && r.attendanceDate === dayStr);
+    if (!found && isSunday(day)) {
+      return {
+        id: `sunday_${empId}_${dayStr}`,
+        employeeId: empId,
+        attendanceDate: dayStr,
+        status: "LEAVE" as AttendanceStatus,
+        notes: "Sunday (Weekly Off / Leave)",
+      };
+    }
+    return found;
   };
 
   const handleCellClick = (emp: EmployeeItem, day: number) => {
@@ -72,7 +86,7 @@ export default function AttendanceGridPage() {
       employeeId: emp.id,
       employeeName: emp.name,
       dateStr: dayStr,
-      status: rec?.status || "PRESENT",
+      status: rec?.status || (isSunday(day) ? "LEAVE" : "PRESENT"),
       notes: rec?.notes || "",
       checkInTime: rec?.checkInTime || "08:00",
       checkOutTime: rec?.checkOutTime || "17:00",

@@ -61,6 +61,7 @@ export default function SalesEntryPage() {
   const [buyerName, setBuyerName] = useState("");
   const [buyerCity, setBuyerCity] = useState("");
   const [buyerContact, setBuyerContact] = useState("");
+  const [parties, setParties] = useState<any[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -69,11 +70,12 @@ export default function SalesEntryPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [ledgersRes, salesRes, unitsRes, catsRes] = await Promise.all([
+        const [ledgersRes, salesRes, unitsRes, catsRes, partiesRes] = await Promise.all([
           fetch("/api/expense-ledgers"),
           fetch("/api/sales/other"),
           fetch("/api/units"),
           fetch("/api/sales-categories"),
+          fetch("/api/parties"),
         ]);
         const ledgersData: ExpenseLedgerItem[] = await ledgersRes.json();
         const salesData = await salesRes.json();
@@ -114,12 +116,43 @@ export default function SalesEntryPage() {
         if (Array.isArray(salesData)) {
           setRecordNo(String(salesData.length + 1));
         }
+
+        if (partiesRes.ok) {
+          const partiesData = await partiesRes.json();
+          if (Array.isArray(partiesData)) {
+            setParties(partiesData);
+            if (typeof window !== "undefined") {
+              const bParam = new URLSearchParams(window.location.search).get("buyer");
+              if (bParam) {
+                setBuyerName(bParam);
+                const matched = partiesData.find(
+                  (p: any) => p.name.trim().toLowerCase() === bParam.trim().toLowerCase()
+                );
+                if (matched) {
+                  if (matched.city) setBuyerCity(matched.city);
+                  if (matched.phone) setBuyerContact(matched.phone);
+                }
+              }
+            }
+          }
+        }
       } catch (e) {
         console.error("Error loading sales initial data:", e);
       }
     }
     loadData();
   }, []);
+
+  const handleBuyerNameChange = (name: string) => {
+    setBuyerName(name);
+    const matched = parties.find(
+      (p) => p.name.trim().toLowerCase() === name.trim().toLowerCase()
+    );
+    if (matched) {
+      if (matched.city) setBuyerCity(matched.city);
+      if (matched.phone) setBuyerContact(matched.phone);
+    }
+  };
 
 
 
@@ -363,7 +396,75 @@ export default function SalesEntryPage() {
           {/* Divider */}
           <div className="border-t border-slate-100" />
 
-          {/* SECTION 2: REVENUE ITEM DETAILS */}
+          {/* SECTION 2: BUYER INFORMATION */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-extrabold text-[#15803d] uppercase tracking-wider">
+                BUYER INFORMATION
+              </h2>
+              {parties.length > 0 && (
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {parties.length} registered retailer{parties.length === 1 ? "" : "s"} available
+                </span>
+              )}
+            </div>
+
+            {/* Buyer Full Name */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 uppercase">
+                BUYER FULL NAME
+              </label>
+              <input
+                type="text"
+                list="buyers-suggestions"
+                placeholder="Name of buyer or retail establishment"
+                value={buyerName}
+                onChange={(e) => handleBuyerNameChange(e.target.value)}
+                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
+              />
+              <datalist id="buyers-suggestions">
+                {parties.map((p) => (
+                  <option key={p.id} value={p.name}>
+                    {p.name} {p.city ? `(${p.city})` : ""} [{p.type}]
+                  </option>
+                ))}
+              </datalist>
+            </div>
+
+            {/* Buyer City & Buyer Contact Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase">
+                  BUYER CITY
+                </label>
+                <input
+                  type="text"
+                  placeholder="City / Market town"
+                  value={buyerCity}
+                  onChange={(e) => setBuyerCity(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase">
+                  BUYER CONTACT DETAILS
+                </label>
+                <input
+                  type="text"
+                  placeholder="Mobile / Phone number"
+                  value={buyerContact}
+                  onChange={(e) => setBuyerContact(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-slate-100" />
+
+          {/* SECTION 3: REVENUE ITEM DETAILS */}
           <div className="space-y-5">
             <h2 className="text-sm font-extrabold text-[#15803d] uppercase tracking-wider">
               REVENUE ITEM DETAILS
@@ -493,7 +594,7 @@ export default function SalesEntryPage() {
               ))}
             </div>
 
-            {/* Bottom Row of Section 2: + Add Another Item & GRAND TOTAL Pill */}
+            {/* Bottom Row: + Add Another Item & GRAND TOTAL Pill */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
               <button
                 type="button"
@@ -511,59 +612,6 @@ export default function SalesEntryPage() {
                 <span className="text-lg font-black text-[#15803d]">
                   ₹{grandTotal.toFixed(2)}
                 </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="border-t border-slate-100" />
-
-          {/* SECTION 3: BUYER INFORMATION */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-extrabold text-[#15803d] uppercase tracking-wider">
-              BUYER INFORMATION
-            </h2>
-
-            {/* Buyer Full Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 uppercase">
-                BUYER FULL NAME
-              </label>
-              <input
-                type="text"
-                placeholder="Name of buyer or retail establishment"
-                value={buyerName}
-                onChange={(e) => setBuyerName(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
-              />
-            </div>
-
-            {/* Buyer City & Buyer Contact Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase">
-                  BUYER CITY
-                </label>
-                <input
-                  type="text"
-                  placeholder="City / Market town"
-                  value={buyerCity}
-                  onChange={(e) => setBuyerCity(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase">
-                  BUYER CONTACT DETAILS
-                </label>
-                <input
-                  type="text"
-                  placeholder="Mobile / Phone number"
-                  value={buyerContact}
-                  onChange={(e) => setBuyerContact(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all font-mono"
-                />
               </div>
             </div>
           </div>

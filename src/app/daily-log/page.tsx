@@ -666,9 +666,6 @@ function DailyLogContent() {
                   <ClipboardList className="w-5 h-5 text-emerald-600" />
                   Planned Activities for {currentPlot?.name || "Plot"}
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Toggle completion status or view carry-forward reasons
-                </p>
               </div>
 
               <button
@@ -963,7 +960,6 @@ function DailyLogContent() {
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-slate-900">Reason Required</h3>
-                <p className="text-xs text-slate-500">Why was this activity not completed today?</p>
               </div>
             </div>
 

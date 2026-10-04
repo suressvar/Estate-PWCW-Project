@@ -383,11 +383,6 @@ export default function CropCycleDetailPage() {
             <h1 id="cycle-detail-title" className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               {cycle.cropName}
             </h1>
-            <p className="text-xs sm:text-sm text-emerald-200/80 max-w-2xl">
-              Seed-to-harvest ledger &bull;{" "}
-              {cycle.actualHarvestDate ? `Harvested on ${cycle.actualHarvestDate}` : `Target harvest: ${cycle.expectedHarvestDate}`}
-              {cycle.notes ? ` &bull; ${cycle.notes}` : ""}
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

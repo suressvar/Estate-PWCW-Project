@@ -60,9 +60,6 @@ export default function SettingsPage() {
                 <AlertTriangle className="w-4 h-4 text-red-700" />
                 Danger Zone: Wipe Application Data
               </h3>
-              <p className="text-xs text-red-700 max-w-xl leading-relaxed">
-                Permanently delete all in-memory operational records (Plots, Crops, Fertilizer logs, Diesel logs, Machinery usage, HR attendance & wages, Sales, and Vouchers). The system will be reset back to an empty database state.
-              </p>
             </div>
 
             <button

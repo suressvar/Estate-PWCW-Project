@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { StatCard } from "@/components/ui/stat-card";
 import {
   Users,
   Calendar,
@@ -31,7 +32,6 @@ import {
   Sprout,
   Check,
 } from "lucide-react";
-import { StatCard } from "@/components/ui/stat-card";
 import {
   WorkerItem,
   WorkerAttendanceItem,
@@ -44,7 +44,7 @@ import {
 export default function WorkersManagementPage() {
   const todayStr = new Date().toISOString().split("T")[0];
   const [activeTab, setActiveTab] = useState<
-    "attendance" | "activities" | "wages" | "summary" | "directory"
+    "attendance" | "activities" | "summary"
   >("attendance");
 
   // Date Navigation
@@ -67,25 +67,12 @@ export default function WorkersManagementPage() {
   } | null>(null);
 
   const [activitiesList, setActivitiesList] = useState<WorkerActivityLogItem[]>([]);
-  const [wageRegister, setWageRegister] = useState<{
-    entries: any[];
-    totalComputed: number;
-    totalPaid: number;
-    totalBalance: number;
-  }>({ entries: [], totalComputed: 0, totalPaid: 0, totalBalance: 0 });
-
   const [monthlySummary, setMonthlySummary] = useState<any>(null);
 
   // External Reference Data (Plots, Crop Cycles, Daily Logs)
   const [plots, setPlots] = useState<any[]>([]);
   const [cropCycles, setCropCycles] = useState<any[]>([]);
   const [dailyLogs, setDailyLogs] = useState<any[]>([]);
-
-  // Filter States
-  const [wageFilterWorker, setWageFilterWorker] = useState<string>("ALL");
-  const [wageFilterStatus, setWageFilterStatus] = useState<string>("ALL");
-  const [wageStartDate, setWageStartDate] = useState<string>("");
-  const [wageEndDate, setWageEndDate] = useState<string>("");
 
   // Loading & Alert States
   const [loading, setLoading] = useState(false);
@@ -95,12 +82,6 @@ export default function WorkersManagementPage() {
   } | null>(null);
 
   // Modals
-  const [isAddWorkerModalOpen, setIsAddWorkerModalOpen] = useState(false);
-  const [newWorkerName, setNewWorkerName] = useState("");
-  const [newWorkerPhone, setNewWorkerPhone] = useState("");
-  const [newWorkerRole, setNewWorkerRole] = useState("General Field Worker");
-  const [newWorkerWage, setNewWorkerWage] = useState("500");
-
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [actWorkerId, setActWorkerId] = useState("");
   const [actPlotId, setActPlotId] = useState("");
@@ -109,13 +90,7 @@ export default function WorkersManagementPage() {
   const [actDescription, setActDescription] = useState("");
   const [actHours, setActHours] = useState("8");
 
-  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
-  const [selectedWageEntry, setSelectedWageEntry] = useState<any>(null);
-  const [paymentAmount, setPaymentAmount] = useState<string>("");
-  const [paymentDate, setPaymentDate] = useState<string>(todayStr);
-  const [paymentNotes, setPaymentNotes] = useState<string>("");
-
-  // 1. Fetch Reference Data (Plots, Crop Cycles, Daily Logs)
+  // 1. Fetch Reference Data (Plots, Crop Cycles, Daily Logs, Employee Roles)
   useEffect(() => {
     async function loadRefs() {
       try {
@@ -184,23 +159,6 @@ export default function WorkersManagementPage() {
     }
   }, []);
 
-  // 5. Fetch Wage Register
-  const fetchWageRegister = useCallback(async () => {
-    try {
-      let url = `/api/workers/wages?workerId=${wageFilterWorker}&paidStatus=${wageFilterStatus}`;
-      if (wageStartDate) url += `&startDate=${wageStartDate}`;
-      if (wageEndDate) url += `&endDate=${wageEndDate}`;
-
-      const res = await fetch(url, { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        setWageRegister(data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [wageFilterWorker, wageFilterStatus, wageStartDate, wageEndDate]);
-
   // 6. Fetch Monthly Summary
   const fetchMonthlySummary = useCallback(async () => {
     try {
@@ -224,12 +182,10 @@ export default function WorkersManagementPage() {
       fetchDailySheet();
     } else if (activeTab === "activities") {
       fetchActivities();
-    } else if (activeTab === "wages") {
-      fetchWageRegister();
     } else if (activeTab === "summary") {
       fetchMonthlySummary();
     }
-  }, [activeTab, fetchWorkers, fetchDailySheet, fetchActivities, fetchWageRegister, fetchMonthlySummary]);
+  }, [activeTab, fetchWorkers, fetchDailySheet, fetchActivities, fetchMonthlySummary]);
 
   // Date Navigation Helpers
   const handlePrevDay = () => {
@@ -307,36 +263,59 @@ export default function WorkersManagementPage() {
     }
   };
 
-  // Create Worker
-  const handleCreateWorker = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newWorkerName.trim() || Number(newWorkerWage) < 0) {
-      setActionAlert({ type: "error", text: "Name and valid daily wage rate are required." });
+  // Bulk Mark All as Sunday Leave (0 wage, no absent)
+  const handleBulkMarkSundayLeave = async () => {
+    if (!dailySheet?.workers) return;
+    try {
+      setLoading(true);
+      await Promise.all(
+        dailySheet.workers
+          .filter((w) => w.active)
+          .map((w) =>
+            fetch("/api/workers/attendance", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                workerId: w.id,
+                date: selectedDate,
+                status: "LEAVE",
+                hoursWorked: 0,
+                notes: "Sunday (Weekly Off / Leave)",
+              }),
+            })
+          )
+      );
+      fetchDailySheet();
+      setActionAlert({
+        type: "success",
+        text: `Calculated all active workers as LEAVE for Sunday ${selectedDate} (No salary, absent not marked).`,
+      });
+    } catch (e: any) {
+      setActionAlert({ type: "error", text: "Error updating attendance." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  // Delete Worker
+  const handleDeleteWorker = async (workerId: string, workerName: string) => {
+    if (!confirm(`Are you sure you want to remove worker "${workerName}" and all associated attendance/wage records?`)) {
       return;
     }
     try {
-      const res = await fetch("/api/workers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newWorkerName,
-          phone: newWorkerPhone,
-          role: newWorkerRole,
-          dailyWageRate: Number(newWorkerWage),
-          active: true,
-        }),
-      });
+      const res = await fetch(`/api/workers/${workerId}`, { method: "DELETE" });
       if (res.ok) {
-        setIsAddWorkerModalOpen(false);
-        setNewWorkerName("");
-        setNewWorkerPhone("");
-        setNewWorkerWage("500");
         fetchWorkers();
         fetchDailySheet();
-        setActionAlert({ type: "success", text: "New worker added to roster." });
+        setActionAlert({ type: "success", text: `Worker "${workerName}" removed successfully.` });
+      } else {
+        const err = await res.json();
+        setActionAlert({ type: "error", text: err.error || "Failed to remove worker." });
       }
     } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Error adding worker." });
+      setActionAlert({ type: "error", text: e.message || "Failed to remove worker." });
     }
   };
 
@@ -391,48 +370,7 @@ export default function WorkersManagementPage() {
     }
   };
 
-  // Open Payment Settle Modal
-  const openPayModal = (entry: any) => {
-    setSelectedWageEntry(entry);
-    setPaymentAmount(String(entry.balance || entry.computedAmount));
-    setPaymentDate(todayStr);
-    setPaymentNotes(`Payment for work on ${entry.date}`);
-    setIsPayModalOpen(true);
-  };
 
-  // Settle / Record Wage Payment
-  const handleRecordPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedWageEntry) return;
-    const amount = Number(paymentAmount);
-    if (amount <= 0) {
-      setActionAlert({ type: "error", text: "Payment amount must be greater than zero." });
-      return;
-    }
-    try {
-      const res = await fetch("/api/workers/wages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          wageId: selectedWageEntry.id,
-          paidAmount: (Number(selectedWageEntry.paidAmount) || 0) + amount,
-          paidDate: paymentDate,
-          paymentNotes: paymentNotes,
-        }),
-      });
-      if (res.ok) {
-        setIsPayModalOpen(false);
-        fetchWageRegister();
-        fetchDailySheet();
-        setActionAlert({
-          type: "success",
-          text: `Recorded ₹${amount.toLocaleString()} payment for ${selectedWageEntry.workerName}.`,
-        });
-      }
-    } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Failed to record payment." });
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300">
@@ -449,22 +387,19 @@ export default function WorkersManagementPage() {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Worker Management & Wages
+              Daily Attendance & Tracking
             </h1>
-            <p className="text-xs sm:text-sm text-emerald-200/80 max-w-2xl">
-              Daily attendance &amp; time tracking, activity logs tied to Daily Logs, auto-computed wages, and direct sync into Crop Expenses.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              id="new-worker-btn"
-              onClick={() => setIsAddWorkerModalOpen(true)}
+            <Link
+              id="employees-roster-btn"
+              href="/employees"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-emerald-950 hover:bg-emerald-50 shadow-md transition-all hover:scale-[1.02]"
             >
-              <Plus className="w-4 h-4 text-emerald-700" />
-              <span>+ Add Worker</span>
-            </button>
+              <Users className="w-4 h-4 text-emerald-700" />
+              <span>Employees Roster</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -526,18 +461,7 @@ export default function WorkersManagementPage() {
           <Briefcase className="w-4 h-4" />
           <span>Worker Activities</span>
         </button>
-        <button
-          id="tab-wages"
-          onClick={() => setActiveTab("wages")}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "wages"
-              ? "bg-white text-emerald-900 shadow-xs"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <DollarSign className="w-4 h-4" />
-          <span>Wage Register</span>
-        </button>
+
         <button
           id="tab-summary"
           onClick={() => setActiveTab("summary")}
@@ -550,18 +474,6 @@ export default function WorkersManagementPage() {
           <FileSpreadsheet className="w-4 h-4" />
           <span>Monthly Summary &amp; CSV</span>
         </button>
-        <button
-          id="tab-directory"
-          onClick={() => setActiveTab("directory")}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "directory"
-              ? "bg-white text-emerald-900 shadow-xs"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Workers Roster ({workers.length})</span>
-        </button>
       </div>
 
       {/* ========================================================================= */}
@@ -571,7 +483,7 @@ export default function WorkersManagementPage() {
         <div className="space-y-6 animate-in fade-in">
           {/* Date Selector & Action Bar */}
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 id="prev-date-btn"
                 onClick={handlePrevDay}
@@ -600,9 +512,25 @@ export default function WorkersManagementPage() {
               >
                 Today
               </button>
+              {new Date(selectedDate + "T00:00:00").getDay() === 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
+                  <Calendar className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Sunday - Weekly Off (Leave)</span>
+                </span>
+              )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {new Date(selectedDate + "T00:00:00").getDay() === 0 && (
+                <button
+                  id="bulk-mark-sunday-leave-btn"
+                  onClick={handleBulkMarkSundayLeave}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-700 hover:bg-sky-800 text-white shadow-xs"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>Mark All Sunday Leave</span>
+                </button>
+              )}
               <button
                 id="bulk-mark-present-btn"
                 onClick={handleBulkMarkPresent}
@@ -666,6 +594,7 @@ export default function WorkersManagementPage() {
                     <th className="py-3 px-4 text-center">Hours Worked</th>
                     <th className="py-3 px-4">Crop Cycle Link (Labor Expense)</th>
                     <th className="py-3 px-4 text-right">Computed Wage</th>
+                    <th className="py-3 px-4 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -781,13 +710,27 @@ export default function WorkersManagementPage() {
                               ₹{wage.toLocaleString()}
                             </span>
                           </td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              id={`delete-worker-${w.id}`}
+                              onClick={() => handleDeleteWorker(w.id, w.name)}
+                              title={`Delete worker ${w.name}`}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center justify-center"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
-                        No active workers found. Click &ldquo;+ Add Worker&rdquo; to register field staff.
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        No active employees found. Please register employees in the{" "}
+                        <Link href="/employees" className="underline font-bold text-emerald-700 hover:text-emerald-800">
+                          Employees Roster
+                        </Link>
+                        .
                       </td>
                     </tr>
                   )}
@@ -806,9 +749,6 @@ export default function WorkersManagementPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
             <div>
               <h2 className="text-base font-bold text-slate-900">Granular Field Activities</h2>
-              <p className="text-xs text-slate-500">
-                Detailed breakdown of tasks completed by each worker linked to Daily Logs and Plots.
-              </p>
             </div>
             <button
               id="log-activity-btn"
@@ -872,160 +812,7 @@ export default function WorkersManagementPage() {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 3: WAGE REGISTER & PAYMENT SETTLEMENT */}
-      {/* ========================================================================= */}
-      {activeTab === "wages" && (
-        <div className="space-y-6 animate-in fade-in">
-          {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                <Users className="w-3.5 h-3.5 text-slate-400" />
-                <span>Worker:</span>
-                <select
-                  id="wage-filter-worker-select"
-                  value={wageFilterWorker}
-                  onChange={(e) => setWageFilterWorker(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold"
-                >
-                  <option value="ALL">All Workers</option>
-                  {workers.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
-                <span>Status:</span>
-                <select
-                  id="wage-filter-status-select"
-                  value={wageFilterStatus}
-                  onChange={(e) => setWageFilterStatus(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold"
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="UNPAID">Unpaid</option>
-                  <option value="PARTIAL">Partial</option>
-                  <option value="PAID">Paid</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="text-xs text-slate-500 font-medium">
-              Showing {wageRegister.entries.length} wage records
-            </div>
-          </div>
-
-          {/* Wage KPI Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard
-              title="Total Wages Earned"
-              value={`₹${wageRegister.totalComputed.toLocaleString()}`}
-              subtitle="Calculated from attendance & hours"
-            />
-            <StatCard
-              title="Total Wages Paid"
-              value={`₹${wageRegister.totalPaid.toLocaleString()}`}
-              subtitle="Settled to workers"
-            />
-            <StatCard
-              title="Outstanding Balance Due"
-              value={`₹${wageRegister.totalBalance.toLocaleString()}`}
-              isPositive={wageRegister.totalBalance === 0}
-              change={wageRegister.totalBalance === 0 ? "ALL SETTLED" : "BALANCE DUE"}
-            />
-          </div>
-
-          {/* Wage Register Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs" id="wages-register-table">
-                <thead>
-                  <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Worker</th>
-                    <th className="py-3 px-4">Crop Cycle Link</th>
-                    <th className="py-3 px-4 text-right">Computed (₹)</th>
-                    <th className="py-3 px-4 text-right">Paid (₹)</th>
-                    <th className="py-3 px-4 text-right">Balance Due (₹)</th>
-                    <th className="py-3 px-4 text-center">Status</th>
-                    <th className="py-3 px-4 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                  {wageRegister.entries.length > 0 ? (
-                    wageRegister.entries.map((w) => (
-                      <tr
-                        key={w.id}
-                        className="hover:bg-slate-50/60 transition-colors"
-                        id={`wage-row-${w.id}`}
-                      >
-                        <td className="py-3 px-4 font-semibold text-slate-900">{w.date}</td>
-                        <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{w.workerName}</div>
-                          <div className="text-[11px] text-slate-500">{w.workerRole || "Worker"}</div>
-                        </td>
-                        <td className="py-3 px-4 text-emerald-700 font-semibold">
-                          {w.cropCycleName || "-"}
-                        </td>
-                        <td className="py-3 px-4 text-right font-bold text-slate-900">
-                          ₹{Number(w.computedAmount).toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-right font-bold text-emerald-700">
-                          ₹{Number(w.paidAmount).toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-right font-bold text-rose-700">
-                          ₹{Number(w.balance).toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span
-                            id={`wage-status-${w.id}`}
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              w.paidStatus === "PAID"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : w.paidStatus === "PARTIAL"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-rose-100 text-rose-800"
-                            }`}
-                          >
-                            {w.paidStatus}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {w.paidStatus !== "PAID" ? (
-                            <button
-                              id={`pay-wage-btn-${w.id}`}
-                              onClick={() => openPayModal(w)}
-                              className="px-3 py-1 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-colors"
-                            >
-                              Settle / Pay
-                            </button>
-                          ) : (
-                            <span className="text-[11px] font-bold text-emerald-600 flex items-center justify-center gap-1">
-                              <Check className="w-3.5 h-3.5" />
-                              Settled
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400">
-                        No wage entries matching the filter.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* TAB 4: MONTHLY SUMMARY & CSV EXPORT */}
@@ -1160,140 +947,9 @@ export default function WorkersManagementPage() {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 5: WORKERS ROSTER DIRECTORY */}
-      {/* ========================================================================= */}
-      {activeTab === "directory" && (
-        <div className="space-y-6 animate-in fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs" id="workers-directory-table">
-                <thead>
-                  <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="py-3 px-4">Name</th>
-                    <th className="py-3 px-4">Role / Skill</th>
-                    <th className="py-3 px-4">Phone</th>
-                    <th className="py-3 px-4 text-right">Daily Wage Rate</th>
-                    <th className="py-3 px-4 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                  {workers.map((w) => (
-                    <tr key={w.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-900">{w.name}</td>
-                      <td className="py-3 px-4">{w.role || "General Worker"}</td>
-                      <td className="py-3 px-4 text-slate-500 font-mono">{w.phone || "-"}</td>
-                      <td className="py-3 px-4 text-right font-bold text-slate-900">
-                        ₹{w.dailyWageRate.toLocaleString()}/day
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            w.active
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          {w.active ? "ACTIVE" : "INACTIVE"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 1: ADD WORKER MODAL */}
-      {/* ========================================================================= */}
-      {isAddWorkerModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">Register New Field Worker</h3>
-              <button
-                onClick={() => setIsAddWorkerModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <form onSubmit={handleCreateWorker} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Worker Full Name *</label>
-                <input
-                  id="worker-name-input"
-                  type="text"
-                  required
-                  placeholder="e.g. Ramanathan M"
-                  value={newWorkerName}
-                  onChange={(e) => setNewWorkerName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                />
-              </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Phone Number</label>
-                <input
-                  id="worker-phone-input"
-                  type="tel"
-                  placeholder="e.g. 9876543210"
-                  value={newWorkerPhone}
-                  onChange={(e) => setNewWorkerPhone(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Role / Skill Type</label>
-                <input
-                  id="worker-role-input"
-                  type="text"
-                  placeholder="e.g. Harvester & Weeder, Pruning Specialist"
-                  value={newWorkerRole}
-                  onChange={(e) => setNewWorkerRole(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Daily Wage Rate (₹) *</label>
-                <input
-                  id="worker-wage-input"
-                  type="number"
-                  step="1"
-                  required
-                  placeholder="e.g. 500"
-                  value={newWorkerWage}
-                  onChange={(e) => setNewWorkerWage(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsAddWorkerModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="save-worker-btn"
-                  type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
-                >
-                  Register Worker
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* MODAL 2: LOG WORKER ACTIVITY MODAL */}
@@ -1426,106 +1082,7 @@ export default function WorkersManagementPage() {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 3: RECORD WAGE PAYMENT SETTLEMENT */}
-      {/* ========================================================================= */}
-      {isPayModalOpen && selectedWageEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Settle Wage Payment</h3>
-                <p className="text-xs text-slate-500">
-                  {selectedWageEntry.workerName} &bull; Work Date: {selectedWageEntry.date}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsPayModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-xs font-semibold">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Computed Wage Owed:</span>
-                <span className="font-bold text-slate-900">
-                  ₹{Number(selectedWageEntry.computedAmount).toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Previously Paid:</span>
-                <span className="font-bold text-emerald-700">
-                  ₹{Number(selectedWageEntry.paidAmount || 0).toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between pt-1 border-t border-slate-200">
-                <span className="text-slate-700">Remaining Balance:</span>
-                <span className="font-black text-rose-700">
-                  ₹{Number(selectedWageEntry.balance || selectedWageEntry.computedAmount).toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            <form onSubmit={handleRecordPayment} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Payment Amount (₹) *</label>
-                <input
-                  id="pay-amount-input"
-                  type="number"
-                  step="1"
-                  required
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-bold text-slate-900"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Payment Date *</label>
-                <input
-                  id="pay-date-input"
-                  type="date"
-                  required
-                  value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Payment Notes / Reference</label>
-                <input
-                  id="pay-notes-input"
-                  type="text"
-                  placeholder="e.g. Cash settlement, UPI, weekly payout"
-                  value={paymentNotes}
-                  onChange={(e) => setPaymentNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsPayModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="confirm-pay-btn"
-                  type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                >
-                  Confirm Payment
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

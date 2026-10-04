@@ -288,9 +288,6 @@ export default function ExpensesAndPettyCashPage() {
             <Wallet className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             General & Petty Cash Expense Tracker
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track estate overheads, running petty cash balance, daily top-ups and disbursements, with auto P&L sync.
-          </p>
         </div>
 
         {/* Action Buttons */}
@@ -596,9 +593,6 @@ export default function ExpensesAndPettyCashPage() {
                 <h3 className="font-semibold text-foreground text-sm">
                   Chronological Petty Cash Day Book & Running Balance
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  Opening balance + cash added - petty disbursements = closing balance per date.
-                </p>
               </div>
               <button
                 onClick={async () => {

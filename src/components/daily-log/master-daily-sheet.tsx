@@ -91,6 +91,7 @@ export function MasterDailySheet({
   const [loadingMaster, setLoadingMaster] = useState(false);
 
   // Form State
+  const [selectedPlotCropId, setSelectedPlotCropId] = useState("");
   const [loggedBy, setLoggedBy] = useState("Field Supervisor");
   const [notes, setNotes] = useState("");
 
@@ -189,15 +190,40 @@ export function MasterDailySheet({
     loadAuxiliaryData();
   }, []);
 
+  // Memoize filtered plot-crops for currently selected plot
+  const filteredPlotCrops = useMemo(() => {
+    return plotCrops.filter((pc) => pc.plotId === selectedPlotId);
+  }, [plotCrops, selectedPlotId]);
+
   // Set default crop based on selected plot
   useEffect(() => {
     if (selectedPlotId && plotCrops.length > 0) {
-      const match = plotCrops.find((pc) => pc.plotId === selectedPlotId);
-      if (match) {
-        setSalesCropName(match.cropActivityName);
+      const matchingCrops = plotCrops.filter((pc) => pc.plotId === selectedPlotId);
+      if (matchingCrops.length > 0) {
+        const activeMatch = matchingCrops.find((pc) => pc.status === "ACTIVE") || matchingCrops[0];
+        setSelectedPlotCropId(activeMatch.id);
+        setSalesCropName(activeMatch.cropActivityName);
+      } else {
+        setSelectedPlotCropId("");
+        if (crops.length > 0) {
+          setSalesCropName(crops[0].name);
+        }
       }
     }
-  }, [selectedPlotId, plotCrops]);
+  }, [selectedPlotId, plotCrops, crops]);
+
+  const handlePlotCropChange = (val: string) => {
+    setSelectedPlotCropId(val);
+    const match = plotCrops.find((pc) => pc.id === val);
+    if (match) {
+      setSalesCropName(match.cropActivityName);
+    } else {
+      const cropMatch = crops.find((c) => `crop_${c.id}` === val || c.id === val);
+      if (cropMatch) {
+        setSalesCropName(cropMatch.name);
+      }
+    }
+  };
 
   // Auto calculate labor cost
   const calculatedLaborCost = useMemo(() => {
@@ -282,6 +308,7 @@ export function MasterDailySheet({
       const payload = {
         date: selectedDate,
         plotId: selectedPlotId,
+        plotCropId: selectedPlotCropId && !selectedPlotCropId.startsWith("crop_") ? selectedPlotCropId : undefined,
         loggedBy,
         notes: notes.trim() || undefined,
         activity: hasActivity
@@ -412,10 +439,6 @@ export function MasterDailySheet({
             <h3 className="text-xs sm:text-sm font-extrabold text-emerald-950">
               Master Daily Operations Sheet (Day Book)
             </h3>
-            <p className="text-[11px] text-slate-600 mt-0.5 max-w-3xl leading-relaxed">
-              Record everything that happened on <strong>{selectedDate}</strong> for{" "}
-              <strong>{currentPlot?.name || "Selected Plot"}</strong> in one place. Only fill the sections that occurred today; leave anything that did not happen empty. Upon saving, all data is automatically routed into its respective menu.
-            </p>
           </div>
         </div>
 
@@ -608,24 +631,50 @@ export function MasterDailySheet({
                 onChange={(e) => onPlotChange(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
               >
-                {plots.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
+                {plots.map((p) => {
+                  const plotCropNames = plotCrops
+                    .filter((pc) => pc.plotId === p.id && pc.status === "ACTIVE")
+                    .map((pc) => pc.cropActivityName);
+                  const cropSuffix = plotCropNames.length > 0 ? ` (${plotCropNames.join(", ")})` : "";
+                  return (
+                    <option key={p.id} value={p.id}>
+                      {p.name}{cropSuffix}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-600">Supervisor / Logged By</label>
-              <input
-                id="master-sheet-logged-by"
-                type="text"
-                placeholder="Supervisor Name"
-                value={loggedBy}
-                onChange={(e) => setLoggedBy(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-              />
+              <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+                <Sprout className="w-3 h-3 text-emerald-600" />
+                Crop(s)
+              </label>
+              <select
+                id="master-sheet-crop"
+                value={selectedPlotCropId}
+                onChange={(e) => handlePlotCropChange(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              >
+                {filteredPlotCrops.length > 0 ? (
+                  filteredPlotCrops.map((pc) => (
+                    <option key={pc.id} value={pc.id}>
+                      {pc.cropActivityName} {pc.status === "ACTIVE" ? "" : `(${pc.status})`}
+                    </option>
+                  ))
+                ) : crops.length > 0 ? (
+                  <>
+                    <option value="">No Active Crop Mapped to Plot</option>
+                    {crops.map((c) => (
+                      <option key={c.id} value={`crop_${c.id}`}>
+                        {c.name} (General)
+                      </option>
+                    ))}
+                  </>
+                ) : (
+                  <option value="">No Active Crop Mapped to Plot</option>
+                )}
+              </select>
             </div>
           </div>
         </div>
@@ -1280,19 +1329,36 @@ export function MasterDailySheet({
         </div>
 
         {/* SECTION 7: GENERAL ESTATE REMARKS & WEATHER */}
-        <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-3.5 sm:p-4 space-y-1.5">
-          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
-            <FileText className="w-3 h-3 text-slate-500" />
-            General Estate Observations, Rainfall & Supervisor Notes
-          </label>
-          <textarea
-            id="master-sheet-notes"
-            rows={2}
-            placeholder="Weather conditions, water pump run observations, insect scouting notes..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-          />
+        <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-3.5 sm:p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2 space-y-1">
+              <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+                <FileText className="w-3 h-3 text-slate-500" />
+                General Estate Observations, Rainfall & Remarks
+              </label>
+              <textarea
+                id="master-sheet-notes"
+                rows={2}
+                placeholder="Weather conditions, water pump run observations, insect scouting notes..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+                Supervisor / Logged By
+              </label>
+              <input
+                id="master-sheet-logged-by"
+                type="text"
+                placeholder="Field Supervisor"
+                value={loggedBy}
+                onChange={(e) => setLoggedBy(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              />
+            </div>
+          </div>
         </div>
 
         {/* BOTTOM SUBMIT ACTION BAR */}
