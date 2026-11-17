@@ -158,5 +158,5 @@ export interface PartyItem {
   updatedAt?: string;
 }
 
-export type { GodownItem, GodownStockMovement } from "@/lib/db-storage";
+export type { GodownItem,GodownStockMovement } from "./storage";
 

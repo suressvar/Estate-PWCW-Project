@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { bulkMarkAttendance } from "@/lib/hr-data";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -9,7 +10,7 @@ export async function POST(req: Request) {
     }
     const result = bulkMarkAttendance(attendanceDate, status);
     return NextResponse.json(result);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

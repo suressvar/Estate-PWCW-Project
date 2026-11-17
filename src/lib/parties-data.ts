@@ -1,20 +1,25 @@
+import { withTransaction } from "./db-storage";
+import { assertRecordId } from "./validation";
+import { randomUUID } from "node:crypto";
 import {
-  getDatabase,
-  saveDatabase,
-  PartyItem,
-  PartyType,
-  DEFAULT_SEED_PARTIES,
+getDatabase,
+PartyItem,
+PartyType,
+saveDatabase
 } from "./db-storage";
 
-export type { PartyItem, PartyType };
+export type { PartyItem,PartyType };
 
 function ensureParties(): PartyItem[] {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.parties || !Array.isArray(db.parties)) {
     db.parties = [];
     saveDatabase(db);
   }
   return db.parties ?? [];
+
+  });
 }
 
 export function getParties(type?: PartyType): PartyItem[] {
@@ -31,12 +36,13 @@ export function getPartyById(id: string): PartyItem | undefined {
 }
 
 export function createParty(data: Omit<PartyItem, "id" | "createdAt">): PartyItem {
+  return withTransaction(() => {
   const db = getDatabase();
   const parties = ensureParties();
 
   const newParty: PartyItem = {
     ...data,
-    id: `pty_${Date.now()}`,
+    id: `pty_${randomUUID()}`,
     createdAt: new Date().toISOString().split("T")[0],
   };
 
@@ -44,9 +50,13 @@ export function createParty(data: Omit<PartyItem, "id" | "createdAt">): PartyIte
   db.parties = parties;
   saveDatabase(db);
   return newParty;
+
+  });
 }
 
 export function updateParty(id: string, data: Partial<PartyItem>): PartyItem | undefined {
+  return withTransaction(() => {
+  assertRecordId(id, data);
   const db = getDatabase();
   const parties = ensureParties();
 
@@ -62,9 +72,12 @@ export function updateParty(id: string, data: Partial<PartyItem>): PartyItem | u
   db.parties = parties;
   saveDatabase(db);
   return parties[index];
+
+  });
 }
 
 export function deleteParty(id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   const parties = ensureParties();
 
@@ -75,4 +88,6 @@ export function deleteParty(id: string): boolean {
     return true;
   }
   return false;
+
+  });
 }

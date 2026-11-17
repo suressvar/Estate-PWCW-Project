@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
 import {
-  getPurchaseCategories,
-  createPurchaseCategory,
-  deletePurchaseCategory,
+createPurchaseCategory,
+deletePurchaseCategory,
+getPurchaseCategories,
 } from "@/lib/transaction-logs";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     const categories = getPurchaseCategories();
     return NextResponse.json(categories);
-  } catch (error) {
+  } catch  {
     return NextResponse.json(
       { error: "Failed to fetch purchase categories" },
       { status: 500 }
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const newCategory = createPurchaseCategory(body.category);
     const updatedCategories = getPurchaseCategories();
     return NextResponse.json({ category: newCategory, categories: updatedCategories }, { status: 201 });
-  } catch (error) {
+  } catch  {
     return NextResponse.json(
       { error: "Failed to create purchase category" },
       { status: 500 }
@@ -49,7 +49,7 @@ export async function DELETE(request: Request) {
     }
     const updated = deletePurchaseCategory(category);
     return NextResponse.json({ success: true, categories: updated });
-  } catch (error) {
+  } catch  {
     return NextResponse.json(
       { error: "Failed to delete purchase category" },
       { status: 500 }

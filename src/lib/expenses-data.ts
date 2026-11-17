@@ -1,14 +1,18 @@
+import { assertRecordId } from "./validation";
+import { randomUUID } from "node:crypto";
+import { withTransaction } from "./db-storage";
+import { getCropCycles } from "./crop-cycle-data";
 import {
-  getDatabase,
-  saveDatabase,
-  GeneralExpenseItem,
-  PettyCashLedgerItem,
-  ExpenseCategory,
+ExpenseCategory,
+GeneralExpenseItem,
+getDatabase,
+PettyCashLedgerItem,
+saveDatabase,
 } from "./db-storage";
 import { getPlots } from "./master-data";
-import { getCropCycles } from "./crop-cycle-data";
+import { dateKey,oneOf,positiveNumber,requiredText,validateAllocation } from "./validation";
 
-export type { GeneralExpenseItem, PettyCashLedgerItem, ExpenseCategory };
+export type { ExpenseCategory,GeneralExpenseItem,PettyCashLedgerItem };
 
 export interface PettyCashStatus {
   currentBalance: number;
@@ -78,7 +82,7 @@ export function getExpenseById(id: string): GeneralExpenseItem | undefined {
  * Automatically updates petty cash running ledger if category is PETTY_CASH.
  * Automatically/idempotently syncs to CropExpense under MISC if tagged to a CropCycle.
  */
-export function addExpense(data: {
+function addExpenseImpl(data: {
   category: ExpenseCategory;
   amount: number;
   date: string;
@@ -88,6 +92,9 @@ export function addExpense(data: {
   paidBy?: string | null;
   receiptRef?: string | null;
 }): GeneralExpenseItem {
+  data.amount = positiveNumber(data.amount, "Expense amount");
+  dateKey(data.date);
+  data.category = oneOf(data.category, ["GENERAL", "PETTY_CASH", "MAINTENANCE", "ADMIN", "OTHER"], "Expense category", "GENERAL");
   if (!data.amount || data.amount <= 0) {
     throw new Error("Expense amount must be greater than zero.");
   }
@@ -99,6 +106,7 @@ export function addExpense(data: {
   }
 
   const plots = getPlots();
+  validateAllocation(data, getDatabase());
   const plot = data.plotId ? plots.find((p) => p.id === data.plotId) : undefined;
 
   const cycles = getCropCycles();
@@ -109,7 +117,7 @@ export function addExpense(data: {
 
   const now = new Date().toISOString();
   const newExpense: GeneralExpenseItem = {
-    id: `exp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `exp_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
     category: data.category || "GENERAL",
     amount: Number(data.amount),
     date: data.date,
@@ -141,10 +149,15 @@ export function addExpense(data: {
 /**
  * Update an existing expense.
  */
-export function updateExpense(
+function updateExpenseImpl(
   id: string,
   data: Partial<GeneralExpenseItem>
 ): GeneralExpenseItem | undefined {
+  assertRecordId(id, data);
+  if (data.amount !== undefined) data.amount = positiveNumber(data.amount, "Expense amount");
+  if (data.date !== undefined) dateKey(data.date);
+  if (data.description !== undefined) data.description = requiredText(data.description, "Description");
+  if (data.category !== undefined) oneOf(data.category, ["GENERAL", "PETTY_CASH", "MAINTENANCE", "ADMIN", "OTHER"], "Expense category");
   const db = getDatabase();
   if (!db.generalExpenses) return undefined;
 
@@ -152,6 +165,7 @@ export function updateExpense(
   if (idx < 0) return undefined;
 
   const current = db.generalExpenses[idx];
+  validateAllocation({ ...current, ...data }, db);
   const updated: GeneralExpenseItem = {
     ...current,
     ...data,
@@ -172,7 +186,7 @@ export function updateExpense(
 /**
  * Delete an expense and remove sync.
  */
-export function deleteExpense(id: string): boolean {
+function deleteExpenseImpl(id: string): boolean {
   const db = getDatabase();
   if (!db.generalExpenses) return false;
 
@@ -200,6 +214,7 @@ export function deleteExpense(id: string): boolean {
  * Idempotent sync of general or petty expense into CropExpense under MISC.
  */
 export function syncExpenseToCropExpense(expense: GeneralExpenseItem): void {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.cropExpenses) db.cropExpenses = [];
 
@@ -225,7 +240,7 @@ export function syncExpenseToCropExpense(expense: GeneralExpenseItem): void {
     db.cropExpenses[existingIdx].updatedAt = new Date().toISOString();
   } else {
     db.cropExpenses.push({
-      id: `ce_exp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `ce_exp_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
       cropCycleId: expense.cropCycleId,
       category: "MISC",
       amount: Number(expense.amount),
@@ -239,16 +254,20 @@ export function syncExpenseToCropExpense(expense: GeneralExpenseItem): void {
   }
 
   saveDatabase(db);
+
+  });
 }
 
 /**
  * Record a petty cash top-up (cash added to the register).
  */
-export function topUpPettyCash(data: {
+function topUpPettyCashImpl(data: {
   amount: number;
   date: string;
   notes?: string;
 }): PettyCashLedgerItem {
+  data.amount = positiveNumber(data.amount, "Top-up amount");
+  dateKey(data.date);
   if (!data.amount || data.amount <= 0) {
     throw new Error("Top up amount must be greater than zero.");
   }
@@ -271,7 +290,7 @@ export function topUpPettyCash(data: {
     row.updatedAt = now;
   } else {
     row = {
-      id: `pcl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `pcl_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
       date: data.date,
       openingBalance: 0,
       amountIn: Number(data.amount),
@@ -298,6 +317,7 @@ export function topUpPettyCash(data: {
  * closingBalance[d] = openingBalance[d] + amountIn[d] - amountOut[d]
  */
 export function recalculatePettyCashLedger(): void {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.pettyCashLedger) db.pettyCashLedger = [];
   if (!db.generalExpenses) db.generalExpenses = [];
@@ -331,7 +351,7 @@ export function recalculatePettyCashLedger(): void {
     const closingBalance = runningOpeningBalance + amountIn - amountOut;
 
     newLedger.push({
-      id: existing?.id || `pcl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: existing?.id || `pcl_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
       date: d,
       openingBalance: Math.round(runningOpeningBalance * 100) / 100,
       amountIn: Math.round(amountIn * 100) / 100,
@@ -347,6 +367,8 @@ export function recalculatePettyCashLedger(): void {
 
   db.pettyCashLedger = newLedger;
   saveDatabase(db);
+
+  });
 }
 
 /**
@@ -431,4 +453,20 @@ export function getExpenseSummaryReport(): ExpenseReportSummary {
     taggedToPlotsTotal: Math.round(taggedToPlotsTotal * 100) / 100,
     taggedToCropCyclesTotal: Math.round(taggedToCropCyclesTotal * 100) / 100,
   };
+}
+
+export function addExpense(...args: Parameters<typeof addExpenseImpl>) {
+  return withTransaction(() => addExpenseImpl(...args));
+}
+
+export function updateExpense(...args: Parameters<typeof updateExpenseImpl>) {
+  return withTransaction(() => updateExpenseImpl(...args));
+}
+
+export function deleteExpense(...args: Parameters<typeof deleteExpenseImpl>) {
+  return withTransaction(() => deleteExpenseImpl(...args));
+}
+
+export function topUpPettyCash(...args: Parameters<typeof topUpPettyCashImpl>) {
+  return withTransaction(() => topUpPettyCashImpl(...args));
 }

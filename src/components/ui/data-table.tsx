@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
+import { ChevronDown,ChevronUp,Search,SlidersHorizontal } from "lucide-react";
+import React,{ useState } from "react";
 
 export interface Column<T> {
   header: string;
@@ -16,7 +16,7 @@ interface DataTableProps<T> {
   searchField?: keyof T;
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends object>({
   data,
   columns,
   searchPlaceholder = "Search records...",

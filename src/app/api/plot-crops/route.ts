@@ -1,5 +1,5 @@
+import { createPlotCrop,createPlotCrops,deletePlotCrop,getPlotCrops,updatePlotCropStatus } from "@/lib/master-data";
 import { NextResponse } from "next/server";
-import { getPlotCrops, createPlotCrop, createPlotCrops, updatePlotCropStatus, deletePlotCrop } from "@/lib/master-data";
 
 export async function GET() {
   return NextResponse.json(getPlotCrops());

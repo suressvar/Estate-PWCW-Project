@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { createExpenseUnit,getExpenseUnits } from "@/lib/vouchers-data";
 import { NextResponse } from "next/server";
-import { getExpenseUnits, createExpenseUnit } from "@/lib/vouchers-data";
 
 export async function GET() {
   const units = getExpenseUnits();
@@ -14,8 +15,8 @@ export async function POST(req: Request) {
     }
     const newUnit = createExpenseUnit(body);
     return NextResponse.json(newUnit, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 
@@ -29,7 +30,7 @@ export async function DELETE(req: Request) {
     const { deleteExpenseUnit } = await import("@/lib/vouchers-data");
     deleteExpenseUnit(id);
     return NextResponse.json({ success: true, message: `Unit ${id} deleted successfully.` });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

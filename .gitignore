@@ -12,6 +12,38 @@
 
 # testing
 /coverage
+/test-results.json
+/unit-test-output.txt
+/lint-results.txt
+/typecheck-results.txt
+/eslint-results.json
+/test-lint-results.txt
+/.integration-app/
+/integration-artifacts/
+/integration-report/
+/integration-results.json
+/integration-output.txt
+/legacy-browser-results.json
+/legacy-browser-output.txt
+/legacy-browser-report/
+/legacy-browser-artifacts/
+/cross-browser-results.json
+/cross-browser-report/
+/cross-browser-artifacts/
+/cross-browser-output.txt
+/integration-build-output.txt
+/integration-typecheck.txt
+/integration-lint.json
+/fix-*.txt
+/fix-lint.json
+/fix-*.json
+/dependency-audit*.json
+/dependency-fix-output.txt
+/style-package-output.json
+/data/*.tmp
+/data/*.bak
+/data/*.lock
+/data/backups/
 
 # next.js
 /.next/
@@ -32,6 +64,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+/.auth/
 
 # vercel
 .vercel

@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { ShieldCheck, UserPlus, SlidersHorizontal } from "lucide-react";
-import { RoleBadge } from "@/components/ui/role-badge";
+import { ShieldCheck,UserPlus } from "lucide-react";
+import { useState } from "react";
 
 interface RoleDef {
   id: string;
@@ -66,8 +65,8 @@ const initialRoles: RoleDef[] = [
 
 export default function UsersPage() {
   const [roles, setRoles] = useState<RoleDef[]>(initialRoles);
-  const [canEdit, setCanEdit] = useState(true);
-  const [roleName, setRoleName] = useState("Admin");
+  const canEdit = false;
+  
 
   const handleTogglePerm = (roleId: string, permKey: keyof RoleDef) => {
     if (!canEdit) return;
@@ -84,11 +83,12 @@ export default function UsersPage() {
         <div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-700" />
-            <h1 className="text-xl font-bold text-slate-900">Users & Dynamic RBAC Roles Management</h1>
+            <h1 className="text-xl font-bold text-slate-900">Access & Role Templates</h1>
           </div>
         </div>
       </div>
 
+      <p className="text-sm text-slate-600">Only the administrator account can sign in. Additional user accounts are not enabled; the role templates below are read-only.</p>
       {/* Roles Permission Matrix Table */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
         <div className="p-4 border-b border-slate-100 font-bold text-xs text-slate-900 flex justify-between items-center">

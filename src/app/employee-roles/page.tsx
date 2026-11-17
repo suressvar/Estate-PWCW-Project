@@ -1,15 +1,16 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft, ShieldCheck, Plus, Trash2, CheckCircle2, ShieldAlert } from "lucide-react";
 import { EmployeeRoleItem } from "@/lib/hr-data";
+import { ArrowLeft,CheckCircle2,Plus,ShieldAlert,Trash2 } from "lucide-react";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 export default function EmployeeRolesPage() {
   const [roles, setRoles] = useState<EmployeeRoleItem[]>([]);
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const fetchRoles = async () => {
@@ -25,7 +26,11 @@ export default function EmployeeRolesPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchRoles();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -47,8 +52,8 @@ export default function EmployeeRolesPage() {
         const err = await res.json();
         setMsg({ type: "error", text: err.error || "Failed to create role" });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 

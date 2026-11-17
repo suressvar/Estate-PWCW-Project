@@ -1,35 +1,28 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import {
-  ClipboardList,
-  Calendar,
-  Filter,
-  Download,
-  ArrowLeft,
-  RefreshCw,
-  Trees,
-  Sprout,
-  Users,
-  Tractor,
-  Wallet,
-  CheckCircle2,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Clock,
-  Check,
-  ChevronDown,
-  FileSpreadsheet,
-} from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { ConsolidatedReportData } from "@/lib/consolidated-report-data";
-import { PlotItem, CropCycleItem } from "@/lib/db-storage";
+import { CropCycleItem,PlotItem } from "@/lib/db-storage";
+import {
+AlertTriangle,
+ArrowLeft,
+Check,
+CheckCircle2,
+ClipboardList,
+DollarSign,
+Download,
+FileSpreadsheet,
+Filter,
+RefreshCw,
+TrendingDown,
+TrendingUp,
+Users
+} from "lucide-react";
+import Link from "next/link";
+import { useCallback,useEffect,useState } from "react";
 
 export default function ConsolidatedReportPage() {
-  const todayStr = new Date().toISOString().split("T")[0];
+  
 
   // Filters
   const [selectedPlot, setSelectedPlot] = useState<string>("");
@@ -82,11 +75,19 @@ export default function ConsolidatedReportPage() {
   }, [selectedPlot, selectedCycle, startDate, endDate]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchOptions();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [fetchOptions]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchReport();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [fetchReport]);
 
   const handleDownloadCsv = () => {
@@ -649,7 +650,7 @@ export default function ConsolidatedReportPage() {
                     </div>
                     {act.reason && (
                       <div className="text-[11px] text-amber-700 dark:text-amber-300 italic bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded">
-                        "{act.reason}"
+                        &quot;{act.reason}&quot;
                       </div>
                     )}
                   </div>

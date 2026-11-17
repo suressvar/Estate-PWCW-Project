@@ -1,5 +1,6 @@
+import { ActivityType,addWorkActivity } from "@/lib/daily-log-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { NextResponse } from "next/server";
-import { addWorkActivity, ActivityType } from "@/lib/daily-log-data";
 
 export async function POST(
   request: Request,
@@ -20,9 +21,9 @@ export async function POST(
     });
 
     return NextResponse.json(result, { status: 201 });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Failed to add activity" },
+      { error: getErrorMessage(err) || "Failed to add activity" },
       { status: 400 }
     );
   }

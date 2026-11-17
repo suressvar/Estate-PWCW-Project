@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
 import {
-  getCropCycleById,
-  getCropCycleFinancials,
-  updateCropCycle,
-  deleteCropCycle,
+deleteCropCycle,
+getCropCycleById,
+getCropCycleFinancials,
+updateCropCycle,
 } from "@/lib/crop-cycle-data";
 import { getDatabase } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -45,8 +46,8 @@ export async function PUT(
       return NextResponse.json({ error: "Crop cycle not found" }, { status: 404 });
     }
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 

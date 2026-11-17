@@ -1,13 +1,15 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { addGodownItem,getGodownItems,getGodownStats } from "@/lib/godown-data";
+import { finiteNumber,positiveNumber,ValidationError } from '@/lib/validation';
 import { NextResponse } from "next/server";
-import { getGodownItems, getGodownStats, addGodownItem } from "@/lib/godown-data";
 
 export async function GET() {
   try {
     const items = getGodownItems();
     const stats = getGodownStats();
     return NextResponse.json({ items, stats });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -24,29 +26,21 @@ export async function POST(request: Request) {
       sourceVoucherNo: body.sourceVoucherNo,
       vendorName: body.vendorName || "Direct Procurement",
       receivedDate: body.receivedDate || new Date().toISOString().split("T")[0],
-      totalReceivedQuantity: Number(body.quantity) || Number(body.totalReceivedQuantity) || 1,
-      availableQuantity: Number(body.availableQuantity) || Number(body.quantity) || 1,
+      totalReceivedQuantity: positiveNumber(body.quantity ?? body.totalReceivedQuantity, 'Received quantity'),
+      availableQuantity: finiteNumber(body.availableQuantity ?? body.quantity ?? body.totalReceivedQuantity, 'Available quantity'),
       unit: body.unit || "units",
-      ratePerUnit: Number(body.ratePerUnit) || 0,
+      ratePerUnit: finiteNumber(body.ratePerUnit, 'Rate per unit', 0, 0),
       location: body.location || "Godown Main Storage Bay",
-      minStockAlert: Number(body.minStockAlert) || 5,
+      minStockAlert: finiteNumber(body.minStockAlert, 'Stock alert', 0, 5),
       notes: body.notes || "",
     });
 
     return NextResponse.json(newItem, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: err instanceof ValidationError || err instanceof SyntaxError ? 400 : 500 });
   }
 }
 
 export async function DELETE() {
-  try {
-    const { clearAllGodownData } = await import("@/lib/godown-data");
-    const { resetTransactionLogs } = await import("@/lib/transaction-logs");
-    clearAllGodownData();
-    resetTransactionLogs();
-    return NextResponse.json({ success: true, message: "All Godown items, movements, and test logs cleared successfully." });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
+  return NextResponse.json({ error: 'Bulk stock deletion is disabled to preserve financial history. Use the backed-up reset in Settings when intentionally resetting the entire estate.' }, { status: 409 });
 }

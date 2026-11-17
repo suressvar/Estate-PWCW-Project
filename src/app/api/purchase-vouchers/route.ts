@@ -1,16 +1,26 @@
-import { NextResponse } from "next/server";
-import { getGeneralPurchaseLogs, addGeneralPurchaseLog, deleteGeneralPurchaseLog } from "@/lib/transaction-logs";
+import { withTransaction } from "@/lib/db-storage";
+import { finiteNumber, positiveNumber, requiredText, dateKey } from "@/lib/validation";
 import { inwardPurchasedItems } from "@/lib/godown-data";
+import { addGeneralPurchaseLog,deleteGeneralPurchaseLog,getGeneralPurchaseLogs } from "@/lib/transaction-logs";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   return NextResponse.json(getGeneralPurchaseLogs());
 }
 
 export async function POST(request: Request) {
+  try {
   const body = await request.json();
   const cost = Number(body.cost) || Number(body.totalAmount) || Number(body.subtotal) || 0;
 
-  const newLog = addGeneralPurchaseLog({
+  requiredText(body.vendorName, "Supplier name");
+  if (body.date) dateKey(body.date);
+  if (!Array.isArray(body.items) || body.items.length === 0) throw new Error("Purchase items are required.");
+  for (const item of body.items) {
+    requiredText(item.description, "Item description"); positiveNumber(item.quantity, "Quantity"); finiteNumber(item.rate, "Rate");
+  }
+  const newLog = withTransaction(() => {
+  const created = addGeneralPurchaseLog({
     voucherNo: body.voucherNo,
     category: body.category || "General Estate Supplies",
     plotCropId: body.plotCropId || undefined,
@@ -43,22 +53,12 @@ export async function POST(request: Request) {
     notes: body.notes || "",
   });
 
-  // Automatically store purchased items in the Godown
-  try {
-    if (newLog.items && newLog.items.length > 0) {
-      inwardPurchasedItems(newLog.items, {
-        voucherId: newLog.id,
-        voucherNo: newLog.voucherNo,
-        category: newLog.category,
-        vendorName: newLog.vendorName,
-        date: newLog.date,
-      });
-    }
-  } catch (err) {
-    console.error("Error auto-inwarding to godown:", err);
-  }
+  inwardPurchasedItems(created.items || [], { voucherId: created.id, voucherNo: created.voucherNo, category: created.category, vendorName: created.vendorName, date: created.date });
+  return created;
+  });
 
   return NextResponse.json(newLog, { status: 201 });
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to save voucher." }, { status: 400 }); }
 }
 
 export async function DELETE(request: Request) {
@@ -67,6 +67,6 @@ export async function DELETE(request: Request) {
   if (!id) {
     return NextResponse.json({ error: "Missing ID" }, { status: 400 });
   }
-  deleteGeneralPurchaseLog(id);
+  try { deleteGeneralPurchaseLog(id); } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to delete voucher." }, { status: 400 }); }
   return NextResponse.json({ success: true });
 }

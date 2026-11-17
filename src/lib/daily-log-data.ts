@@ -1,15 +1,18 @@
+import { withTransaction } from "./db-storage";
+import { randomUUID } from "node:crypto";
 import {
-  getDatabase,
-  saveDatabase,
-  DailyLogItem,
-  WorkActivityItem,
-  DailyLogStatus,
-  ActivityType,
+ActivityType,
+DailyLogItem,
+DailyLogStatus,
+getDatabase,
+saveDatabase,
+WorkActivityItem,
 } from "./db-storage";
-import { getPlots } from "./master-data";
 import { getEmployees } from "./hr-data";
+import { getPlots } from "./master-data";
+import { dateKey,oneOf,referenceExists } from "./validation";
 
-export type { DailyLogItem, WorkActivityItem, DailyLogStatus, ActivityType };
+export type { ActivityType,DailyLogItem,DailyLogStatus,WorkActivityItem };
 
 /**
  * Format Date object to YYYY-MM-DD
@@ -34,7 +37,7 @@ export function getNextDayKey(dateStr: string): string {
 /**
  * Helper to compute DailyLog status based on its activities
  */
-export function computeDailyLogStatus(activities: WorkActivityItem[]): DailyLogStatus {
+export function computeDailyLogStatus(activities: Pick<WorkActivityItem, "completedFlag" | "plannedFlag">[]): DailyLogStatus {
   if (!activities || activities.length === 0) {
     return "PLANNED";
   }
@@ -148,6 +151,10 @@ export function upsertDailyLog(data: {
   notes?: string;
   status?: DailyLogStatus;
 }): DailyLogItem {
+  return withTransaction(() => {
+  dateKey(data.date);
+  referenceExists(data.plotId, getPlots(), "Plot");
+  if (data.status !== undefined) oneOf(data.status, ["PLANNED", "IN_PROGRESS", "COMPLETED", "NOT_DONE"], "Daily log status");
   const db = getDatabase();
   if (!db.dailyLogs) {
     db.dailyLogs = [];
@@ -180,7 +187,7 @@ export function upsertDailyLog(data: {
   // Create new record
   const now = new Date().toISOString();
   const newLog: DailyLogItem = {
-    id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `dl_${randomUUID()}_${Math.random().toString(36).substring(2, 7)}`,
     date: data.date,
     plotId: data.plotId,
     plotName,
@@ -195,6 +202,8 @@ export function upsertDailyLog(data: {
   db.dailyLogs.unshift(newLog);
   saveDatabase(db);
   return enrichDailyLog({ ...newLog });
+
+  });
 }
 
 /**
@@ -213,6 +222,7 @@ export function addWorkActivity(
     carriedForwardFromId?: string | null;
   }
 ): { activity: WorkActivityItem; dailyLog: DailyLogItem } {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.dailyLogs) {
     db.dailyLogs = [];
@@ -229,7 +239,7 @@ export function addWorkActivity(
 
   const now = new Date().toISOString();
   const newActivity: WorkActivityItem = {
-    id: `act_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `act_${randomUUID()}_${Math.random().toString(36).substring(2, 7)}`,
     dailyLogId,
     activityType: data.activityType || "OTHER",
     customActivity: data.customActivity?.trim() || undefined,
@@ -253,6 +263,8 @@ export function addWorkActivity(
     activity: { ...newActivity },
     dailyLog: enrichDailyLog({ ...log }),
   };
+
+  });
 }
 
 /**
@@ -264,6 +276,8 @@ export function updateActivityStatus(
   status: "DONE" | "NOT_DONE" | "PENDING",
   reasonIfNotDone?: string | null
 ): { activity: WorkActivityItem; dailyLog: DailyLogItem } {
+  return withTransaction(() => {
+  oneOf(status, ['DONE', 'NOT_DONE', 'PENDING'], 'Activity status');
   const db = getDatabase();
   if (!db.dailyLogs) {
     throw new Error("No daily logs found");
@@ -316,12 +330,15 @@ export function updateActivityStatus(
     activity: { ...foundActivity },
     dailyLog: enrichDailyLog({ ...parentLog }),
   };
+
+  });
 }
 
 /**
  * Delete an activity from a daily log
  */
 export function deleteWorkActivity(activityId: string): { success: boolean; dailyLog?: DailyLogItem } {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.dailyLogs) return { success: false };
 
@@ -337,6 +354,8 @@ export function deleteWorkActivity(activityId: string): { success: boolean; dail
   }
 
   return { success: false };
+
+  });
 }
 
 /**
@@ -352,6 +371,7 @@ export function autoTransitionPastPlannedActivities(referenceDateStr?: string): 
   transitionedActivitiesCount: number;
   carriedForwardCount: number;
 } {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.dailyLogs || db.dailyLogs.length === 0) {
     return { transitionedActivitiesCount: 0, carriedForwardCount: 0 };
@@ -394,7 +414,7 @@ export function autoTransitionPastPlannedActivities(referenceDateStr?: string): 
           const plots = getPlots();
           const plot = plots.find((p) => p.id === log.plotId);
           nextDayLog = {
-            id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            id: `dl_${randomUUID()}_${Math.random().toString(36).substring(2, 7)}`,
             date: nextDayStr,
             plotId: log.plotId,
             plotName: plot ? plot.name : log.plotName,
@@ -416,7 +436,7 @@ export function autoTransitionPastPlannedActivities(referenceDateStr?: string): 
         if (!alreadyCarried) {
           const now = new Date().toISOString();
           const carriedActivity: WorkActivityItem = {
-            id: `act_cf_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            id: `act_cf_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
             dailyLogId: nextDayLog.id,
             activityType: activity.activityType,
             customActivity: activity.customActivity,
@@ -451,6 +471,8 @@ export function autoTransitionPastPlannedActivities(referenceDateStr?: string): 
     transitionedActivitiesCount,
     carriedForwardCount,
   };
+
+  });
 }
 
 /**

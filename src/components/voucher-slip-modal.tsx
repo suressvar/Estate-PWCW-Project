@@ -1,20 +1,22 @@
 "use client";
 
-import React from "react";
 import {
-  Printer,
-  X,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  FileCheck,
-  Phone,
-  MapPin,
-  Trees,
+AlertCircle,
+CheckCircle2,
+Clock,
+FileCheck,
+MapPin,
+Maximize2,
+Minimize2,
+Phone,
+Printer,
+Trees,
+X,
 } from "lucide-react";
+import { useEffect,useState } from "react";
 
 export interface VoucherSlipData {
-  voucherType: "SALES" | "PURCHASE" | "OTHER";
+  voucherType: "SALES" | "PURCHASE" | "OTHER" | "EXPENSE" | "PETTY_CASH";
   voucherNo: string;
   date: string;
   title?: string;
@@ -50,6 +52,7 @@ interface VoucherSlipModalProps {
   isOpen: boolean;
   onClose: () => void;
   voucher: VoucherSlipData | null;
+  initialFullPage?: boolean;
 }
 
 // Number to Words Converter in Indian Numbering System
@@ -123,7 +126,17 @@ function numberToWords(num: number): string {
   return `Rupees ${inWords(integerPart)} Only`;
 }
 
-export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalProps) {
+export function VoucherSlipModal({ isOpen, onClose, voucher, initialFullPage = true }: VoucherSlipModalProps) {
+  const [isFullPage, setIsFullPage] = useState(initialFullPage);
+
+  useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
+    setIsFullPage(initialFullPage);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [initialFullPage, isOpen]);
+
   if (!isOpen || !voucher) return null;
 
   const isSales = voucher.voucherType === "SALES";
@@ -135,16 +148,36 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static">
-      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8 print:shadow-none print:border-none print:my-0">
+      <div
+        className={`relative w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all duration-200 print:shadow-none print:border-none print:my-0 ${
+          isFullPage ? "max-w-6xl my-4 min-h-[92vh]" : "max-w-3xl my-8"
+        }`}
+      >
         {/* Modal Top Actions Header (hidden in print) */}
         <div className="flex items-center justify-between px-6 py-3 bg-slate-900 text-white print:hidden">
           <div className="flex items-center gap-2">
             <FileCheck className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-200">
-              {isSales ? "Estate Sales Voucher Preview" : voucher.voucherType === "OTHER" ? "Estate Other Purchase Voucher Preview" : "Estate Purchase Voucher Preview"}
+              {isSales
+                ? "Estate Sales Voucher Preview"
+                : voucher.voucherType === "EXPENSE"
+                ? "Estate Expense Payment Voucher Preview"
+                : voucher.voucherType === "PETTY_CASH"
+                ? "Estate Petty Cash Voucher Preview"
+                : voucher.voucherType === "OTHER"
+                ? "Estate Other Operational Voucher Preview"
+                : "Estate Purchase Voucher Preview"}
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsFullPage(!isFullPage)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors cursor-pointer border border-slate-700"
+              title={isFullPage ? "Compact View" : "Expand to Full Page"}
+            >
+              {isFullPage ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              <span>{isFullPage ? "Compact View" : "Expand to Full Page"}</span>
+            </button>
             <button
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors shadow-xs cursor-pointer"
@@ -190,10 +223,22 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
                   className={`inline-block px-3 py-1 text-xs font-black tracking-wider uppercase rounded-md shadow-xs ${
                     isSales
                       ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                      : voucher.voucherType === "EXPENSE"
+                      ? "bg-blue-100 text-blue-900 border border-blue-300"
+                      : voucher.voucherType === "PETTY_CASH"
+                      ? "bg-amber-100 text-amber-900 border border-amber-300"
                       : "bg-emerald-100 text-emerald-900 border border-emerald-300/80"
                   }`}
                 >
-                  {isSales ? "OFFICIAL SALES VOUCHER" : voucher.voucherType === "OTHER" ? "OTHER PURCHASES VOUCHER" : "OFFICIAL PURCHASE VOUCHER"}
+                  {isSales
+                    ? "OFFICIAL SALES VOUCHER"
+                    : voucher.voucherType === "EXPENSE"
+                    ? "OFFICIAL EXPENSE PAYMENT VOUCHER"
+                    : voucher.voucherType === "PETTY_CASH"
+                    ? "OFFICIAL PETTY CASH VOUCHER"
+                    : voucher.voucherType === "OTHER"
+                    ? "OFFICIAL OPERATIONAL VOUCHER"
+                    : "OFFICIAL PURCHASE VOUCHER"}
                 </span>
                 <div className="mt-2 text-xs text-slate-700 font-mono font-bold">
                   VOUCHER NO: <span className="text-slate-950 font-black">{voucher.voucherNo}</span>
@@ -211,7 +256,13 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
                 <span className="font-bold text-slate-600 uppercase tracking-wider text-[10px]">
-                  {isSales ? "Billed To / Buyer Details" : "Vendor / Supplier Details"}
+                  {isSales
+                    ? "Billed To / Buyer Details"
+                    : voucher.voucherType === "EXPENSE"
+                    ? "Paid To / Beneficiary Details"
+                    : voucher.voucherType === "PETTY_CASH"
+                    ? "Petty Cash Account / Custodian"
+                    : "Vendor / Supplier Details"}
                 </span>
                 {voucher.paymentStatus && (
                   <span
@@ -418,7 +469,13 @@ export function VoucherSlipModal({ isOpen, onClose, voucher }: VoucherSlipModalP
                   {voucher.partyName ? `For ${voucher.partyName}` : "—"}
                 </div>
                 <p className="mt-1 font-bold text-slate-700 text-[11px]">
-                  {isSales ? "Customer / Receiver" : "Vendor / Supplier"}
+                  {isSales
+                    ? "Customer / Receiver"
+                    : voucher.voucherType === "EXPENSE"
+                    ? "Payee / Receiver"
+                    : voucher.voucherType === "PETTY_CASH"
+                    ? "Receiver / Bearer"
+                    : "Vendor / Supplier"}
                 </p>
                 <p className="text-[10px] text-slate-400">Acknowledgment Signature</p>
               </div>

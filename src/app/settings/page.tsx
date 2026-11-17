@@ -1,8 +1,9 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState } from "react";
-import { Settings, Trash2, AlertTriangle, CheckCircle } from "lucide-react";
+import { AlertTriangle,CheckCircle,Settings,Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -30,8 +31,8 @@ export default function SettingsPage() {
       } else {
         setError(data.error || "Failed to reset data.");
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err) {
+      setError(getErrorMessage(err) || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }

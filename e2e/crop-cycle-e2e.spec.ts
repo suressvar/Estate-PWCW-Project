@@ -1,15 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+import { authenticate } from "./auth";
 
 test.describe("Epic: Seed-to-Harvest Financial Ledger per Plot & Crop Cycle", () => {
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      { name: "estate_authenticated", value: "true", domain: "localhost", path: "/" },
-    ]);
+    await authenticate(context);
   });
 
   test("Create a crop cycle, add 3 expenses and 2 incomes, verify exact P&L on detail page and plot rollup", async ({
-    page,
+    page, context,
   }) => {
+    const plotName = `Crop Ledger Plot ${Date.now()}`;
+    const response = await context.request.post('/api/plots', { data: { name: plotName, location: 'Test', areaAcres: 5, status: 'ACTIVE' } });
+    expect(response.ok()).toBeTruthy();
+    const plot = await response.json();
     // 1. Navigate to Crop Cycles Overview
     await page.goto("http://localhost:3000/crop-cycles");
     await expect(page.locator("main h1")).toContainText("Crop Cycles Financial Performance");
@@ -20,6 +23,7 @@ test.describe("Epic: Seed-to-Harvest Financial Ledger per Plot & Crop Cycle", ()
 
     // Fill new cycle form
     const uniqueCycleName = `Tomato Monsoon 2026 - ${Date.now()}`;
+    await page.selectOption('#cycle-plot-select', plot.id);
     await page.fill("#cycle-crop-name-input", uniqueCycleName);
     await page.fill("#cycle-crop-type-input", "Vegetables");
     await page.fill("#cycle-sowing-date-input", "2026-06-01");
@@ -105,7 +109,7 @@ test.describe("Epic: Seed-to-Harvest Financial Ledger per Plot & Crop Cycle", ()
     await expect(page.locator("#plot-rollups-table")).toBeVisible();
 
     // Verify plot table and grid display updated totals
-    await expect(page.locator("#plot-rollups-table")).toContainText("Plot A");
+    await expect(page.locator("#plot-rollups-table")).toContainText(plotName);
     await expect(page.locator("#crop-cycles-grid")).toContainText(uniqueCycleName);
     await expect(page.locator("#crop-cycles-grid")).toContainText("₹19,000");
     await expect(page.locator("#crop-cycles-grid")).toContainText("₹43,000");

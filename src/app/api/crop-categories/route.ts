@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
 import {
-  getCropCategories,
-  createCropCategory,
-  deleteCropCategory,
+createCropCategory,
+deleteCropCategory,
+getCropCategories,
 } from "@/lib/master-data";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     const categories = getCropCategories();
     return NextResponse.json(categories);
-  } catch (error) {
+  } catch  {
     return NextResponse.json(
       { error: "Failed to fetch crop categories" },
       { status: 500 }
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
     const newCategory = createCropCategory(body.category);
     return NextResponse.json({ category: newCategory }, { status: 201 });
-  } catch (error) {
+  } catch  {
     return NextResponse.json(
       { error: "Failed to create crop category" },
       { status: 500 }
@@ -48,7 +48,7 @@ export async function DELETE(request: Request) {
     }
     deleteCropCategory(category);
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch  {
     return NextResponse.json(
       { error: "Failed to delete crop category" },
       { status: 500 }

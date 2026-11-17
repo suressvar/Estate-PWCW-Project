@@ -1,34 +1,30 @@
 "use client";
+import { useCallback } from 'react';
 
-import React, { useState, useEffect, useMemo } from "react";
-import type { PlotCropAssociation, PlotItem, CropItem } from "@/types/estate";
-import { RoleBadge } from "@/components/ui/role-badge";
 import { PlotsCropsNav } from "@/components/plots-crops-nav";
+import type { CropItem,PlotCropAssociation,PlotItem } from "@/types/estate";
 import {
-  Link2,
-  Plus,
-  Trash2,
-  CheckCircle,
-  Clock,
-  ShieldAlert,
-  SlidersHorizontal,
-  Search,
-  Layers,
-  LayoutGrid,
-  List,
-  MapPin,
-  Sprout,
-  Check,
-  X,
-  AlertCircle,
+Check,
+CheckCircle,
+Clock,
+LayoutGrid,
+Link2,
+List,
+MapPin,
+Plus,
+Search,
+ShieldAlert,
+Sprout,
+Trash2,
+X
 } from "lucide-react";
+import React,{ useEffect,useMemo,useState } from "react";
 
 export default function PlotCropsPage() {
   const [associations, setAssociations] = useState<PlotCropAssociation[]>([]);
   const [plots, setPlots] = useState<PlotItem[]>([]);
   const [crops, setCrops] = useState<CropItem[]>([]);
-  const [canEdit, setCanEdit] = useState<boolean>(true);
-  const [roleName, setRoleName] = useState<string>("Admin");
+  const canEdit = true;
 
   // View state
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
@@ -43,7 +39,7 @@ export default function PlotCropsPage() {
   const [cropTypeFilter, setCropTypeFilter] = useState<string>("ALL");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const [assocRes, plotsRes, cropsRes] = await Promise.all([
       fetch("/api/plot-crops"),
       fetch("/api/plots"),
@@ -60,23 +56,18 @@ export default function PlotCropsPage() {
     setPlots(plotsData);
     setCrops(cropsData);
 
-    if (plotsData.length > 0 && !selectedPlotId) setSelectedPlotId(plotsData[0].id);
-    if (cropsData.length > 0 && selectedCropIds.length === 0) setSelectedCropIds([cropsData[0].id]);
-  };
-
-  useEffect(() => {
-    fetchData();
+    if (plotsData.length > 0) setSelectedPlotId(previous => previous || plotsData[0].id);
   }, []);
 
-  const handleToggleRole = () => {
-    if (canEdit) {
-      setCanEdit(false);
-      setRoleName("Field Staff");
-    } else {
-      setCanEdit(true);
-      setRoleName("Admin");
-    }
-  };
+  useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
+    fetchData();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchData]);
+
+  
 
   const handleOpenCreate = (targetPlotId?: string) => {
     const plotIdToSet = targetPlotId || (plots.length > 0 ? plots[0].id : "");
@@ -173,7 +164,7 @@ export default function PlotCropsPage() {
   }, [crops]);
 
   // Modal crop search & filter
-  const filteredCropsInModal = useMemo(() => {
+  const filteredCropsInModal = (() => {
     return crops.filter((crop) => {
       const matchesSearch = crop.name
         .toLowerCase()
@@ -182,7 +173,7 @@ export default function PlotCropsPage() {
         cropTypeFilter === "ALL" || crop.type.toUpperCase() === cropTypeFilter.toUpperCase();
       return matchesSearch && matchesType;
     });
-  }, [crops, cropSearchTerm, cropTypeFilter]);
+  })();
 
   // Selected plot object for info display
   const currentSelectedPlot = plots.find((p) => p.id === selectedPlotId);
@@ -295,7 +286,7 @@ export default function PlotCropsPage() {
           {plots.map((plot) => {
             const plotAssocs = associations.filter((a) => a.plotId === plot.id);
             const activeAssocs = plotAssocs.filter((a) => a.status === "ACTIVE");
-            const completedAssocs = plotAssocs.filter((a) => a.status === "COMPLETED");
+            
 
             return (
               <div
@@ -618,6 +609,14 @@ export default function PlotCropsPage() {
                         <div
                           key={crop.id}
                           data-testid={`crop-checkbox-${crop.name}`}
+                          role="checkbox"
+                          aria-checked={isSelected}
+                          tabIndex={0}
+                          onKeyDown={(event) => {
+                            if (event.key === ' ' || event.key === 'Enter') {
+                              event.preventDefault(); toggleCropSelection(crop.id);
+                            }
+                          }}
                           onClick={() => toggleCropSelection(crop.id)}
                           className={`p-2 rounded-md border flex items-center justify-between gap-2 cursor-pointer transition-all ${
                             isSelected

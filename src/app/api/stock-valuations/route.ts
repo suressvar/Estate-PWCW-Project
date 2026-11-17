@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { createStockValuation,getStockValuations } from "@/lib/inventory-data";
 import { NextResponse } from "next/server";
-import { getStockValuations, createStockValuation } from "@/lib/inventory-data";
 
 export async function GET() {
   const valuations = getStockValuations();
@@ -11,7 +12,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const created = createStockValuation(body);
     return NextResponse.json(created, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

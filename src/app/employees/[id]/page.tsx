@@ -1,23 +1,18 @@
 "use client";
+import type { AttendanceRecord,LeaveRecord,WageRecord } from "@/lib/db-storage";
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  Calendar,
-  DollarSign,
-  FileText,
-  Phone,
-  MapPin,
-  Building,
-  CreditCard,
-  CheckCircle2,
-  Clock,
-  ShieldCheck,
-  UserCheck,
-} from "lucide-react";
 import { EmployeeItem } from "@/lib/hr-data";
+import {
+ArrowLeft,
+Building,
+Calendar,
+DollarSign,
+MapPin,
+Phone,
+UserCheck
+} from "lucide-react";
+import { useParams,useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
 
 export default function EmployeeDetailPage() {
   const params = useParams();
@@ -25,11 +20,12 @@ export default function EmployeeDetailPage() {
   const id = params.id as string;
 
   const [employee, setEmployee] = useState<EmployeeItem | null>(null);
-  const [attendance, setAttendance] = useState<any[]>([]);
-  const [wages, setWages] = useState<any[]>([]);
-  const [leaves, setLeaves] = useState<any[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [wages, setWages] = useState<WageRecord[]>([]);
+  const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [activeTab, setActiveTab] = useState<"attendance" | "wages" | "leaves">("attendance");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -42,18 +38,20 @@ export default function EmployeeDetailPage() {
         ]);
 
         const empData = await empRes.json();
+        if (!empRes.ok) { setLoadError(empRes.status === 404 ? 'Employee not found.' : 'Unable to load employee profile.'); return; }
         const attData = await attRes.json();
         const wagesData = await wagesRes.json();
         const leavesData = await leavesRes.json();
 
         setEmployee(empData);
         if (attData.records) {
-          setAttendance(attData.records.filter((r: any) => r.employeeId === id));
+          setAttendance(attData.records.filter((r: AttendanceRecord) => r.employeeId === id));
         }
-        setWages(wagesData.filter((w: any) => w.employeeId === id));
-        setLeaves(leavesData.filter((l: any) => l.employeeId === id));
+        setWages(wagesData.filter((w: WageRecord) => w.employeeId === id));
+        setLeaves(leavesData.filter((l: LeaveRecord) => l.employeeId === id));
       } catch (e) {
         console.error(e);
+        setLoadError('Unable to load employee profile. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -61,6 +59,7 @@ export default function EmployeeDetailPage() {
     load();
   }, [id]);
 
+  if (loadError) return <div role="alert" className="p-12 text-center text-slate-600">{loadError}</div>;
   if (loading || !employee) {
     return <div className="p-12 text-center text-slate-500 font-medium">Loading employee profile...</div>;
   }

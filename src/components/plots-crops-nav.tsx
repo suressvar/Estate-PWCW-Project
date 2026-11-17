@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
+import { CircleDollarSign,Link2,MapPin,Sprout } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Link2, MapPin, Sprout, CircleDollarSign } from "lucide-react";
 
 interface PlotsCropsNavProps {
   stats?: {

@@ -1,8 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+import { authenticate } from "./auth";
 
 test.describe("Epic: Settings & Reset Operations", () => {
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([{ name: "estate_authenticated", value: "true", domain: "localhost", path: "/" }]);
+    await authenticate(context);
   });
 
   test("navigate to settings page and trigger a full database reset", async ({ page }) => {

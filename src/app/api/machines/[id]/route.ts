@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getMachineById, updateMachine, deleteMachine } from "@/lib/machinery-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { deleteMachine,getMachineById,updateMachine } from "@/lib/machinery-data";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
@@ -15,9 +16,9 @@ export async function GET(
       );
     }
     return NextResponse.json({ success: true, data: machine });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch machine" },
+      { success: false, error: getErrorMessage(error) || "Failed to fetch machine" },
       { status: 500 }
     );
   }
@@ -38,9 +39,9 @@ export async function PUT(
       );
     }
     return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to update machine" },
+      { success: false, error: getErrorMessage(error) || "Failed to update machine" },
       { status: 400 }
     );
   }
@@ -60,9 +61,9 @@ export async function DELETE(
       );
     }
     return NextResponse.json({ success: true, message: "Machine deleted successfully" });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to delete machine" },
+      { success: false, error: getErrorMessage(error) || "Failed to delete machine" },
       { status: 500 }
     );
   }

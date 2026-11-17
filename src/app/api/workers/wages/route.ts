@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
-import {
-  getWageRegister,
-  recordWagePayment,
-  syncWageToCropExpense,
-} from "@/lib/worker-data";
 import { WagePaidStatus } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import {
+getWageRegister,
+recordWagePayment,
+syncWageToCropExpense,
+} from "@/lib/worker-data";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     const updated = recordWagePayment(body.wageId, {
-      paidAmount: Number(body.paidAmount),
+      paidAmount: body.paidAmount,
       paidDate: body.paidDate,
       paymentNotes: body.paymentNotes,
     });
@@ -47,9 +48,9 @@ export async function POST(request: Request) {
     syncWageToCropExpense(updated);
 
     return NextResponse.json(updated);
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Failed to record wage payment" },
+      { error: getErrorMessage(err) || "Failed to record wage payment" },
       { status: 400 }
     );
   }

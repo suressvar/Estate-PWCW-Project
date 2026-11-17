@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
-  getDailyAttendanceSheet,
-  upsertWorkerAttendanceAndWage,
+getDailyAttendanceSheet,
+upsertWorkerAttendanceAndWage,
 } from "@/lib/worker-data";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -34,16 +35,16 @@ export async function POST(request: Request) {
       status: body.status,
       checkInTime: body.checkInTime,
       checkOutTime: body.checkOutTime,
-      hoursWorked: body.hoursWorked !== undefined ? Number(body.hoursWorked) : undefined,
+      hoursWorked: body.hoursWorked,
       notes: body.notes,
       cropCycleId: body.cropCycleId,
-      manualWageOverride: body.manualWageOverride !== undefined ? Number(body.manualWageOverride) : undefined,
+      manualWageOverride: body.manualWageOverride,
     });
 
     return NextResponse.json(result, { status: 200 });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Failed to update attendance" },
+      { error: getErrorMessage(err) || "Failed to update attendance" },
       { status: 400 }
     );
   }

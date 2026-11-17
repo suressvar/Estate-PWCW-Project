@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getMachines, createMachine } from "@/lib/machinery-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { createMachine,getMachines } from "@/lib/machinery-data";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,9 +9,9 @@ export async function GET(request: NextRequest) {
 
     const machines = getMachines({ activeOnly });
     return NextResponse.json({ success: true, data: machines });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch machines" },
+      { success: false, error: getErrorMessage(error) || "Failed to fetch machines" },
       { status: 500 }
     );
   }
@@ -21,9 +22,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const machine = createMachine(body);
     return NextResponse.json({ success: true, data: machine }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to create machine" },
+      { success: false, error: getErrorMessage(error) || "Failed to create machine" },
       { status: 400 }
     );
   }

@@ -1,30 +1,27 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import type { PlotItem, PlotCropAssociation, CropItem } from "@/types/estate";
-import { RoleBadge } from "@/components/ui/role-badge";
 import { PlotsCropsNav } from "@/components/plots-crops-nav";
+import type { CropItem,PlotCropAssociation,PlotItem } from "@/types/estate";
 import {
-  MapPin,
-  Plus,
-  Edit2,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  ShieldAlert,
-  SlidersHorizontal,
-  Sprout,
-  Check,
-  X,
-  Search,
+Check,
+CheckCircle,
+Edit2,
+MapPin,
+Plus,
+Search,
+ShieldAlert,
+Sprout,
+Trash2,
+X,
+XCircle
 } from "lucide-react";
+import React,{ useEffect,useState } from "react";
 
 export default function PlotsPage() {
   const [plots, setPlots] = useState<PlotItem[]>([]);
   const [associations, setAssociations] = useState<PlotCropAssociation[]>([]);
   const [crops, setCrops] = useState<CropItem[]>([]);
-  const [canEdit, setCanEdit] = useState<boolean>(true);
-  const [roleName, setRoleName] = useState<string>("Admin");
+  const canEdit = true;
 
   // Plot Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -58,18 +55,14 @@ export default function PlotsPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
-  const handleToggleRole = () => {
-    if (canEdit) {
-      setCanEdit(false);
-      setRoleName("Field Staff");
-    } else {
-      setCanEdit(true);
-      setRoleName("Admin");
-    }
-  };
+  
 
   const handleOpenCreate = () => {
     setEditingId(null);

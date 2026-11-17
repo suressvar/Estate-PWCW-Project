@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { deleteWorker,getWorkerById,updateWorker } from "@/lib/worker-data";
 import { NextResponse } from "next/server";
-import { getWorkerById, updateWorker, deleteWorker } from "@/lib/worker-data";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +28,8 @@ export async function PUT(
       return NextResponse.json({ error: "Worker not found" }, { status: 404 });
     }
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 
@@ -39,6 +40,7 @@ export async function DELETE(
   const { id } = await params;
   const success = deleteWorker(id);
   if (!success) {
+    if (getWorkerById(id)) return NextResponse.json({ error: 'Paid wage history must be retained. Deactivate this worker instead.' }, { status: 409 });
     return NextResponse.json({ error: "Worker not found" }, { status: 404 });
   }
   return NextResponse.json({ success: true });

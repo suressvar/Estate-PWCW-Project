@@ -1,14 +1,14 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+import { authenticate } from "./auth";
 
 test.describe("Epic: Daily Work Tracking & Operations Module", () => {
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      { name: "estate_authenticated", value: "true", domain: "localhost", path: "/" },
-    ]);
+    await authenticate(context);
   });
 
   test("1. Navigate to Daily Work Log, add planned activities, toggle Done and Not Done with reason", async ({ page }) => {
     await page.goto("http://localhost:3000/daily-log");
+    await page.click("#tab-task-board");
     await expect(page.locator("main h1")).toContainText("Daily Work Tracking");
 
     // Select Plot A - North Field

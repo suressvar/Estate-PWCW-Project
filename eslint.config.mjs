@@ -11,6 +11,12 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "coverage/**",
+    ".integration-app/**",
+    "integration-artifacts/**",
+    "integration-report/**",
+    "legacy-browser-artifacts/**",
+    "legacy-browser-report/**",
     "next-env.d.ts",
   ]),
 ]);

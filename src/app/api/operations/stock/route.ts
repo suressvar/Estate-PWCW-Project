@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
-  getModuleStockSummary,
-  addGodownItem,
+addGodownItem,
+getModuleStockSummary,
 } from "@/lib/godown-data";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,8 @@ export async function GET(request: Request) {
     const moduleName = searchParams.get("module") || "Fertilizer";
     const data = getModuleStockSummary(moduleName);
     return NextResponse.json(data);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(newItem, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

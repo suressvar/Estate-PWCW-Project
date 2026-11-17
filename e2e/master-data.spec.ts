@@ -1,8 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+import { authenticate } from "./auth";
 
 test.describe("Epic: Plot/Crop Master Data Management", () => {
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([{ name: "estate_authenticated", value: "true", domain: "localhost", path: "/" }]);
+    await authenticate(context);
   });
 
   test("create a plot, create a crop, assign crop to plot, verify in plot_crops list", async ({ page }) => {
@@ -44,27 +45,39 @@ test.describe("Epic: Plot/Crop Master Data Management", () => {
     await expect(page.locator("table")).toContainText("Mango Harvest");
   });
 
-  test("assign multiple crops to a plot simultaneously via batch assignment modal", async ({ page }) => {
+  test("assign multiple crops to a plot simultaneously via batch assignment modal", async ({ page, context }) => {
+    const stamp = Date.now();
+    const plotName = `Batch Plot ${stamp}`;
+    const plotResponse = await context.request.post('/api/plots', { data: { name: plotName, location: 'Test', areaAcres: 12.5, status: 'ACTIVE' } });
+    expect(plotResponse.ok()).toBeTruthy();
+    const plot = await plotResponse.json();
+    const cropNames = [`Coconut ${stamp}`, `Weeding ${stamp}`];
+    for (const name of cropNames) {
+      const response = await context.request.post('/api/crops', { data: { name, type: 'CROP' } });
+      expect(response.ok()).toBeTruthy();
+    }
     await page.goto("http://localhost:3000/plot-crops");
     await expect(page.locator("main h1")).toContainText("Plot-Crop Active Tracking Associations");
 
     // Open multi-crop assignment modal
     await page.click("#add-plot-crop-btn");
 
-    // Select Plot A - North Field
-    await page.selectOption("#assoc-plot-select", { label: "Plot A - North Field (12.5 Acres)" });
+    await page.selectOption("#assoc-plot-select", plot.id);
 
     // Select multiple crops via the interactive checkbox grid inside the form modal
-    await page.locator('[data-testid="crop-checkbox-Coconut"]').click();
-    await page.locator('[data-testid="crop-checkbox-Weeding & Tying"]').click();
+    await page.getByRole('button', { name: 'Clear', exact: true }).click();
+    for (const name of cropNames) {
+      const checkbox = page.getByTestId(`crop-checkbox-${name}`);
+      await expect(checkbox).not.toBeChecked();
+      await checkbox.click();
+      await expect(checkbox).toBeChecked();
+    }
 
     // Submit assignment
     await page.click("#save-assoc-btn");
 
-    // Verify both newly assigned crops appear for Plot A
-    await expect(page.locator("table")).toContainText("Plot A - North Field");
-    await expect(page.locator("table")).toContainText("Coconut");
-    await expect(page.locator("table")).toContainText("Weeding & Tying");
+    await expect(page.locator("table")).toContainText(plotName);
+    for (const name of cropNames) await expect(page.locator('table')).toContainText(name);
   });
 
   test("verify Plots, Crops, and Plot-Crops are inside a single menu Plots-Crops in the sidebar", async ({ page }) => {

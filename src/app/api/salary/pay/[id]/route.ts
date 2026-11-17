@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { markWagePaid,updateWageRecord } from "@/lib/hr-data";
 import { NextResponse } from "next/server";
-import { markWagePaid, updateWageRecord } from "@/lib/hr-data";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -8,8 +9,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const updated = markWagePaid(id, body);
     if (!updated) return NextResponse.json({ error: "Wage record not found" }, { status: 404 });
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 
@@ -20,7 +21,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const updated = updateWageRecord(id, body);
     if (!updated) return NextResponse.json({ error: "Wage record not found" }, { status: 404 });
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

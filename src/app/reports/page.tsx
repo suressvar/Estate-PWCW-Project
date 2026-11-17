@@ -1,15 +1,17 @@
 "use client";
+import { useCallback } from 'react';
+import type { DashboardAnalytics } from "@/types/api";
 
-import React, { useState, useEffect } from "react";
-import { BarChart3, Calendar, FileText, Printer } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
+import { BarChart3,Calendar,FileText,Printer } from "lucide-react";
+import { useEffect,useState } from "react";
 
 export default function ReportsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     let url = "/api/analytics";
     const params = new URLSearchParams();
     if (startDate) params.append("startDate", startDate);
@@ -19,11 +21,15 @@ export default function ReportsPage() {
     const res = await fetch(url);
     const data = await res.json();
     setAnalytics(data);
-  };
+  }, [endDate, startDate]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchAnalytics();
-  }, [startDate, endDate]);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [startDate, endDate, fetchAnalytics]);
 
   if (!analytics) {
     return <div className="p-8 text-center text-xs text-slate-500 font-semibold">Generating Financial Reports...</div>;
@@ -107,7 +113,7 @@ export default function ReportsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200/80 bg-white">
-            {plotPnL.map((item: any, idx: number) => (
+            {plotPnL.map((item, idx: number) => (
               <tr key={idx} className="hover:bg-slate-50/80">
                 <td className="p-3 font-bold text-slate-900">{item.plot}</td>
                 <td className="p-3 text-emerald-700 font-semibold">₹{item.Revenue.toLocaleString()}</td>
@@ -137,7 +143,7 @@ export default function ReportsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200/80 bg-white">
-            {cropPnL.map((item: any, idx: number) => (
+            {cropPnL.map((item, idx: number) => (
               <tr key={idx} className="hover:bg-slate-50/80">
                 <td className="p-3 font-bold text-slate-900">{item.crop}</td>
                 <td className="p-3 text-emerald-700 font-semibold">₹{item.Revenue.toLocaleString()}</td>

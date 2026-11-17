@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
-  getWorkerActivityLogs,
-  addWorkerActivityLog,
-  deleteWorkerActivityLog,
+addWorkerActivityLog,
+deleteWorkerActivityLog,
+getWorkerActivityLogs,
 } from "@/lib/worker-data";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -51,9 +52,9 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(activity, { status: 201 });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Failed to log worker activity" },
+      { error: getErrorMessage(err) || "Failed to log worker activity" },
       { status: 400 }
     );
   }

@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
-  getExpenses,
-  addExpense,
-  updateExpense,
-  deleteExpense,
-  getExpenseSummaryReport,
-  ExpenseCategory,
+addExpense,
+deleteExpense,
+ExpenseCategory,
+getExpenses,
+getExpenseSummaryReport,
+updateExpense,
 } from "@/lib/expenses-data";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,9 +33,9 @@ export async function GET(request: NextRequest) {
       endDate,
     });
     return NextResponse.json({ success: true, data: expenses });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch expenses" },
+      { success: false, error: getErrorMessage(error) || "Failed to fetch expenses" },
       { status: 500 }
     );
   }
@@ -45,9 +46,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const expense = addExpense(body);
     return NextResponse.json({ success: true, data: expense }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to create expense" },
+      { success: false, error: getErrorMessage(error) || "Failed to create expense" },
       { status: 400 }
     );
   }
@@ -71,9 +72,9 @@ export async function PUT(request: NextRequest) {
       );
     }
     return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to update expense" },
+      { success: false, error: getErrorMessage(error) || "Failed to update expense" },
       { status: 400 }
     );
   }
@@ -97,9 +98,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
     return NextResponse.json({ success: true, message: "Expense deleted successfully" });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to delete expense" },
+      { success: false, error: getErrorMessage(error) || "Failed to delete expense" },
       { status: 500 }
     );
   }

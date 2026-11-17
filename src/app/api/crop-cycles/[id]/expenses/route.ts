@@ -1,5 +1,6 @@
+import { addCropExpense,deleteCropExpense,getCropCycleFinancials } from "@/lib/crop-cycle-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { NextResponse } from "next/server";
-import { addCropExpense, deleteCropExpense, getCropCycleFinancials } from "@/lib/crop-cycle-data";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +32,9 @@ export async function POST(
       },
       { status: 201 }
     );
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Failed to log expense" },
+      { error: getErrorMessage(err) || "Failed to log expense" },
       { status: 400 }
     );
   }

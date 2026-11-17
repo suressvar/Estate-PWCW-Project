@@ -1,32 +1,29 @@
+import { employeeDailyRate } from "./payroll";
+import { getWorkers, upsertWorkerAttendanceAndWage } from "./worker-data";
+import { referenceExists } from "./validation";
+import { assertRecordId } from "./validation";
+import { randomUUID } from "node:crypto";
+import { withTransaction } from "./db-storage";
 import {
-  getDatabase,
-  saveDatabase,
-  EmployeeStatus,
-  WageType,
-  AttendanceStatus,
-  WageStatus,
-  LeaveType,
-  LeaveStatus,
-  EmployeeRoleItem,
-  EmployeeItem,
-  AttendanceRecord,
-  WageRecord,
-  LeaveRecord,
-  WorkerAttendanceStatus,
+AttendanceRecord,
+AttendanceStatus,
+EmployeeItem,
+EmployeeRoleItem,
+EmployeeStatus,
+getDatabase,
+LeaveRecord,
+LeaveStatus,
+LeaveType,
+saveDatabase,
+WageRecord,
+WageStatus,
+WageType,
+WorkerAttendanceStatus,
 } from "./db-storage";
+import { dateKey,dateRange,finiteNumber,oneOf,requiredText } from "./validation";
 
 export type {
-  EmployeeStatus,
-  WageType,
-  AttendanceStatus,
-  WageStatus,
-  LeaveType,
-  LeaveStatus,
-  EmployeeRoleItem,
-  EmployeeItem,
-  AttendanceRecord,
-  WageRecord,
-  LeaveRecord,
+AttendanceRecord,AttendanceStatus,EmployeeItem,EmployeeRoleItem,EmployeeStatus,LeaveRecord,LeaveStatus,LeaveType,WageRecord,WageStatus,WageType
 };
 
 // =================== ROLES ===================
@@ -38,30 +35,40 @@ export function createEmployeeRole(
   roleNameOrData: string | Omit<EmployeeRoleItem, "id">,
   description?: string
 ): EmployeeRoleItem {
+  return withTransaction(() => {
   const db = getDatabase();
   const newRole: EmployeeRoleItem =
     typeof roleNameOrData === "string"
-      ? { id: `er_${Date.now()}`, roleName: roleNameOrData, description }
-      : { ...roleNameOrData, id: `er_${Date.now()}` };
+      ? { id: `er_${randomUUID()}`, roleName: roleNameOrData, description }
+      : { ...roleNameOrData, id: `er_${randomUUID()}` };
   db.employeeRoles.push(newRole);
   saveDatabase(db);
   return newRole;
+
+  });
 }
 
 export function updateEmployeeRole(id: string, data: Partial<EmployeeRoleItem>): EmployeeRoleItem | undefined {
+  return withTransaction(() => {
+  assertRecordId(id, data);
   const db = getDatabase();
   db.employeeRoles = db.employeeRoles.map((r) => (r.id === id ? { ...r, ...data } : r));
   saveDatabase(db);
   return db.employeeRoles.find((r) => r.id === id);
+
+  });
 }
 
 export function deleteEmployeeRole(id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   const isUsed = db.employees.some((e) => e.roleId === id);
   if (isUsed) return false;
   db.employeeRoles = db.employeeRoles.filter((r) => r.id !== id);
   saveDatabase(db);
   return true;
+
+  });
 }
 
 // =================== EMPLOYEES ===================
@@ -87,12 +94,16 @@ export function getEmployeeById(id: string): EmployeeItem | undefined {
   };
 }
 
-export function createEmployee(data: Omit<EmployeeItem, "id" | "createdAt">): EmployeeItem {
+function createEmployeeImpl(data: Omit<EmployeeItem, "id" | "createdAt">): EmployeeItem {
+  data.name = requiredText(data.name, "Employee name");
+  data.wageRate = finiteNumber(data.wageRate, "Wage rate");
+  data.wageType = oneOf(data.wageType, ["DAILY", "MONTHLY", "HOURLY"], "Wage type");
+  data.status = oneOf(data.status, ["ACTIVE", "INACTIVE", "RESIGNED"], "Employee status");
   const db = getDatabase();
   const role = data.roleId ? db.employeeRoles.find((r) => r.id === data.roleId) : undefined;
   const newEmp: EmployeeItem = {
     ...data,
-    id: `emp_${Date.now()}`,
+    id: `emp_${randomUUID()}`,
     roleName: role ? role.roleName : "Staff",
     createdAt: new Date().toISOString().split("T")[0],
   };
@@ -100,7 +111,7 @@ export function createEmployee(data: Omit<EmployeeItem, "id" | "createdAt">): Em
 
   // Automatically sync to workers for attendance, field operations & daily logs
   if (!db.workers) db.workers = [];
-  const dailyRate = newEmp.wageType === "MONTHLY" ? Math.round(newEmp.wageRate / 26) : Number(newEmp.wageRate) || 500;
+  const dailyRate = employeeDailyRate(newEmp);
   const workerIdx = db.workers.findIndex((w) => w.id === newEmp.id);
   const workerRecord = {
     id: newEmp.id,
@@ -122,7 +133,15 @@ export function createEmployee(data: Omit<EmployeeItem, "id" | "createdAt">): Em
   return newEmp;
 }
 
-export function updateEmployee(id: string, data: Partial<EmployeeItem>): EmployeeItem | undefined {
+function updateEmployeeImpl(id: string, data: Partial<EmployeeItem>): EmployeeItem | undefined {
+  assertRecordId(id, data);
+  const current = getEmployeeById(id);
+  if (!current) return undefined;
+  const merged = { ...current, ...data };
+  requiredText(merged.name, "Employee name"); finiteNumber(merged.wageRate, "Wage rate");
+  oneOf(merged.wageType, ["DAILY", "MONTHLY", "HOURLY"], "Wage type");
+  oneOf(merged.status, ["ACTIVE", "INACTIVE", "RESIGNED"], "Employee status");
+  if (data.id !== undefined && data.id !== id) throw new Error("Employee ID cannot be changed.");
   const db = getDatabase();
   const role = data.roleId ? db.employeeRoles.find((r) => r.id === data.roleId) : undefined;
   db.employees = db.employees.map((e) =>
@@ -139,8 +158,8 @@ export function updateEmployee(id: string, data: Partial<EmployeeItem>): Employe
   if (!db.workers) db.workers = [];
   const updatedEmp = db.employees.find((e) => e.id === id);
   if (updatedEmp) {
-    const dailyRate = updatedEmp.wageType === "MONTHLY" ? Math.round(updatedEmp.wageRate / 26) : Number(updatedEmp.wageRate) || 500;
-    const workerIdx = db.workers.findIndex((w) => w.id === id || w.name.trim().toLowerCase() === updatedEmp.name.trim().toLowerCase());
+    const dailyRate = employeeDailyRate(updatedEmp);
+    const workerIdx = db.workers.findIndex((w) => w.id === id);
     const workerRecord = {
       id: updatedEmp.id,
       name: updatedEmp.name,
@@ -161,10 +180,12 @@ export function updateEmployee(id: string, data: Partial<EmployeeItem>): Employe
   return getEmployeeById(id);
 }
 
-export function deleteEmployee(id: string, force: boolean = true): boolean {
+export function deleteEmployee(id: string, force: boolean = false): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   const exists = db.employees.some((e) => e.id === id);
   if (!exists) return false;
+  if (db.wages.some(wage => wage.employeeId === id && wage.status === 'PAID') || (db.wageEntries || []).some(wage => wage.workerId === id && Number(wage.paidAmount) > 0)) return false;
 
   if (!force) {
     const hasAttendance = db.attendance.some((a) => a.employeeId === id);
@@ -192,6 +213,8 @@ export function deleteEmployee(id: string, force: boolean = true): boolean {
 
   saveDatabase(db);
   return true;
+
+  });
 }
 
 // =================== ATTENDANCE ===================
@@ -206,111 +229,27 @@ export function getAttendanceForMonth(year: number, month: number): AttendanceRe
     });
 }
 
-export function markAttendance(payload: {
-  employeeId: string;
-  attendanceDate: string;
-  status: AttendanceStatus;
-  notes?: string;
-  checkInTime?: string;
-  checkOutTime?: string;
+function markAttendanceImpl(payload: {
+  employeeId: string; attendanceDate: string; status: AttendanceStatus;
+  notes?: string; checkInTime?: string; checkOutTime?: string;
 }): AttendanceRecord {
+  dateKey(payload.attendanceDate);
+  oneOf(payload.status, ["PRESENT", "ABSENT", "HALF_DAY", "LEAVE", "HOLIDAY"], "Attendance status");
   const db = getDatabase();
-  if (!db.attendance) db.attendance = [];
-  if (!db.workerAttendances) db.workerAttendances = [];
-  if (!db.wageEntries) db.wageEntries = [];
-
-  const existingIdx = db.attendance.findIndex(
-    (a) => a.employeeId === payload.employeeId && a.attendanceDate === payload.attendanceDate
-  );
-
-  const emp = db.employees.find((e) => e.id === payload.employeeId);
-  const employeeName = emp?.name || "Unknown";
-
-  let record: AttendanceRecord;
-  if (existingIdx >= 0) {
-    record = {
-      ...db.attendance[existingIdx],
-      ...payload,
-      employeeName,
-    };
-    db.attendance[existingIdx] = record;
-  } else {
-    record = {
-      id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      ...payload,
-      employeeName,
-      createdAt: new Date().toISOString(),
-    };
-    db.attendance.push(record);
-  }
-
-  // Bidirectional sync to db.workerAttendances & db.wageEntries
-  const workerStatus: WorkerAttendanceStatus = payload.status === "HOLIDAY" ? "LEAVE" : (payload.status as WorkerAttendanceStatus);
-  const hours = payload.status === "PRESENT" ? 8 : payload.status === "HALF_DAY" ? 4 : 0;
-  const existingWorkerAttIdx = db.workerAttendances.findIndex(
-    (wa) => wa.workerId === payload.employeeId && wa.date === payload.attendanceDate
-  );
-  if (existingWorkerAttIdx >= 0) {
-    db.workerAttendances[existingWorkerAttIdx] = {
-      ...db.workerAttendances[existingWorkerAttIdx],
-      workerName: employeeName,
-      status: workerStatus,
-      hoursWorked: hours,
-      notes: payload.notes,
-      checkInTime: payload.checkInTime,
-      checkOutTime: payload.checkOutTime,
-      updatedAt: new Date().toISOString(),
-    };
-  } else {
-    db.workerAttendances.push({
-      id: `wa_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      workerId: payload.employeeId,
-      workerName: employeeName,
-      date: payload.attendanceDate,
-      status: workerStatus,
-      hoursWorked: hours,
-      notes: payload.notes,
-      checkInTime: payload.checkInTime,
-      checkOutTime: payload.checkOutTime,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  }
-
-  const dailyRate = emp ? (emp.wageType === "MONTHLY" ? Math.round(emp.wageRate / 26) : Number(emp.wageRate) || 500) : 500;
-  const computedWage = payload.status === "PRESENT" ? dailyRate : payload.status === "HALF_DAY" ? Math.round(dailyRate * 0.5) : 0;
-  const existingWageIdx = db.wageEntries.findIndex(
-    (w) => w.workerId === payload.employeeId && w.date === payload.attendanceDate
-  );
-  if (existingWageIdx >= 0) {
-    db.wageEntries[existingWageIdx] = {
-      ...db.wageEntries[existingWageIdx],
-      workerName: employeeName,
-      computedAmount: computedWage,
-      updatedAt: new Date().toISOString(),
-    };
-  } else {
-    db.wageEntries.push({
-      id: `we_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      workerId: payload.employeeId,
-      workerName: employeeName,
-      date: payload.attendanceDate,
-      computedAmount: computedWage,
-      paidStatus: "UNPAID",
-      paidAmount: 0,
-      paidDate: null,
-      cropCycleId: null,
-      paymentNotes: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  }
-
+  referenceExists(payload.employeeId, db.employees, "Employee");
+  getWorkers();
+  upsertWorkerAttendanceAndWage({
+    workerId: payload.employeeId, date: payload.attendanceDate,
+    status: payload.status === "HOLIDAY" ? "LEAVE" : payload.status,
+    notes: payload.notes, checkInTime: payload.checkInTime, checkOutTime: payload.checkOutTime,
+  });
+  const record = db.attendance.find(item => item.employeeId === payload.employeeId && item.attendanceDate === payload.attendanceDate)!;
+  record.status = payload.status;
   saveDatabase(db);
   return record;
 }
 
-export function bulkMarkAttendance(attendanceDate: string, status: AttendanceStatus) {
+function bulkMarkAttendanceImpl(attendanceDate: string, status: AttendanceStatus) {
   const db = getDatabase();
   const activeEmps = (db.employees || []).filter((e) => e.status === "ACTIVE");
   activeEmps.forEach((emp) => {
@@ -350,7 +289,7 @@ export function getAttendanceSummary(year: number, month: number, workingDays: n
     const dateMap = new Map<string, { status: AttendanceStatus; hoursWorked: number }>();
 
     allAttendance
-      .filter((a) => (a.employeeId === emp.id || a.employeeName?.trim().toLowerCase() === emp.name.trim().toLowerCase()) && a.attendanceDate.startsWith(prefix))
+      .filter((a) => (a.employeeId === emp.id) && a.attendanceDate.startsWith(prefix))
       .forEach((a) => {
         dateMap.set(a.attendanceDate, {
           status: a.status,
@@ -359,7 +298,7 @@ export function getAttendanceSummary(year: number, month: number, workingDays: n
       });
 
     allWorkerAtts
-      .filter((wa) => (wa.workerId === emp.id || wa.workerName?.trim().toLowerCase() === emp.name.trim().toLowerCase()) && wa.date.startsWith(prefix))
+      .filter((wa) => (wa.workerId === emp.id) && wa.date.startsWith(prefix))
       .forEach((wa) => {
         dateMap.set(wa.date, {
           status: wa.status as AttendanceStatus,
@@ -450,6 +389,9 @@ export function getWages(year?: number, month?: number): WageRecord[] {
 }
 
 export function calculateSalariesForMonth(year: number, month: number, workingDays: number = 26): WageRecord[] {
+  return withTransaction(() => {
+  if (!Number.isInteger(year) || year < 1900 || year > 9999 || !Number.isInteger(month) || month < 1 || month > 12) throw new Error('Invalid salary period.');
+  if (!Number.isInteger(workingDays) || workingDays < 1 || workingDays > 31) throw new Error('Working days must be between 1 and 31.');
   const db = getDatabase();
   const summary = getAttendanceSummary(year, month, workingDays);
   if (!db.wages) db.wages = [];
@@ -484,13 +426,14 @@ export function calculateSalariesForMonth(year: number, month: number, workingDa
       (w) => w.employeeId === item.employeeId && w.year === year && w.month === month
     );
     const existing = existingIdx >= 0 ? db.wages[existingIdx] : undefined;
+    if (existing?.status === 'PAID') { calculatedList.push(existing); return; }
 
     const bonus = existing?.bonus !== undefined ? Number(existing.bonus) || 0 : 0;
     const deductions = existing?.deductions !== undefined ? Number(existing.deductions) || 0 : 0;
     const net = Math.max(0, gross + bonus - deductions);
 
     const wageObj: WageRecord = {
-      id: existing ? existing.id : `w_${Date.now()}_${item.employeeId}`,
+      id: existing ? existing.id : `w_${randomUUID()}_${item.employeeId}`,
       employeeId: item.employeeId,
       employeeName: item.employeeName,
       roleName: item.roleName,
@@ -523,9 +466,16 @@ export function calculateSalariesForMonth(year: number, month: number, workingDa
 
   saveDatabase(db);
   return calculatedList;
+
+  });
 }
 
 export function updateWageRecord(id: string, data: Partial<WageRecord>) {
+  return withTransaction(() => {
+  assertRecordId(id, data);
+  for (const key of ['grossSalary', 'bonus', 'deductions'] as const) if (data[key] !== undefined) data[key] = finiteNumber(data[key], key);
+  const current = getDatabase().wages.find(wage => wage.id === id);
+  if (current?.status === 'PAID') throw new Error('Paid salary records cannot be changed.');
   const db = getDatabase();
   if (!db.wages) db.wages = [];
   db.wages = db.wages.map((w) => {
@@ -547,9 +497,13 @@ export function updateWageRecord(id: string, data: Partial<WageRecord>) {
   });
   saveDatabase(db);
   return db.wages.find((w) => w.id === id);
+
+  });
 }
 
 export function markWagePaid(id: string, paymentDetails: { paymentDate: string; paymentMode: string; paymentReference?: string; notes?: string }) {
+  return withTransaction(() => {
+  dateKey(paymentDetails.paymentDate, 'Payment date'); requiredText(paymentDetails.paymentMode, 'Payment mode');
   const db = getDatabase();
   db.wages = db.wages.map((w) =>
     w.id === id
@@ -562,6 +516,8 @@ export function markWagePaid(id: string, paymentDetails: { paymentDate: string; 
   );
   saveDatabase(db);
   return db.wages.find((w) => w.id === id);
+
+  });
 }
 
 // =================== LEAVES ===================
@@ -573,7 +529,8 @@ export function getLeaves(): LeaveRecord[] {
   });
 }
 
-export function createLeave(data: Omit<LeaveRecord, "id" | "appliedDate">): LeaveRecord {
+function createLeaveImpl(data: Omit<LeaveRecord, "id" | "appliedDate">): LeaveRecord {
+  dateRange(data.fromDate, data.toDate);
   const db = getDatabase();
   const from = new Date(data.fromDate);
   const to = new Date(data.toDate);
@@ -584,7 +541,7 @@ export function createLeave(data: Omit<LeaveRecord, "id" | "appliedDate">): Leav
 
   const newLeave: LeaveRecord = {
     ...data,
-    id: `lv_${Date.now()}`,
+    id: `lv_${randomUUID()}`,
     employeeName: emp?.name || "Employee",
     totalDays: diffDays || data.totalDays || 1,
     appliedDate: new Date().toISOString().split("T")[0],
@@ -595,7 +552,7 @@ export function createLeave(data: Omit<LeaveRecord, "id" | "appliedDate">): Leav
 
   // If approved, mark corresponding attendance dates as LEAVE
   if (newLeave.status === "APPROVED") {
-    let curr = new Date(data.fromDate);
+    const curr = new Date(data.fromDate);
     const end = new Date(data.toDate);
     while (curr <= end) {
       const dateStr = curr.toISOString().split("T")[0];
@@ -614,20 +571,28 @@ export function createLeave(data: Omit<LeaveRecord, "id" | "appliedDate">): Leav
 }
 
 export function updateLeave(id: string, data: Partial<LeaveRecord>): LeaveRecord | undefined {
+  return withTransaction(() => {
+  assertRecordId(id, data);
   const db = getDatabase();
   db.leaves = db.leaves.map((l) => (l.id === id ? { ...l, ...data } : l));
   saveDatabase(db);
   return db.leaves.find((l) => l.id === id);
+
+  });
 }
 
 export function deleteLeave(id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   db.leaves = db.leaves.filter((l) => l.id !== id);
   saveDatabase(db);
   return true;
+
+  });
 }
 
 export function resetHrData() {
+  return withTransaction(() => {
   const db = getDatabase();
   db.employeeRoles = [];
   db.employees = [];
@@ -635,4 +600,26 @@ export function resetHrData() {
   db.wages = [];
   db.leaves = [];
   saveDatabase(db);
+
+  });
+}
+
+export function createEmployee(...args: Parameters<typeof createEmployeeImpl>) {
+  return withTransaction(() => createEmployeeImpl(...args));
+}
+
+export function updateEmployee(...args: Parameters<typeof updateEmployeeImpl>) {
+  return withTransaction(() => updateEmployeeImpl(...args));
+}
+
+export function markAttendance(...args: Parameters<typeof markAttendanceImpl>) {
+  return withTransaction(() => markAttendanceImpl(...args));
+}
+
+export function bulkMarkAttendance(...args: Parameters<typeof bulkMarkAttendanceImpl>) {
+  return withTransaction(() => bulkMarkAttendanceImpl(...args));
+}
+
+export function createLeave(...args: Parameters<typeof createLeaveImpl>) {
+  return withTransaction(() => createLeaveImpl(...args));
 }

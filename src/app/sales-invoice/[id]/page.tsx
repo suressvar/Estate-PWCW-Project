@@ -1,27 +1,25 @@
 "use client";
+import type { SalesInvoice } from "@/types/api";
+import { formatInvoiceReference } from '@/lib/references';
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import {
-  Printer,
-  ArrowLeft,
-  Sliders,
-  Check,
-  Building2,
-  DollarSign,
-  Receipt,
-  FileText,
+ArrowLeft,
+DollarSign,
+Printer,
+Sliders
 } from "lucide-react";
+import Link from "next/link";
+import { useParams,useSearchParams } from "next/navigation";
+import { useEffect,useState } from "react";
 
 export default function SalesInvoicePage() {
   const params = useParams();
-  const router = useRouter();
+  
   const searchParams = useSearchParams();
   const id = params.id as string;
   const autoPrint = searchParams.get("print") === "true";
 
-  const [invoice, setInvoice] = useState<any>(null);
+  const [invoice, setInvoice] = useState<SalesInvoice | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Spacing & Layout Options matching Picture 3
@@ -79,9 +77,7 @@ export default function SalesInvoicePage() {
   const { otherItems = [], totalAmount = 0, dateOfSale, buyerName, buyerCity, buyerContact, invoiceGroupId } = invoice;
 
   // Format invoice number
-  const invoiceNumber = invoiceGroupId?.startsWith("inv_")
-    ? `INV-OTH-${invoiceGroupId.slice(-4).padStart(4, "0")}`
-    : invoiceGroupId || `INV-OTH-${id.slice(-4)}`;
+  const invoiceNumber = formatInvoiceReference(invoiceGroupId || id);
 
   // Dynamic row padding based on rowSpacing
   const rowPaddingClass =
@@ -139,7 +135,7 @@ export default function SalesInvoicePage() {
               <span className="font-bold text-slate-700">Row Spacing:</span>
               <select
                 value={rowSpacing}
-                onChange={(e) => setRowSpacing(e.target.value as any)}
+                onChange={(e) => setRowSpacing(e.target.value as typeof rowSpacing)}
                 className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-600"
               >
                 <option value="Compact">Compact</option>
@@ -153,7 +149,7 @@ export default function SalesInvoicePage() {
               <span className="font-bold text-slate-700">Signature Height:</span>
               <select
                 value={signatureHeight}
-                onChange={(e) => setSignatureHeight(e.target.value as any)}
+                onChange={(e) => setSignatureHeight(e.target.value as typeof signatureHeight)}
                 className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-600"
               >
                 <option value="Small Space">Small Space</option>
@@ -295,7 +291,7 @@ export default function SalesInvoicePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
-              {otherItems.map((item: any, index: number) => (
+              {otherItems.map((item, index: number) => (
                 <tr key={item.id || index} className="hover:bg-slate-50/50">
                   <td className={`${rowPaddingClass} text-center text-slate-500 border-r border-slate-200 font-medium`}>
                     {index + 1}

@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
+import React,{ useCallback, useState } from "react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  const closeNavigation = useCallback(() => setMobileSidebarOpen(false), []);
 
   const isLoginPage = pathname === "/login";
 
@@ -43,7 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Desktop Fixed & Mobile Drawer Sidebar */}
         <Sidebar
           mobileOpen={mobileSidebarOpen}
-          onMobileClose={() => setMobileSidebarOpen(false)}
+          onMobileClose={closeNavigation}
         />
 
         {/* Main Content Area (Offset by md:ml-64, removed completely during print) */}

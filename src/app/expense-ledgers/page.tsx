@@ -1,8 +1,10 @@
 "use client";
+import { useCallback } from 'react';
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import { ExpenseLedgerItem, LedgerGroupItem } from "@/lib/accounting-data";
-import { BookOpen, Plus, Edit2, Trash2, ShieldAlert, CheckCircle2, Search, Filter } from "lucide-react";
+import { ExpenseLedgerItem,LedgerGroupItem } from "@/lib/accounting-data";
+import { BookOpen,CheckCircle2,Edit2,Filter,Plus,Search,ShieldAlert,Trash2 } from "lucide-react";
+import React,{ useEffect,useState } from "react";
 
 export default function ExpenseLedgersPage() {
   const [ledgers, setLedgers] = useState<ExpenseLedgerItem[]>([]);
@@ -19,7 +21,7 @@ export default function ExpenseLedgersPage() {
   const [description, setDescription] = useState("");
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [ledgersRes, groupsRes] = await Promise.all([
         fetch("/api/expense-ledgers"),
@@ -38,11 +40,15 @@ export default function ExpenseLedgersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [groupId]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
-  }, []);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchData]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -88,8 +94,8 @@ export default function ExpenseLedgersPage() {
         const err = await res.json();
         setMsg({ type: "error", text: err.error || "Failed to save ledger" });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 

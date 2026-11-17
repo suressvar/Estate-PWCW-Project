@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { createWorker,getWorkers } from "@/lib/worker-data";
 import { NextResponse } from "next/server";
-import { getWorkers, createWorker } from "@/lib/worker-data";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +19,13 @@ export async function POST(request: Request) {
       name: body.name,
       phone: body.phone,
       role: body.role,
-      dailyWageRate: Number(body.dailyWageRate),
+      dailyWageRate: body.dailyWageRate,
       active: body.active !== undefined ? body.active : true,
     });
     return NextResponse.json(worker, { status: 201 });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Failed to create worker" },
+      { error: getErrorMessage(err) || "Failed to create worker" },
       { status: 400 }
     );
   }

@@ -1,30 +1,26 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import type { CropItem, PlotCropAssociation, PlotItem } from "@/types/estate";
-import { RoleBadge } from "@/components/ui/role-badge";
 import { PlotsCropsNav } from "@/components/plots-crops-nav";
+import type { CropItem,PlotCropAssociation,PlotItem } from "@/types/estate";
 import {
-  Sprout,
-  Plus,
-  Edit2,
-  Trash2,
-  ShieldAlert,
-  SlidersHorizontal,
-  FlaskConical,
-  MapPin,
-  Tag,
-  Tags,
-  Search,
-  Filter,
-  CheckCircle2,
-  X,
-  Layers,
-  Leaf,
-  Droplets,
-  Wrench,
-  Sparkles,
+CheckCircle2,
+Droplets,
+Edit2,
+Filter,
+FlaskConical,
+Leaf,
+MapPin,
+Plus,
+Search,
+ShieldAlert,
+Sprout,
+Tag,
+Tags,
+Trash2,
+Wrench,
+X
 } from "lucide-react";
+import React,{ useEffect,useMemo,useState } from "react";
 
 export default function CropsPage() {
   const [crops, setCrops] = useState<CropItem[]>([]);
@@ -41,8 +37,7 @@ export default function CropsPage() {
     "IRRIGATION & WATER",
     "SOIL & FERTILIZATION",
   ]);
-  const [canEdit, setCanEdit] = useState<boolean>(true);
-  const [roleName, setRoleName] = useState<string>("Admin");
+  const canEdit = true;
 
   // Filtering & Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -87,18 +82,14 @@ export default function CropsPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
-  const handleToggleRole = () => {
-    if (canEdit) {
-      setCanEdit(false);
-      setRoleName("Field Staff");
-    } else {
-      setCanEdit(true);
-      setRoleName("Admin");
-    }
-  };
+  
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -186,7 +177,7 @@ export default function CropsPage() {
         setManagerMessage({ type: "success", text: `Category "${trimmed}" created successfully!` });
         setTimeout(() => setManagerMessage(null), 3000);
       }
-    } catch (err) {
+    } catch  {
       setManagerMessage({ type: "error", text: "Failed to create category." });
     }
   };

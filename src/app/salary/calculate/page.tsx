@@ -1,23 +1,16 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import {
-  Calculator,
-  Printer,
-  DollarSign,
-  CheckCircle2,
-  Calendar,
-  Save,
-  ArrowRight,
-  ShieldAlert,
-  CreditCard,
-  X,
-  Check,
-  Building,
-  Sparkles,
-} from "lucide-react";
 import { WageRecord } from "@/lib/hr-data";
+import {
+Calculator,
+Check,
+CheckCircle2,
+Printer,
+ShieldAlert,
+X
+} from "lucide-react";
+import React,{ useCallback,useEffect,useState } from "react";
 
 export default function SalaryCalculatePage() {
   const now = new Date();
@@ -56,7 +49,11 @@ export default function SalaryCalculatePage() {
   }, []);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchWagesForPeriod(year, month);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [year, month, fetchWagesForPeriod]);
 
   // 2. Trigger Calculation Engine
@@ -80,8 +77,8 @@ export default function SalaryCalculatePage() {
         setMsg({ type: "error", text: err.error || "Failed to calculate salaries." });
       }
       setTimeout(() => setMsg(null), 4000);
-    } catch (e: any) {
-      setMsg({ type: "error", text: e.message || "Failed to calculate salaries." });
+    } catch (e) {
+      setMsg({ type: "error", text: getErrorMessage(e) || "Failed to calculate salaries." });
     } finally {
       setLoading(false);
     }
@@ -157,8 +154,8 @@ export default function SalaryCalculatePage() {
         const err = await res.json();
         setMsg({ type: "error", text: err.error || "Payment recording failed." });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message || "Payment recording failed." });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) || "Payment recording failed." });
     }
   };
 

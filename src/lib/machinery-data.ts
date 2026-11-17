@@ -1,16 +1,19 @@
+import { assertRecordId } from "./validation";
+import { randomUUID } from "node:crypto";
+import { withTransaction } from "./db-storage";
+import { getCropCycles } from "./crop-cycle-data";
 import {
-  getDatabase,
-  saveDatabase,
-  MachineItem,
-  MachineUsageLogItem,
-  MachineType,
-  CropExpenseItem,
+getDatabase,
+MachineItem,
+MachineType,
+MachineUsageLogItem,
+saveDatabase
 } from "./db-storage";
 import { getPlots } from "./master-data";
-import { getCropCycles } from "./crop-cycle-data";
+import { dateKey,finiteNumber,oneOf,positiveNumber,referenceExists,requiredText,validateAllocation } from "./validation";
 import { getWorkers } from "./worker-data";
 
-export type { MachineItem, MachineUsageLogItem, MachineType };
+export type { MachineItem,MachineType,MachineUsageLogItem };
 
 export interface MachineReportSummary {
   machineId: string;
@@ -73,6 +76,7 @@ export function createMachine(data: {
   active?: boolean;
   notes?: string;
 }): MachineItem {
+  return withTransaction(() => {
   if (!data.name || !data.name.trim()) {
     throw new Error("Machine name is required.");
   }
@@ -82,7 +86,7 @@ export function createMachine(data: {
 
   const now = new Date().toISOString();
   const newMachine: MachineItem = {
-    id: `m_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `m_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
     name: data.name.trim(),
     type: data.type || "TRACTOR",
     registrationNumber: data.registrationNumber?.trim() || undefined,
@@ -96,6 +100,8 @@ export function createMachine(data: {
   db.machines.unshift(newMachine);
   saveDatabase(db);
   return newMachine;
+
+  });
 }
 
 /**
@@ -105,6 +111,10 @@ export function updateMachine(
   id: string,
   data: Partial<MachineItem>
 ): MachineItem | undefined {
+  return withTransaction(() => {
+  assertRecordId(id, data);
+  if (data.name !== undefined) data.name = requiredText(data.name, 'Machine name');
+  if (data.type !== undefined) oneOf(data.type, ['TRACTOR', 'TILLER', 'SPRAYER', 'PUMP', 'HARVESTER', 'VEHICLE', 'DRONE', 'OTHER'], 'Machine type');
   const db = getDatabase();
   if (!db.machines) return undefined;
 
@@ -120,22 +130,23 @@ export function updateMachine(
   db.machines[idx] = updated;
   saveDatabase(db);
   return updated;
+
+  });
 }
 
 /**
  * Delete a machine (or soft-deactivate).
  */
-export function deleteMachine(id: string): boolean {
+function deleteMachineImpl(id: string): boolean {
   const db = getDatabase();
   if (!db.machines) return false;
 
   const initialCount = db.machines.length;
   db.machines = db.machines.filter((m) => m.id !== id);
 
-  // Also remove its usage logs
-  if (db.machineUsageLogs) {
-    db.machineUsageLogs = db.machineUsageLogs.filter((u) => u.machineId !== id);
-  }
+  const usageIds = new Set((db.machineUsageLogs || []).filter(log => log.machineId === id).map(log => `machine_log_${log.id}`));
+  db.machineUsageLogs = (db.machineUsageLogs || []).filter(log => log.machineId !== id);
+  db.cropExpenses = (db.cropExpenses || []).filter(expense => !usageIds.has(expense.sourceRefId || ""));
 
   saveDatabase(db);
   return db.machines.length < initialCount;
@@ -180,7 +191,7 @@ export function getMachineUsageLogs(filter?: {
 /**
  * Log a machine usage event and automatically/idempotently sync to CropExpense if tied to a CropCycle.
  */
-export function addMachineUsageLog(data: {
+function addMachineUsageLogImpl(data: {
   machineId: string;
   date: string;
   plotId?: string | null;
@@ -195,6 +206,10 @@ export function addMachineUsageLog(data: {
   maintenanceCost?: number | null;
   cropCycleId?: string | null;
 }): MachineUsageLogItem {
+  data.hoursUsed = positiveNumber(data.hoursUsed, "Hours used");
+  dateKey(data.date);
+  if (data.fuelCost != null) data.fuelCost = finiteNumber(data.fuelCost, "Fuel cost");
+  if (data.maintenanceCost != null) data.maintenanceCost = finiteNumber(data.maintenanceCost, "Maintenance cost");
   const machine = getMachineById(data.machineId);
   if (!machine) {
     throw new Error(`Machine with id ${data.machineId} not found.`);
@@ -211,6 +226,7 @@ export function addMachineUsageLog(data: {
   }
 
   const plots = getPlots();
+  validateAllocation(data, getDatabase());
   const plot = data.plotId ? plots.find((p) => p.id === data.plotId) : undefined;
 
   const cycles = getCropCycles();
@@ -218,6 +234,7 @@ export function addMachineUsageLog(data: {
 
   const workers = getWorkers();
   const worker = data.workerId ? workers.find((w) => w.id === data.workerId) : undefined;
+  if (data.workerId) referenceExists(data.workerId, workers, 'Worker');
   const operator = data.operatorName || (worker ? worker.name : undefined);
 
   const db = getDatabase();
@@ -225,7 +242,7 @@ export function addMachineUsageLog(data: {
 
   const now = new Date().toISOString();
   const newLog: MachineUsageLogItem = {
-    id: `mul_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `mul_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
     machineId: data.machineId,
     machineName: machine.name,
     machineType: machine.type,
@@ -262,10 +279,15 @@ export function addMachineUsageLog(data: {
 /**
  * Update machine usage log and resync crop expense.
  */
-export function updateMachineUsageLog(
+function updateMachineUsageLogImpl(
   id: string,
   data: Partial<MachineUsageLogItem>
 ): MachineUsageLogItem | undefined {
+  assertRecordId(id, data);
+  if (data.hoursUsed !== undefined) data.hoursUsed = positiveNumber(data.hoursUsed, "Hours used");
+  if (data.date !== undefined) dateKey(data.date);
+  if (data.fuelCost != null) data.fuelCost = finiteNumber(data.fuelCost, "Fuel cost");
+  if (data.maintenanceCost != null) data.maintenanceCost = finiteNumber(data.maintenanceCost, "Maintenance cost");
   const db = getDatabase();
   if (!db.machineUsageLogs) return undefined;
 
@@ -273,9 +295,17 @@ export function updateMachineUsageLog(
   if (idx < 0) return undefined;
 
   const current = db.machineUsageLogs[idx];
+  const merged = { ...current, ...data };
+  dateKey(merged.date); requiredText(merged.workDescription, 'Work description');
+  referenceExists(merged.machineId, db.machines || [], 'Machine');
+  validateAllocation(merged, db);
+  if (merged.workerId) referenceExists(merged.workerId, db.workers || [], 'Worker');
   const updated: MachineUsageLogItem = {
     ...current,
     ...data,
+    machineName: db.machines!.find(machine => machine.id === merged.machineId)!.name,
+    machineType: db.machines!.find(machine => machine.id === merged.machineId)!.type,
+    plotId: merged.plotId || (merged.cropCycleId ? db.cropCycles?.find(cycle => cycle.id === merged.cropCycleId)?.plotId : null),
     updatedAt: new Date().toISOString(),
   };
 
@@ -289,7 +319,7 @@ export function updateMachineUsageLog(
 /**
  * Delete a machine usage log and clean up any synced crop expense.
  */
-export function deleteMachineUsageLog(id: string): boolean {
+function deleteMachineUsageLogImpl(id: string): boolean {
   const db = getDatabase();
   if (!db.machineUsageLogs) return false;
 
@@ -310,6 +340,7 @@ export function deleteMachineUsageLog(id: string): boolean {
  * Idempotent sync of a machine usage log to CropExpense under MACHINERY category.
  */
 export function syncMachineLogToCropExpense(log: MachineUsageLogItem): void {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.cropExpenses) db.cropExpenses = [];
 
@@ -338,7 +369,7 @@ export function syncMachineLogToCropExpense(log: MachineUsageLogItem): void {
     db.cropExpenses[existingIdx].updatedAt = new Date().toISOString();
   } else {
     db.cropExpenses.push({
-      id: `ce_mch_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `ce_mch_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
       cropCycleId: log.cropCycleId,
       category: "MACHINERY",
       amount: operatingCost,
@@ -352,6 +383,8 @@ export function syncMachineLogToCropExpense(log: MachineUsageLogItem): void {
   }
 
   saveDatabase(db);
+
+  });
 }
 
 /**
@@ -440,4 +473,20 @@ export function getPlotMachineryConsumptionReport(): PlotMachineReportSummary[] 
       machineBreakdown,
     };
   });
+}
+
+export function addMachineUsageLog(...args: Parameters<typeof addMachineUsageLogImpl>) {
+  return withTransaction(() => addMachineUsageLogImpl(...args));
+}
+
+export function updateMachineUsageLog(...args: Parameters<typeof updateMachineUsageLogImpl>) {
+  return withTransaction(() => updateMachineUsageLogImpl(...args));
+}
+
+export function deleteMachineUsageLog(...args: Parameters<typeof deleteMachineUsageLogImpl>) {
+  return withTransaction(() => deleteMachineUsageLogImpl(...args));
+}
+
+export function deleteMachine(...args: Parameters<typeof deleteMachineImpl>) {
+  return withTransaction(() => deleteMachineImpl(...args));
 }

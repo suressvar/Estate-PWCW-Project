@@ -9,7 +9,13 @@
   "productionLogs": [],
   "salesLogs": [],
   "generalPurchaseLogs": [],
-  "employeeRoles": [],
+  "employeeRoles": [
+    {
+      "id": "er_1791904701426",
+      "roleName": "Supervicer",
+      "description": ""
+    }
+  ],
   "employees": [],
   "attendance": [],
   "wages": [],
@@ -127,8 +133,8 @@
       "fuelType": "Diesel",
       "active": true,
       "notes": "Main farm tractor with rotavator and trolley attachments",
-      "createdAt": "2026-10-04T03:53:44.242Z",
-      "updatedAt": "2026-10-04T03:53:44.243Z"
+      "createdAt": "2026-10-13T15:09:06.399Z",
+      "updatedAt": "2026-10-13T15:09:06.399Z"
     },
     {
       "id": "m_vst_shakti",
@@ -138,8 +144,8 @@
       "fuelType": "Diesel",
       "active": true,
       "notes": "Power tiller for inter-cultivation and weeding",
-      "createdAt": "2026-10-04T03:53:44.243Z",
-      "updatedAt": "2026-10-04T03:53:44.243Z"
+      "createdAt": "2026-10-13T15:09:06.399Z",
+      "updatedAt": "2026-10-13T15:09:06.399Z"
     },
     {
       "id": "m_aspee_sprayer",
@@ -149,8 +155,8 @@
       "fuelType": "Diesel / PTO",
       "active": true,
       "notes": "High pressure orchard and field sprayer",
-      "createdAt": "2026-10-04T03:53:44.243Z",
-      "updatedAt": "2026-10-04T03:53:44.243Z"
+      "createdAt": "2026-10-13T15:09:06.399Z",
+      "updatedAt": "2026-10-13T15:09:06.399Z"
     },
     {
       "id": "m_kirloskar_pump",
@@ -160,8 +166,8 @@
       "fuelType": "Electric",
       "active": true,
       "notes": "Submersible pump connected to drip irrigation network",
-      "createdAt": "2026-10-04T03:53:44.243Z",
-      "updatedAt": "2026-10-04T03:53:44.243Z"
+      "createdAt": "2026-10-13T15:09:06.399Z",
+      "updatedAt": "2026-10-13T15:09:06.399Z"
     },
     {
       "id": "m_bolero_pickup",
@@ -171,8 +177,8 @@
       "fuelType": "Diesel",
       "active": true,
       "notes": "Estate produce transport and market dispatch vehicle",
-      "createdAt": "2026-10-04T03:53:44.243Z",
-      "updatedAt": "2026-10-04T03:53:44.243Z"
+      "createdAt": "2026-10-13T15:09:06.399Z",
+      "updatedAt": "2026-10-13T15:09:06.399Z"
     }
   ],
   "machineUsageLogs": [],
@@ -205,6 +211,7 @@
     "Tools & Hardware",
     "General Estate Supplies"
   ],
+  "operationItems": [],
   "salesCategories": [
     "Vegetables & Greens",
     "Fruits & Orchards",

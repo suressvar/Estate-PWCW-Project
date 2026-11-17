@@ -1,22 +1,20 @@
 "use client";
+import { useCallback } from 'react';
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { EmployeeItem,EmployeeRoleItem,EmployeeStatus,WageType } from "@/lib/hr-data";
 import {
-  Users,
-  Plus,
-  Search,
-  Filter,
-  Eye,
-  Edit2,
-  Trash2,
-  Phone,
-  Calendar,
-  CheckCircle2,
-  ShieldAlert,
-  ShieldCheck,
+CheckCircle2,
+Edit2,
+Eye,
+Plus,
+Search,
+ShieldAlert,
+Trash2,
+Users
 } from "lucide-react";
-import { EmployeeItem, EmployeeRoleItem, WageType, EmployeeStatus } from "@/lib/hr-data";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
@@ -47,7 +45,7 @@ export default function EmployeesPage() {
   const [ifscCode, setIfscCode] = useState("");
   const [notes, setNotes] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [empRes, roleRes] = await Promise.all([
         fetch("/api/employees"),
@@ -65,11 +63,15 @@ export default function EmployeesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roleId]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
-  }, []);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchData]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -156,8 +158,8 @@ export default function EmployeesPage() {
         const err = await res.json();
         setMsg({ type: "error", text: err.error || "Failed to save employee" });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 
@@ -182,7 +184,7 @@ export default function EmployeesPage() {
   });
 
   const activeCount = employees.filter((e) => e.status === "ACTIVE").length;
-  const inactiveCount = employees.filter((e) => e.status !== "ACTIVE").length;
+  
   const dailyCount = employees.filter((e) => e.wageType === "DAILY").length;
   const monthlyCount = employees.filter((e) => e.wageType === "MONTHLY").length;
 
@@ -493,7 +495,7 @@ export default function EmployeesPage() {
                       <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Wage Basis *</label>
                       <select
                         value={wageType}
-                        onChange={(e) => setWageType(e.target.value as any)}
+                        onChange={(e) => setWageType(e.target.value as typeof wageType)}
                         className="w-full p-2 bg-white border border-slate-300 rounded-lg font-medium text-slate-900"
                       >
                         <option value="DAILY">Daily Wage</option>
@@ -545,7 +547,7 @@ export default function EmployeesPage() {
                       <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Status</label>
                       <select
                         value={status}
-                        onChange={(e) => setStatus(e.target.value as any)}
+                        onChange={(e) => setStatus(e.target.value as typeof status)}
                         className="w-full p-2 bg-white border border-slate-300 rounded-lg font-medium text-slate-900"
                       >
                         <option value="ACTIVE">Active</option>

@@ -1,48 +1,38 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import {
-  Tractor,
-  Calendar,
-  Clock,
-  Fuel,
-  Wrench,
-  Plus,
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
-  X,
-  Trash2,
-  Edit2,
-  RefreshCw,
-  Search,
-  Filter,
-  BarChart3,
-  MapPin,
-  Sprout,
-  Users,
-} from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import {
-  MachineItem,
-  MachineUsageLogItem,
-  MachineType,
-  CropCycleItem,
-  PlotItem,
-  WorkerItem,
+CropCycleItem,
+MachineItem,
+MachineType,
+MachineUsageLogItem,
+PlotItem,
+WorkerItem,
 } from "@/lib/db-storage";
-import { MachineReportSummary, PlotMachineReportSummary } from "@/lib/machinery-data";
+import { MachineReportSummary,PlotMachineReportSummary } from "@/lib/machinery-data";
+import {
+ArrowLeft,
+CheckCircle2,
+Clock,
+Edit2,
+Fuel,
+Plus,
+RefreshCw,
+Search,
+Tractor,
+Trash2,
+Wrench,
+X
+} from "lucide-react";
+import Link from "next/link";
+import React,{ useCallback,useEffect,useState } from "react";
 
 export default function MachinesRegisterPage() {
   const todayStr = new Date().toISOString().split("T")[0];
   const [activeTab, setActiveTab] = useState<"logs" | "directory" | "machine_report" | "plot_report">("logs");
 
   // Filter States
-  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [selectedDate, ] = useState<string>(todayStr);
   const [selectedMachineFilter, setSelectedMachineFilter] = useState<string>("ALL");
   const [selectedPlotFilter, setSelectedPlotFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -149,7 +139,11 @@ export default function MachinesRegisterPage() {
   }, []);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [fetchData]);
 
   // Handle Log submit
@@ -647,7 +641,7 @@ export default function MachinesRegisterPage() {
                   </div>
                   {m.notes && (
                     <div className="mt-2 text-muted-foreground text-[11px] bg-muted/40 p-2 rounded-lg italic">
-                      "{m.notes}"
+                      &quot;{m.notes}&quot;
                     </div>
                   )}
                 </div>

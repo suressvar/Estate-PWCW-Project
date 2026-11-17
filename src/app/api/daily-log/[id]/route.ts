@@ -1,5 +1,6 @@
+import { DailyLogStatus,getDailyLogById,upsertDailyLog } from "@/lib/daily-log-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { NextResponse } from "next/server";
-import { getDailyLogById, upsertDailyLog, DailyLogStatus } from "@/lib/daily-log-data";
 
 export async function GET(
   request: Request,
@@ -33,7 +34,7 @@ export async function PUT(
       status: body.status as DailyLogStatus,
     });
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

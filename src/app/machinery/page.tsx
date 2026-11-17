@@ -1,26 +1,28 @@
 "use client";
+import { useCallback } from 'react';
+import type { ExpenseUnit } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import type { ModuleStockSummary } from "@/types/api";
 
-import React, { useState, useEffect } from "react";
-import {
-  Tractor,
-  Package,
-  ShoppingCart,
-  TrendingDown,
-  Plus,
-  Warehouse,
-  History,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Fuel,
-  Wrench,
-  X,
-  Send,
-} from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
-import { MACHINE_RATES } from "@/types/estate";
-import type { PlotItem, PlotCropAssociation, MachineryLogItem } from "@/types/estate";
 import type { GodownItem } from "@/lib/godown-data";
+import type { MachineryLogItem,PlotCropAssociation,PlotItem } from "@/types/estate";
+import { MACHINE_RATES } from "@/types/estate";
+import {
+AlertCircle,
+CheckCircle2,
+Clock,
+History,
+Package,
+Plus,
+Send,
+ShoppingCart,
+Tractor,
+Warehouse,
+Wrench,
+X
+} from "lucide-react";
+import React,{ useEffect,useState } from "react";
 
 const MACHINES = [
   "John Deere 5050D Tractor",
@@ -34,15 +36,15 @@ const MACHINES = [
 
 export default function MachineryPage() {
   const [activeTab, setActiveTab] = useState<"operations" | "purchases" | "stock">("operations");
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Master Data
   const [plots, setPlots] = useState<PlotItem[]>([]);
   const [associations, setAssociations] = useState<PlotCropAssociation[]>([]);
-  const [availableUnits, setAvailableUnits] = useState<any[]>([]);
+  const [availableUnits, setAvailableUnits] = useState<ExpenseUnit[]>([]);
 
   // Module Stock Data from Godown
-  const [stockSummary, setStockSummary] = useState<any>({
+  const [stockSummary, setStockSummary] = useState<ModuleStockSummary>({
     itemsCount: 0,
     totalAvailableQty: 0,
     totalValuation: 0,
@@ -67,7 +69,7 @@ export default function MachineryPage() {
   const [runningHours, setRunningHours] = useState(5);
   const [dieselConsumed, setDieselConsumed] = useState(20);
   const [logDate, setLogDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [operatorName, setOperatorName] = useState("Ramasamy V.");
+  const [operatorName, ] = useState("Ramasamy V.");
   const [submittingRun, setSubmittingRun] = useState(false);
 
   // Inward Purchase Modal State
@@ -83,7 +85,7 @@ export default function MachineryPage() {
   // Feedback Notification
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const loadAllData = async () => {
+  const loadAllData = useCallback(async () => {
     try {
       setLoading(true);
       const [plotsRes, pcRes, stockRes, logsRes, unitsRes] = await Promise.all([
@@ -112,7 +114,7 @@ export default function MachineryPage() {
 
       if (Array.isArray(plotsData) && plotsData.length > 0 && !selectedPlotId) {
         setSelectedPlotId(plotsData[0].id);
-        const filtered = (Array.isArray(pcData) ? pcData : []).filter((a: any) => a.plotId === plotsData[0].id);
+        const filtered = (Array.isArray(pcData) ? pcData : []).filter((a: PlotCropAssociation) => a.plotId === plotsData[0].id);
         if (filtered.length > 0) setSelectedCropActivityId(filtered[0].id);
       }
     } catch (e) {
@@ -120,11 +122,15 @@ export default function MachineryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPlotId]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     loadAllData();
-  }, []);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [loadAllData]);
 
   const handleTimeChange = (start: string, end: string, machine: string) => {
     setStartTime(start);
@@ -187,8 +193,8 @@ export default function MachineryPage() {
 
       loadAllData();
       setTimeout(() => setFeedback(null), 4000);
-    } catch (err: any) {
-      setFeedback({ type: "error", message: err.message || "Failed to record machine usage" });
+    } catch (err) {
+      setFeedback({ type: "error", message: getErrorMessage(err) || "Failed to record machine usage" });
     } finally {
       setSubmittingRun(false);
     }
@@ -234,8 +240,8 @@ export default function MachineryPage() {
 
       loadAllData();
       setTimeout(() => setFeedback(null), 4000);
-    } catch (err: any) {
-      setFeedback({ type: "error", message: err.message || "Failed to inward machinery stock" });
+    } catch (err) {
+      setFeedback({ type: "error", message: getErrorMessage(err) || "Failed to inward machinery stock" });
     } finally {
       setSubmittingInward(false);
     }
@@ -380,6 +386,7 @@ export default function MachineryPage() {
                 <div className="space-y-1.5 min-w-0">
                   <label className="text-xs font-bold text-slate-700">Machine / Tractor *</label>
                   <select
+                    aria-label="Machine name"
                     value={machineName}
                     onChange={(e) => {
                       setMachineName(e.target.value);
@@ -418,6 +425,7 @@ export default function MachineryPage() {
                   <label className="text-xs font-bold text-slate-700">Start Time</label>
                   <input
                     type="time"
+                    aria-label="Start time"
                     value={startTime}
                     onChange={(e) => handleTimeChange(e.target.value, endTime, machineName)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
@@ -429,6 +437,7 @@ export default function MachineryPage() {
                   <label className="text-xs font-bold text-slate-700">End Time</label>
                   <input
                     type="time"
+                    aria-label="End time"
                     value={endTime}
                     onChange={(e) => handleTimeChange(startTime, e.target.value, machineName)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
@@ -540,7 +549,7 @@ export default function MachineryPage() {
                         <td className="p-3.5 text-right font-mono font-bold text-amber-700">
                           {log.dieselConsumedLiters} L
                         </td>
-                        <td className="p-3.5 text-slate-600">{(log as any).operatorName || log.loggedBy}</td>
+                        <td className="p-3.5 text-slate-600">{("operatorName" in log ? String(log.operatorName) : "") || log.loggedBy}</td>
                       </tr>
                     ))
                   )}
@@ -588,11 +597,11 @@ export default function MachineryPage() {
                 {(!stockSummary.purchases || stockSummary.purchases.length === 0) ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-500">
-                      No machinery spares purchase records found in Godown. Click "+ Inward Spares / Equipment" to add parts.
+                      No machinery spares purchase records found in Godown. Click &quot;+ Inward Spares / Equipment&quot; to add parts.
                     </td>
                   </tr>
                 ) : (
-                  stockSummary.purchases.map((m: any) => (
+                  stockSummary.purchases.map((m) => (
                     <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">{m.date}</td>
                       <td className="p-3.5 font-bold text-slate-900">{m.itemName}</td>
@@ -652,7 +661,7 @@ export default function MachineryPage() {
                 {(!stockSummary.items || stockSummary.items.length === 0) ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-500">
-                      No machinery spares currently in Godown. Click "+ Inward Spares to Godown" to add parts.
+                      No machinery spares currently in Godown. Click &quot;+ Inward Spares to Godown&quot; to add parts.
                     </td>
                   </tr>
                 ) : (

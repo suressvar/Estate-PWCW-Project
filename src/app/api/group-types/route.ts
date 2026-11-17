@@ -1,11 +1,11 @@
+import { createGroupType,deleteGroupType,getGroupTypes } from "@/lib/accounting-data";
 import { NextResponse } from "next/server";
-import { getGroupTypes, createGroupType, deleteGroupType } from "@/lib/accounting-data";
 
 export async function GET() {
   try {
     const types = getGroupTypes();
     return NextResponse.json(types);
-  } catch (error) {
+  } catch  {
     return NextResponse.json({ error: "Failed to fetch group types" }, { status: 500 });
   }
 }
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     }
     const newType = createGroupType(body.groupType);
     return NextResponse.json({ groupType: newType }, { status: 201 });
-  } catch (error) {
+  } catch  {
     return NextResponse.json({ error: "Failed to create group type" }, { status: 500 });
   }
 }
@@ -38,7 +38,7 @@ export async function DELETE(req: Request) {
       );
     }
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch  {
     return NextResponse.json({ error: "Failed to delete group type" }, { status: 500 });
   }
 }

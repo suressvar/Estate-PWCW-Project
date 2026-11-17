@@ -1,29 +1,29 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import {
-  Calendar as CalendarIcon,
-  MapPin,
-  Plus,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  RotateCcw,
-  RefreshCw,
-  Users,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  ClipboardList,
-  AlertTriangle,
-  X,
-  FileText,
-  Trash2,
-  FileSpreadsheet,
-} from "lucide-react";
-import { DailyLogItem, WorkActivityItem, ActivityType, DailyLogStatus } from "@/lib/db-storage";
 import { MasterDailySheet } from "@/components/daily-log/master-daily-sheet";
+import { ActivityType,DailyLogItem } from "@/lib/db-storage";
+import {
+AlertCircle,
+AlertTriangle,
+Calendar as CalendarIcon,
+CheckCircle2,
+ChevronLeft,
+ChevronRight,
+ClipboardList,
+Clock,
+FileSpreadsheet,
+MapPin,
+Plus,
+RefreshCw,
+RotateCcw,
+Sparkles,
+Trash2,
+Users,
+X
+} from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import React,{ Suspense,useCallback,useEffect,useState } from "react";
 
 const ACTIVITY_TYPES: { label: string; value: ActivityType }[] = [
   { label: "Irrigation & Water", value: "IRRIGATION" },
@@ -129,7 +129,11 @@ function DailyLogContent() {
   }, [selectedDate, selectedPlotId]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     loadDailyLogs();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [loadDailyLogs]);
 
   // Handle Plot change
@@ -220,8 +224,8 @@ function DailyLogContent() {
         const err = await res.json();
         setActionMessage({ type: "error", text: err.error || "Failed to add activity" });
       }
-    } catch (e: any) {
-      setActionMessage({ type: "error", text: e.message || "An error occurred" });
+    } catch (e) {
+      setActionMessage({ type: "error", text: getErrorMessage(e) || "An error occurred" });
     } finally {
       setIsSubmittingActivity(false);
     }
@@ -286,8 +290,8 @@ function DailyLogContent() {
         const err = await res.json();
         setNotDoneError(err.error || "Failed to mark as Not Done.");
       }
-    } catch (e: any) {
-      setNotDoneError(e.message || "Failed to submit reason");
+    } catch (e) {
+      setNotDoneError(getErrorMessage(e) || "Failed to submit reason");
     }
   };
 
@@ -329,8 +333,8 @@ function DailyLogContent() {
       } else {
         setActionMessage({ type: "error", text: data.error || "Failed to run carry forward." });
       }
-    } catch (e: any) {
-      setActionMessage({ type: "error", text: e.message || "Error running rollover" });
+    } catch (e) {
+      setActionMessage({ type: "error", text: getErrorMessage(e) || "Error running rollover" });
     }
   };
 

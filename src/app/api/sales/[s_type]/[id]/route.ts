@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { deleteSaleItem,getSaleById,SaleType,updateSaleItem } from "@/lib/sales-data";
 import { NextResponse } from "next/server";
-import { getSaleById, updateSaleItem, deleteSaleItem, SaleType } from "@/lib/sales-data";
 
 export async function GET(req: Request, { params }: { params: Promise<{ s_type: string; id: string }> }) {
   const { s_type, id } = await params;
@@ -15,8 +16,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ s_type: 
     const updated = updateSaleItem(s_type as SaleType, id, body);
     if (!updated) return NextResponse.json({ error: "Sale record not found" }, { status: 404 });
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 

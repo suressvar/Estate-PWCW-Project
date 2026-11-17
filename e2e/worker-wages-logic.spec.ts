@@ -1,20 +1,17 @@
-import { test, expect } from "@playwright/test";
-import {
-  calculateWageForAttendance,
-  upsertWorkerAttendanceAndWage,
-  createWorker,
-  getWorkerById,
-  addWorkerActivityLog,
-  getWorkerActivityLogs,
-  recordWagePayment,
-  getWageRegister,
-  getMonthlyWorkerSummary,
-  syncWageToCropExpense,
-} from "../src/lib/worker-data";
-import { createCropCycle, getCropCycleFinancials } from "../src/lib/crop-cycle-data";
+import { expect,test } from "@playwright/test";
+import { createCropCycle } from "../src/lib/crop-cycle-data";
 import { upsertDailyLog } from "../src/lib/daily-log-data";
-import { getDatabase, saveDatabase } from "../src/lib/db-storage";
-import { getPlots } from "../src/lib/master-data";
+import { getDatabase } from "../src/lib/db-storage";
+import { createPlot,getPlots } from "../src/lib/master-data";
+import {
+addWorkerActivityLog,
+calculateWageForAttendance,
+createWorker,
+getMonthlyWorkerSummary,
+getWorkerActivityLogs,
+recordWagePayment,
+upsertWorkerAttendanceAndWage
+} from "../src/lib/worker-data";
 
 test.describe("Worker Management & Wage Computation - Unit & Integration Logic", () => {
   let testPlotId: string;
@@ -25,7 +22,7 @@ test.describe("Worker Management & Wage Computation - Unit & Integration Logic",
   test.beforeAll(() => {
     // 1. Resolve test plot
     const plots = getPlots();
-    testPlotId = plots[0]?.id || "p_test_1";
+    testPlotId = plots[0]?.id || createPlot({ name: "Wage Test Plot", location: "Test", areaAcres: 5, status: "ACTIVE" }).id;
 
     // 2. Create dedicated test worker
     const worker = createWorker({

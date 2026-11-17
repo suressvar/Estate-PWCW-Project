@@ -1,16 +1,21 @@
+import { assertRecordId } from "./validation";
+import { employeeDailyRate } from './payroll';
+import { validateAllocation, ValidationError, referenceExists } from './validation';
+import { randomUUID } from "node:crypto";
+import { withTransaction } from "./db-storage";
+import { addCropExpense,deleteCropExpense,getCropCycleById } from "./crop-cycle-data";
 import {
-  getDatabase,
-  saveDatabase,
-  WorkerItem,
-  WorkerAttendanceItem,
-  WorkerActivityLogItem,
-  WageEntryItem,
-  WorkerAttendanceStatus,
-  WagePaidStatus,
+getDatabase,
+saveDatabase,
+WageEntryItem,
+WagePaidStatus,
+WorkerActivityLogItem,
+WorkerAttendanceItem,
+WorkerAttendanceStatus,
+WorkerItem,
 } from "./db-storage";
-import { getCropCycleById, addCropExpense, deleteCropExpense } from "./crop-cycle-data";
 import { getPlots } from "./master-data";
-import { getDailyLogById } from "./daily-log-data";
+import { dateKey,finiteNumber,oneOf,requiredText } from "./validation";
 
 export interface MonthlyWorkerSummaryRow {
   workerId: string;
@@ -33,6 +38,7 @@ export interface MonthlyWorkerSummaryRow {
  * Get all workers, optionally filtered by active status.
  */
 export function getWorkers(filters?: { activeOnly?: boolean }): WorkerItem[] {
+  return withTransaction(() => {
   const db = getDatabase();
   let modified = false;
 
@@ -40,9 +46,10 @@ export function getWorkers(filters?: { activeOnly?: boolean }): WorkerItem[] {
     if (!db.workers) db.workers = [];
 
     for (const emp of db.employees) {
-      const dailyRate = emp.wageType === "MONTHLY" ? Math.round(emp.wageRate / 26) : Number(emp.wageRate) || 500;
+      if (typeof emp.name !== "string" || !emp.name.trim()) continue;
+      const dailyRate = employeeDailyRate(emp);
       const isActive = emp.status === "ACTIVE";
-      const existingIdx = db.workers.findIndex((w) => w.id === emp.id || w.name.trim().toLowerCase() === emp.name.trim().toLowerCase());
+      const existingIdx = db.workers.findIndex((w) => w.id === emp.id);
       if (existingIdx === -1) {
         db.workers.push({
           id: emp.id,
@@ -80,21 +87,10 @@ export function getWorkers(filters?: { activeOnly?: boolean }): WorkerItem[] {
       }
     }
 
-    // Clean up any in db.workers that are no longer in db.employees
-    const empIds = new Set(db.employees.map((e) => e.id));
-    const empNames = new Set(db.employees.map((e) => e.name.trim().toLowerCase()));
-    const initialWorkersCount = db.workers.length;
-    db.workers = db.workers.filter((w) => empIds.has(w.id) || empNames.has(w.name.trim().toLowerCase()));
-    if (db.workers.length !== initialWorkersCount) {
-      modified = true;
-    }
-
     if (modified) {
       saveDatabase(db);
     }
-  } else if (db.workers && db.workers.length > 0) {
-    db.workers = [];
-    saveDatabase(db);
+
   }
 
   let workers = db.workers || [];
@@ -102,6 +98,8 @@ export function getWorkers(filters?: { activeOnly?: boolean }): WorkerItem[] {
     workers = workers.filter((w) => w.active);
   }
   return workers;
+
+  });
 }
 
 /**
@@ -122,9 +120,11 @@ export function createWorker(data: {
   dailyWageRate: number;
   active?: boolean;
 }): WorkerItem {
+  return withTransaction(() => {
   if (!data.name || !data.name.trim()) {
     throw new Error("Worker name is required.");
   }
+  data.dailyWageRate = finiteNumber(data.dailyWageRate, "Daily wage rate");
   if (data.dailyWageRate === undefined || data.dailyWageRate < 0) {
     throw new Error("Valid daily wage rate is required.");
   }
@@ -134,7 +134,7 @@ export function createWorker(data: {
 
   const now = new Date().toISOString();
   const newWorker: WorkerItem = {
-    id: `w_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `w_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
     name: data.name.trim(),
     phone: data.phone?.trim() || undefined,
     role: data.role?.trim() || "General Field Worker",
@@ -147,6 +147,8 @@ export function createWorker(data: {
   db.workers.push(newWorker);
   saveDatabase(db);
   return newWorker;
+
+  });
 }
 
 /**
@@ -156,6 +158,11 @@ export function updateWorker(
   id: string,
   data: Partial<WorkerItem>
 ): WorkerItem | undefined {
+  return withTransaction(() => {
+  assertRecordId(id, data);
+  if (data.name !== undefined) data.name = requiredText(data.name, "Worker name");
+  if (data.dailyWageRate !== undefined) data.dailyWageRate = finiteNumber(data.dailyWageRate, "Daily wage rate");
+  if (data.id !== undefined && data.id !== id) throw new Error("Worker ID cannot be changed.");
   const db = getDatabase();
   if (!db.workers) return undefined;
 
@@ -171,14 +178,19 @@ export function updateWorker(
   db.workers[idx] = updated;
   saveDatabase(db);
   return updated;
+
+  });
 }
 
 /**
  * Delete a worker and associated logs.
  */
-export function deleteWorker(id: string): boolean {
+function deleteWorkerImpl(id: string): boolean {
   const db = getDatabase();
+  if ((db.wages || []).some(wage => wage.employeeId === id && wage.status === 'PAID') || (db.wageEntries || []).some(wage => wage.workerId === id && Number(wage.paidAmount) > 0)) return false;
   let modified = false;
+  const mirrored = new Set((db.wageEntries || []).filter(wage => wage.workerId === id).map(wage => `wage_${wage.id}`));
+  db.cropExpenses = (db.cropExpenses || []).filter(expense => !mirrored.has(expense.sourceRefId || ''));
 
   if (db.workers) {
     const initialCount = db.workers.length;
@@ -210,7 +222,7 @@ export function deleteWorker(id: string): boolean {
   }
 
   saveDatabase(db);
-  return true;
+  return modified;
 }
 
 /**
@@ -274,6 +286,7 @@ export function calculateWageForAttendance(
  * If cropCycleId is null, removes any previously linked expense.
  */
 export function syncWageToCropExpense(wageEntry: WageEntryItem): void {
+  return withTransaction(() => {
   const db = getDatabase();
   const sourceRefId = `wage_${wageEntry.id}`;
 
@@ -317,13 +330,15 @@ export function syncWageToCropExpense(wageEntry: WageEntryItem): void {
       sourceRefId: sourceRefId,
     });
   }
+
+  });
 }
 
 /**
  * Upsert attendance and auto-calculate wage entry in perfect lockstep.
  * Prevents double attendance entries for same worker+date.
  */
-export function upsertWorkerAttendanceAndWage(data: {
+function upsertWorkerAttendanceAndWageImpl(data: {
   workerId: string;
   date: string;
   status: WorkerAttendanceStatus;
@@ -334,6 +349,10 @@ export function upsertWorkerAttendanceAndWage(data: {
   cropCycleId?: string | null;
   manualWageOverride?: number;
 }): { attendance: WorkerAttendanceItem; wage: WageEntryItem } {
+  dateKey(data.date);
+  oneOf(data.status, ["PRESENT", "ABSENT", "HALF_DAY", "LEAVE"], "Attendance status");
+  if (data.hoursWorked !== undefined) finiteNumber(data.hoursWorked, "Hours worked");
+  if (data.manualWageOverride !== undefined) finiteNumber(data.manualWageOverride, "Wage override");
   const worker = getWorkerById(data.workerId);
   if (!worker) {
     throw new Error(`Worker with ID ${data.workerId} not found.`);
@@ -345,6 +364,7 @@ export function upsertWorkerAttendanceAndWage(data: {
   const db = getDatabase();
   if (!db.workerAttendances) db.workerAttendances = [];
   if (!db.wageEntries) db.wageEntries = [];
+  validateAllocation(db, undefined, data.cropCycleId);
 
   const now = new Date().toISOString();
 
@@ -355,6 +375,8 @@ export function upsertWorkerAttendanceAndWage(data: {
     data.hoursWorked,
     data.manualWageOverride
   );
+  const paidEntry = db.wageEntries.find(entry => entry.workerId === data.workerId && entry.date === data.date);
+  if (Number(paidEntry?.paidAmount) > computedAmount) throw new ValidationError('Attendance cannot reduce earned wages below the amount already paid. Record a payment correction first.');
 
   // 2. Upsert Attendance
   const existingAttIdx = db.workerAttendances.findIndex(
@@ -376,7 +398,7 @@ export function upsertWorkerAttendanceAndWage(data: {
     db.workerAttendances[existingAttIdx] = attendance;
   } else {
     attendance = {
-      id: `wa_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `wa_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
       workerId: data.workerId,
       workerName: worker.name,
       date: data.date,
@@ -422,7 +444,7 @@ export function upsertWorkerAttendanceAndWage(data: {
     db.wageEntries[existingWageIdx] = wage;
   } else {
     wage = {
-      id: `we_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `we_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
       workerId: data.workerId,
       workerName: worker.name,
       date: data.date,
@@ -454,7 +476,7 @@ export function upsertWorkerAttendanceAndWage(data: {
     };
   } else {
     db.attendance.push({
-      id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `att_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
       employeeId: data.workerId,
       employeeName: worker.name,
       attendanceDate: data.date,
@@ -584,6 +606,7 @@ export function addWorkerActivityLog(data: {
   activityDescription: string;
   timeSpentHours?: number;
 }): WorkerActivityLogItem {
+  return withTransaction(() => {
   const worker = getWorkerById(data.workerId);
   if (!worker) {
     throw new Error(`Worker with ID ${data.workerId} not found.`);
@@ -600,6 +623,11 @@ export function addWorkerActivityLog(data: {
 
   const db = getDatabase();
   if (!db.workerActivityLogs) db.workerActivityLogs = [];
+  referenceExists(data.dailyLogId, db.dailyLogs || [], 'Daily log');
+  validateAllocation(data, db);
+  const parentLog = db.dailyLogs!.find(log => log.id === data.dailyLogId)!;
+  if (parentLog.plotId !== data.plotId) throw new ValidationError('Daily log does not belong to the selected plot.');
+  const timeSpentHours = finiteNumber(data.timeSpentHours, 'Time spent', 0, 8);
 
   const plots = getPlots();
   const plot = plots.find((p) => p.id === data.plotId);
@@ -607,7 +635,7 @@ export function addWorkerActivityLog(data: {
 
   const now = new Date().toISOString();
   const newActivity: WorkerActivityLogItem = {
-    id: `wal_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `wal_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
     workerId: data.workerId,
     workerName: worker.name,
     dailyLogId: data.dailyLogId,
@@ -616,7 +644,7 @@ export function addWorkerActivityLog(data: {
     cropCycleId: data.cropCycleId || null,
     cropName: cycle ? cycle.cropName : undefined,
     activityDescription: data.activityDescription.trim(),
-    timeSpentHours: Number(data.timeSpentHours) || 8.0,
+    timeSpentHours,
     createdAt: now,
     updatedAt: now,
   };
@@ -624,6 +652,8 @@ export function addWorkerActivityLog(data: {
   db.workerActivityLogs.unshift(newActivity);
   saveDatabase(db);
   return newActivity;
+
+  });
 }
 
 /**
@@ -658,6 +688,7 @@ export function getWorkerActivityLogs(filters?: {
  * Delete a worker activity log.
  */
 export function deleteWorkerActivityLog(id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.workerActivityLogs) return false;
 
@@ -665,6 +696,8 @@ export function deleteWorkerActivityLog(id: string): boolean {
   db.workerActivityLogs = db.workerActivityLogs.filter((l) => l.id !== id);
   saveDatabase(db);
   return db.workerActivityLogs.length < initial;
+
+  });
 }
 
 /**
@@ -678,6 +711,9 @@ export function recordWagePayment(
     paymentNotes?: string;
   }
 ): WageEntryItem | undefined {
+  return withTransaction(() => {
+  data.paidAmount = finiteNumber(data.paidAmount, "Payment amount");
+  if (data.paidDate) dateKey(data.paidDate, "Payment date");
   const db = getDatabase();
   if (!db.wageEntries) return undefined;
 
@@ -686,6 +722,7 @@ export function recordWagePayment(
 
   const current = db.wageEntries[idx];
   const newPaidAmount = Number(data.paidAmount);
+  if (newPaidAmount > current.computedAmount) throw new ValidationError('Payment cannot exceed the computed wage.');
 
   let paidStatus: WagePaidStatus = "UNPAID";
   if (newPaidAmount >= current.computedAmount && current.computedAmount > 0) {
@@ -706,6 +743,8 @@ export function recordWagePayment(
   db.wageEntries[idx] = updated;
   saveDatabase(db);
   return updated;
+
+  });
 }
 
 /**
@@ -715,7 +754,7 @@ export function getWageRegister(filters?: {
   startDate?: string;
   endDate?: string;
   workerId?: string;
-  paidStatus?: WagePaidStatus;
+  paidStatus?: WagePaidStatus | "ALL";
 }) {
   const db = getDatabase();
   let entries = db.wageEntries || [];
@@ -729,7 +768,7 @@ export function getWageRegister(filters?: {
   if (filters?.workerId && filters.workerId !== "ALL") {
     entries = entries.filter((e) => e.workerId === filters.workerId);
   }
-  if (filters?.paidStatus && filters.paidStatus !== ("ALL" as any)) {
+  if (filters?.paidStatus && filters.paidStatus !== "ALL") {
     entries = entries.filter((e) => e.paidStatus === filters.paidStatus);
   }
 
@@ -922,4 +961,12 @@ export function getMonthlyWorkerSummary(year: number, month: number) {
     estateTotals,
     csvString,
   };
+}
+
+export function upsertWorkerAttendanceAndWage(...args: Parameters<typeof upsertWorkerAttendanceAndWageImpl>) {
+  return withTransaction(() => upsertWorkerAttendanceAndWageImpl(...args));
+}
+
+export function deleteWorker(...args: Parameters<typeof deleteWorkerImpl>) {
+  return withTransaction(() => deleteWorkerImpl(...args));
 }

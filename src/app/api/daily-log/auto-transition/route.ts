@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
 import { autoTransitionPastPlannedActivities } from "@/lib/daily-log-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
       message: `Rolled over ${report.transitionedActivitiesCount} activities; carried forward ${report.carriedForwardCount} items.`,
       ...report,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

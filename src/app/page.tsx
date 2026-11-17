@@ -1,51 +1,47 @@
 "use client";
+import { useCallback } from 'react';
+import type { DashboardAnalytics } from "@/types/api";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { StatCard } from "@/components/ui/stat-card";
 import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Fuel,
-  Calendar,
-  Filter,
-  Tractor,
-  Layers,
-  MapPin,
-  FlaskConical,
-  Sprout,
-  Receipt,
-  Store,
-  Warehouse,
-  FileText,
-  ArrowUpRight,
-  ArrowDownRight,
-  Activity,
-  Sparkles,
-  RefreshCw,
-  Clock,
-  CheckCircle2,
-  Users,
-  Send,
-  Zap,
+Activity,
+ArrowDownRight,
+ArrowUpRight,
+Clock,
+DollarSign,
+FileText,
+Filter,
+FlaskConical,
+Fuel,
+MapPin,
+Receipt,
+Sparkles,
+Sprout,
+Tractor,
+Users,
+Warehouse
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect,useState } from "react";
 
 export default function DashboardPage() {
   const [selectedPlotDrill, setSelectedPlotDrill] = useState("");
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     setCurrentDateTime(new Date());
     const interval = setInterval(() => {
       setCurrentDateTime(new Date());
     }, 1000);
     return () => clearInterval(interval);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/analytics");
@@ -59,11 +55,15 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPlotDrill]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchAnalytics();
-  }, []);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchAnalytics]);
 
   if (!analytics && loading) {
     return (
@@ -91,7 +91,7 @@ export default function DashboardPage() {
   };
 
   const activeDrillData =
-    plotDrillDown.find((d: any) => d.plotName === selectedPlotDrill) || plotDrillDown[0];
+    plotDrillDown.find((d) => d.plotName === selectedPlotDrill) || plotDrillDown[0];
 
   const totalFlow = (kpis.totalRevenue || 0) + (kpis.totalExpenses || 0);
   const revenuePercent = totalFlow > 0 ? Math.round((kpis.totalRevenue / totalFlow) * 100) : 50;
@@ -351,7 +351,7 @@ export default function DashboardPage() {
                     </td>
                   </tr>
                 ) : (
-                  cropPnL.map((item: any, idx: number) => {
+                  cropPnL.map((item, idx: number) => {
                     const isProfit = item.NetProfit >= 0;
                     return (
                       <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
@@ -415,7 +415,7 @@ export default function DashboardPage() {
                     </td>
                   </tr>
                 ) : (
-                  plotPnL.map((item: any, idx: number) => {
+                  plotPnL.map((item, idx: number) => {
                     const isProfit = item.NetProfit >= 0;
                     return (
                       <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
@@ -479,7 +479,7 @@ export default function DashboardPage() {
                   </td>
                 </tr>
               ) : (
-                fuelEfficiency.map((item: any, idx: number) => {
+                fuelEfficiency.map((item, idx: number) => {
                   const isHighEfficiency = item.litersPerHour <= 5.0;
                   const isModerate = item.litersPerHour > 5.0 && item.litersPerHour <= 8.0;
 
@@ -542,7 +542,7 @@ export default function DashboardPage() {
           {/* Plot Selector Tabs */}
           {plotDrillDown.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-              {plotDrillDown.map((p: any) => (
+              {plotDrillDown.map((p) => (
                 <button
                   key={p.plotName}
                   onClick={() => setSelectedPlotDrill(p.plotName)}
@@ -580,7 +580,7 @@ export default function DashboardPage() {
                 <p className="text-slate-400 italic py-2">No fertilizer records logged</p>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {activeDrillData.fertilizer.map((f: any) => (
+                  {activeDrillData.fertilizer.map((f) => (
                     <div
                       key={f.id}
                       className="p-2 bg-white/90 rounded-xl border border-emerald-100 text-slate-700 shadow-2xs space-y-0.5"
@@ -612,7 +612,7 @@ export default function DashboardPage() {
                 <p className="text-slate-400 italic py-2">No labor logs recorded</p>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {activeDrillData.labor.map((l: any) => (
+                  {activeDrillData.labor.map((l) => (
                     <div
                       key={l.id}
                       className="p-2 bg-white/90 rounded-xl border border-violet-100 text-slate-700 shadow-2xs space-y-0.5"
@@ -644,7 +644,7 @@ export default function DashboardPage() {
                 <p className="text-slate-400 italic py-2">No sales logged for this plot</p>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {activeDrillData.sales.map((s: any) => (
+                  {activeDrillData.sales.map((s) => (
                     <div
                       key={s.id}
                       className="p-2 bg-white/90 rounded-xl border border-amber-100 text-slate-700 shadow-2xs space-y-0.5"

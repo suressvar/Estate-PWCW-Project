@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { issueGodownItemToMenu } from "@/lib/godown-data";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(result, { status: 200 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

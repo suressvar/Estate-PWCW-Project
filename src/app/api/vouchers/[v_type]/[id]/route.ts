@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { deleteVoucher,getVoucherById,updateVoucher,VoucherType } from "@/lib/vouchers-data";
 import { NextResponse } from "next/server";
-import { getVoucherById, updateVoucher, deleteVoucher, VoucherType } from "@/lib/vouchers-data";
 
 export async function GET(req: Request, { params }: { params: Promise<{ v_type: string; id: string }> }) {
   const { v_type, id } = await params;
@@ -15,8 +16,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ v_type: 
     const updated = updateVoucher(v_type as VoucherType, id, body);
     if (!updated) return NextResponse.json({ error: "Voucher not found" }, { status: 404 });
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 

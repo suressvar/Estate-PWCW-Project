@@ -1,30 +1,27 @@
+import { withTransaction } from "./db-storage";
+import { calculateVoucherTotals } from './money';
+import { nextReference } from './references';
+import { requiredText } from './validation';
+import { randomUUID } from "node:crypto";
+import { reversePurchaseStock } from "./stock-reconciliation";
 import {
-  getDatabase,
-  saveDatabase,
-  BaseLog,
-  VoucherLineItem,
-  FertilizerLogItem,
-  DieselLogItem,
-  MachineryLogItem,
-  LaborLogItem,
-  ProductionLogItem,
-  SalesLogItem,
-  PurchaseVoucherItem,
-  GeneralPurchaseLogItem,
-  DEFAULT_PURCHASE_CATEGORIES,
+BaseLog,
+DEFAULT_PURCHASE_CATEGORIES,
+DieselLogItem,
+FertilizerLogItem,
+GeneralPurchaseLogItem,
+getDatabase,
+LaborLogItem,
+MachineryLogItem,
+ProductionLogItem,
+PurchaseVoucherItem,
+SalesLogItem,
+saveDatabase,
+VoucherLineItem,
 } from "./db-storage";
 
 export type {
-  BaseLog,
-  VoucherLineItem,
-  FertilizerLogItem,
-  DieselLogItem,
-  MachineryLogItem,
-  LaborLogItem,
-  ProductionLogItem,
-  SalesLogItem,
-  PurchaseVoucherItem,
-  GeneralPurchaseLogItem,
+BaseLog,DieselLogItem,FertilizerLogItem,GeneralPurchaseLogItem,LaborLogItem,MachineryLogItem,ProductionLogItem,PurchaseVoucherItem,SalesLogItem,VoucherLineItem
 };
 
 export { MACHINE_RATES } from "@/types/estate";
@@ -34,11 +31,14 @@ export function getFertilizerLogs(): FertilizerLogItem[] {
 }
 
 export function addFertilizerLog(data: Omit<FertilizerLogItem, "id" | "createdAt">): FertilizerLogItem {
+  return withTransaction(() => {
   const db = getDatabase();
-  const item: FertilizerLogItem = { ...data, id: `fert_${Date.now()}`, createdAt: new Date().toISOString() };
+  const item: FertilizerLogItem = { ...data, id: `fert_${randomUUID()}`, createdAt: new Date().toISOString() };
   db.fertilizerLogs.unshift(item);
   saveDatabase(db);
   return item;
+
+  });
 }
 
 export function getDieselLogs(): DieselLogItem[] {
@@ -46,11 +46,14 @@ export function getDieselLogs(): DieselLogItem[] {
 }
 
 export function addDieselLog(data: Omit<DieselLogItem, "id" | "createdAt">): DieselLogItem {
+  return withTransaction(() => {
   const db = getDatabase();
-  const item: DieselLogItem = { ...data, id: `diesel_${Date.now()}`, createdAt: new Date().toISOString() };
+  const item: DieselLogItem = { ...data, id: `diesel_${randomUUID()}`, createdAt: new Date().toISOString() };
   db.dieselLogs.unshift(item);
   saveDatabase(db);
   return item;
+
+  });
 }
 
 export function getMachineryLogs(): MachineryLogItem[] {
@@ -58,11 +61,14 @@ export function getMachineryLogs(): MachineryLogItem[] {
 }
 
 export function addMachineryLog(data: Omit<MachineryLogItem, "id" | "createdAt">): MachineryLogItem {
+  return withTransaction(() => {
   const db = getDatabase();
-  const item: MachineryLogItem = { ...data, id: `mach_${Date.now()}`, createdAt: new Date().toISOString() };
+  const item: MachineryLogItem = { ...data, id: `mach_${randomUUID()}`, createdAt: new Date().toISOString() };
   db.machineryLogs.unshift(item);
   saveDatabase(db);
   return item;
+
+  });
 }
 
 export function getLaborLogs(): LaborLogItem[] {
@@ -70,11 +76,14 @@ export function getLaborLogs(): LaborLogItem[] {
 }
 
 export function addLaborLog(data: Omit<LaborLogItem, "id" | "createdAt">): LaborLogItem {
+  return withTransaction(() => {
   const db = getDatabase();
-  const item: LaborLogItem = { ...data, id: `labor_${Date.now()}`, createdAt: new Date().toISOString() };
+  const item: LaborLogItem = { ...data, id: `labor_${randomUUID()}`, createdAt: new Date().toISOString() };
   db.laborLogs.unshift(item);
   saveDatabase(db);
   return item;
+
+  });
 }
 
 export function getProductionLogs(): ProductionLogItem[] {
@@ -82,11 +91,14 @@ export function getProductionLogs(): ProductionLogItem[] {
 }
 
 export function addProductionLog(data: Omit<ProductionLogItem, "id" | "createdAt">): ProductionLogItem {
+  return withTransaction(() => {
   const db = getDatabase();
-  const item: ProductionLogItem = { ...data, id: `prod_${Date.now()}`, createdAt: new Date().toISOString() };
+  const item: ProductionLogItem = { ...data, id: `prod_${randomUUID()}`, createdAt: new Date().toISOString() };
   db.productionLogs.unshift(item);
   saveDatabase(db);
   return item;
+
+  });
 }
 
 export function getSalesLogs(): SalesLogItem[] {
@@ -94,12 +106,18 @@ export function getSalesLogs(): SalesLogItem[] {
 }
 
 export function addSalesLog(data: Omit<SalesLogItem, "id" | "createdAt">): SalesLogItem {
+  return withTransaction(() => {
+  if (data.items?.length) {
+    const totals = calculateVoucherTotals(data.items, data.taxPercent, data.discount);
+    data = { ...data, ...totals, value: totals.total };
+  }
   const db = getDatabase();
-  const currentCount = db.salesLogs.length + 1;
-  const voucherNo = data.voucherNo || `SLS-VCH-2026-${String(currentCount).padStart(3, "0")}`;
+  const year = data.date?.slice(0, 4) || String(new Date().getFullYear());
+  const voucherNo = data.voucherNo !== undefined && data.voucherNo !== '' ? requiredText(data.voucherNo, 'Voucher number') : nextReference(db, `SLS-VCH-${year}-`, db.salesLogs.map(item => item.voucherNo || ''));
+  if (db.salesLogs.some(item => item.voucherNo === voucherNo)) throw new Error('Sales voucher reference already exists.');
   const item: SalesLogItem = {
     ...data,
-    id: `sales_${Date.now()}`,
+    id: `sales_${randomUUID()}`,
     voucherNo,
     subtotal: data.subtotal ?? data.value,
     createdAt: new Date().toISOString(),
@@ -107,13 +125,18 @@ export function addSalesLog(data: Omit<SalesLogItem, "id" | "createdAt">): Sales
   db.salesLogs.unshift(item);
   saveDatabase(db);
   return item;
+
+  });
 }
 
 export function deleteSalesLog(id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   db.salesLogs = db.salesLogs.filter((s) => s.id !== id);
   saveDatabase(db);
   return true;
+
+  });
 }
 
 export function getGeneralPurchaseLogs(): GeneralPurchaseLogItem[] {
@@ -121,12 +144,18 @@ export function getGeneralPurchaseLogs(): GeneralPurchaseLogItem[] {
 }
 
 export function addGeneralPurchaseLog(data: Omit<PurchaseVoucherItem, "id" | "createdAt">): GeneralPurchaseLogItem {
+  return withTransaction(() => {
+  if (data.items?.length) {
+    const totals = calculateVoucherTotals(data.items, data.taxPercent, data.discount);
+    data = { ...data, ...totals, cost: totals.total };
+  }
   const db = getDatabase();
-  const currentCount = db.generalPurchaseLogs.length + 1;
-  const voucherNo = data.voucherNo || `PUR-VCH-2026-${String(currentCount).padStart(3, "0")}`;
+  const year = data.date?.slice(0, 4) || String(new Date().getFullYear());
+  const voucherNo = data.voucherNo !== undefined && data.voucherNo !== '' ? requiredText(data.voucherNo, 'Voucher number') : nextReference(db, `PUR-VCH-${year}-`, db.generalPurchaseLogs.map(item => item.voucherNo || ''));
+  if (db.generalPurchaseLogs.some(item => item.voucherNo === voucherNo)) throw new Error('Purchase voucher reference already exists.');
   const item: PurchaseVoucherItem = {
     ...data,
-    id: `gen_${Date.now()}`,
+    id: `gen_${randomUUID()}`,
     voucherNo,
     subtotal: data.subtotal ?? data.cost,
     createdAt: new Date().toISOString(),
@@ -134,16 +163,23 @@ export function addGeneralPurchaseLog(data: Omit<PurchaseVoucherItem, "id" | "cr
   db.generalPurchaseLogs.unshift(item);
   saveDatabase(db);
   return item;
+
+  });
 }
 
 export function deleteGeneralPurchaseLog(id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
+  reversePurchaseStock(db, id);
   db.generalPurchaseLogs = db.generalPurchaseLogs.filter((g) => g.id !== id);
   saveDatabase(db);
   return true;
+
+  });
 }
 
 export function getPurchaseCategories(): string[] {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.purchaseCategories || !Array.isArray(db.purchaseCategories) || db.purchaseCategories.length === 0) {
     const existingVoucherCats = (db.generalPurchaseLogs || []).map((v) => v.category).filter(Boolean);
@@ -151,9 +187,12 @@ export function getPurchaseCategories(): string[] {
     saveDatabase(db);
   }
   return db.purchaseCategories;
+
+  });
 }
 
 export function createPurchaseCategory(category: string): string {
+  return withTransaction(() => {
   const db = getDatabase();
   const trimmed = category.trim();
   if (!trimmed) return "";
@@ -165,9 +204,12 @@ export function createPurchaseCategory(category: string): string {
     saveDatabase(db);
   }
   return trimmed;
+
+  });
 }
 
 export function deletePurchaseCategory(category: string): string[] {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.purchaseCategories) {
     db.purchaseCategories = [...DEFAULT_PURCHASE_CATEGORIES];
@@ -175,9 +217,12 @@ export function deletePurchaseCategory(category: string): string[] {
   db.purchaseCategories = db.purchaseCategories.filter((c) => c !== category.trim());
   saveDatabase(db);
   return db.purchaseCategories;
+
+  });
 }
 
 export function resetTransactionLogs() {
+  return withTransaction(() => {
   const db = getDatabase();
   db.fertilizerLogs = [];
   db.dieselLogs = [];
@@ -187,6 +232,8 @@ export function resetTransactionLogs() {
   db.salesLogs = [];
   db.generalPurchaseLogs = [];
   saveDatabase(db);
+
+  });
 }
 
 export const resetLogsForTesting = resetTransactionLogs;

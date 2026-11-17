@@ -1,19 +1,18 @@
 "use client";
+import type { ExpenseUnit,PartyItem } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  Calendar,
-  Plus,
-  Trash2,
-  BookOpen,
-  IndianRupee,
-  Layers,
-  CheckCircle2,
-  X,
-} from "lucide-react";
 import { ExpenseLedgerItem } from "@/lib/accounting-data";
+import {
+BookOpen,
+Layers,
+Plus,
+Trash2,
+X
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React,{ useEffect,useState } from "react";
 
 interface SaleLineItem {
   id: string;
@@ -28,7 +27,7 @@ export default function SalesEntryPage() {
   const router = useRouter();
 
   // Invoice Details
-  const [recordNo, setRecordNo] = useState("1");
+  const [recordNo, setRecordNo] = useState("");
   const [dateOfSale, setDateOfSale] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -36,7 +35,7 @@ export default function SalesEntryPage() {
   const [ledgerAccounts, setLedgerAccounts] = useState<ExpenseLedgerItem[]>([]);
   const [selectedLedgerId, setSelectedLedgerId] = useState("");
   const [selectedLedgerName, setSelectedLedgerName] = useState("");
-  const [availableUnits, setAvailableUnits] = useState<any[]>([]);
+  const [availableUnits, setAvailableUnits] = useState<ExpenseUnit[]>([]);
 
   // Sales Category
   const [categories, setCategories] = useState<string[]>([]);
@@ -61,7 +60,7 @@ export default function SalesEntryPage() {
   const [buyerName, setBuyerName] = useState("");
   const [buyerCity, setBuyerCity] = useState("");
   const [buyerContact, setBuyerContact] = useState("");
-  const [parties, setParties] = useState<any[]>([]);
+  const [parties, setParties] = useState<PartyItem[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -78,7 +77,7 @@ export default function SalesEntryPage() {
           fetch("/api/parties"),
         ]);
         const ledgersData: ExpenseLedgerItem[] = await ledgersRes.json();
-        const salesData = await salesRes.json();
+        await salesRes.json();
         const unitsData = await unitsRes.json();
         const catsData = await catsRes.json().catch(() => ({ categories: [] }));
 
@@ -113,9 +112,6 @@ export default function SalesEntryPage() {
           }
         }
 
-        if (Array.isArray(salesData)) {
-          setRecordNo(String(salesData.length + 1));
-        }
 
         if (partiesRes.ok) {
           const partiesData = await partiesRes.json();
@@ -126,7 +122,7 @@ export default function SalesEntryPage() {
               if (bParam) {
                 setBuyerName(bParam);
                 const matched = partiesData.find(
-                  (p: any) => p.name.trim().toLowerCase() === bParam.trim().toLowerCase()
+                  (p: PartyItem) => p.name.trim().toLowerCase() === bParam.trim().toLowerCase()
                 );
                 if (matched) {
                   if (matched.city) setBuyerCity(matched.city);
@@ -157,7 +153,7 @@ export default function SalesEntryPage() {
 
 
   // Update item field and recalculate row total
-  const handleItemChange = (index: number, field: keyof SaleLineItem, value: any) => {
+  const handleItemChange = (index: number, field: keyof SaleLineItem, value: string | number) => {
     const updated = [...items];
     const item = { ...updated[index], [field]: value };
 
@@ -238,7 +234,7 @@ export default function SalesEntryPage() {
         buyerContact: buyerContact.trim(),
         items: validItems.map((it) => ({
           itemName: it.itemName.trim(),
-          quantity: Number(it.quantity) || 1,
+          quantity: Number(it.quantity),
           unit: it.unit.trim() || "Units",
           pricePerUnit: Number(it.pricePerUnit) || 0,
           totalAmount: it.totalAmount,
@@ -259,8 +255,8 @@ export default function SalesEntryPage() {
       } else {
         setErrorMsg(data.error || "Failed to record sales transaction.");
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred while saving the sale.");
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err) || "An error occurred while saving the sale.");
     } finally {
       setSubmitting(false);
     }
@@ -309,6 +305,7 @@ export default function SalesEntryPage() {
                 <input
                   type="text"
                   value={recordNo}
+                  placeholder="Assigned on save, or enter a unique reference"
                   onChange={(e) => setRecordNo(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
                 />
@@ -418,7 +415,8 @@ export default function SalesEntryPage() {
                 type="text"
                 list="buyers-suggestions"
                 placeholder="Name of buyer or retail establishment"
-                value={buyerName}
+                aria-label="Buyer name"
+                    value={buyerName}
                 onChange={(e) => handleBuyerNameChange(e.target.value)}
                 className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d] transition-all"
               />
@@ -496,7 +494,8 @@ export default function SalesEntryPage() {
                       <input
                         type="text"
                         required
-                        value={item.itemName}
+                        aria-label="Sale item"
+                    value={item.itemName}
                         onChange={(e) => handleItemChange(index, "itemName", e.target.value)}
                         className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d]"
                       />
@@ -511,7 +510,8 @@ export default function SalesEntryPage() {
                         step="any"
                         required
                         placeholder="0.0"
-                        value={item.quantity}
+                        aria-label="Sale quantity"
+                    value={item.quantity}
                         onChange={(e) =>
                           handleItemChange(
                             index,
@@ -560,7 +560,8 @@ export default function SalesEntryPage() {
                           step="any"
                           required
                           placeholder="0.00"
-                          value={item.pricePerUnit}
+                          aria-label="Sale unit price"
+                    value={item.pricePerUnit}
                           onChange={(e) =>
                             handleItemChange(
                               index,

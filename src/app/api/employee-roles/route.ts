@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { createEmployeeRole,deleteEmployeeRole,getEmployeeRoles } from "@/lib/hr-data";
 import { NextResponse } from "next/server";
-import { getEmployeeRoles, createEmployeeRole, deleteEmployeeRole } from "@/lib/hr-data";
 
 export async function GET() {
   const roles = getEmployeeRoles();
@@ -12,8 +13,8 @@ export async function POST(req: Request) {
     if (!roleName) return NextResponse.json({ error: "Role name is required" }, { status: 400 });
     const created = createEmployeeRole(roleName, description);
     return NextResponse.json(created, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 

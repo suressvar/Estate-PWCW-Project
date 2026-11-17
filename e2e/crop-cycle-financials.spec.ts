@@ -1,14 +1,14 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
 import {
-  createCropCycle,
-  addCropExpense,
-  addCropIncome,
-  getCropCycleFinancials,
-  getPlotFinancialRollup,
-  validateCropCycleDateRange,
-  syncOperationsToCropCycle,
+addCropExpense,
+addCropIncome,
+createCropCycle,
+getCropCycleFinancials,
+getPlotFinancialRollup,
+syncOperationsToCropCycle,
+validateCropCycleDateRange,
 } from "../src/lib/crop-cycle-data";
-import { getPlots, createPlot } from "../src/lib/master-data";
+import { createPlot,getPlots } from "../src/lib/master-data";
 
 test.describe("Crop Cycle Financial Ledger - Unit & Integration Logic", () => {
   let testPlotId = "p1";
@@ -181,7 +181,7 @@ test.describe("Crop Cycle Financial Ledger - Unit & Integration Logic", () => {
 
   test("5. Idempotent operational sync from labor and machinery logs", () => {
     const cycle = createCropCycle({
-      plotId: "p1", // Plot A - North Field
+      plotId: testPlotId,
       cropName: "Operational Sync Test",
       sowingDate: "2026-07-01",
       expectedHarvestDate: "2026-07-31",

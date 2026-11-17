@@ -1,5 +1,5 @@
+import { addMachineryLog,getMachineryLogs } from "@/lib/transaction-logs";
 import { NextResponse } from "next/server";
-import { getMachineryLogs, addMachineryLog } from "@/lib/transaction-logs";
 
 export async function GET() {
   return NextResponse.json(getMachineryLogs());

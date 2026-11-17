@@ -1,34 +1,34 @@
 "use client";
+import { useCallback } from 'react';
+import type { SaleRow } from "@/types/api";
 
-import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
 import {
-  ArrowLeft,
-  Plus,
-  Search,
-  Calendar,
-  Filter,
-  FileSpreadsheet,
-  Receipt,
-  Edit2,
-  Trash2,
-  CheckCircle2,
-  ShieldAlert,
+ArrowLeft,
+Calendar,
+CheckCircle2,
+FileSpreadsheet,
+Plus,
+Receipt,
+Search,
+ShieldAlert,
+Trash2
 } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect,useState } from "react";
 
 export default function SalesRegisterPage() {
   const params = useParams();
   const s_type = (params.s_type as string) || "other";
 
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const fetchSales = async () => {
+  const fetchSales = useCallback(async () => {
     try {
       const res = await fetch(`/api/sales/${s_type}`);
       const data = await res.json();
@@ -38,11 +38,15 @@ export default function SalesRegisterPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [s_type]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchSales();
-  }, [s_type]);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchSales, s_type]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this sale record?")) return;

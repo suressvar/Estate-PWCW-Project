@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
 import {
-  getCropCycles,
-  createCropCycle,
-  getAllPlotsFinancialRollup,
-  CropCycleStatus,
+createCropCycle,
+CropCycleStatus,
+getAllPlotsFinancialRollup,
+getCropCycles,
 } from "@/lib/crop-cycle-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(newCycle, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to create crop cycle" }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) || "Failed to create crop cycle" }, { status: 400 });
   }
 }

@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
-import { getParties, createParty } from "@/lib/parties-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import type { PartyType } from "@/lib/parties-data";
+import { createParty,getParties } from "@/lib/parties-data";
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(party, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to create party" }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) || "Failed to create party" }, { status: 400 });
   }
 }

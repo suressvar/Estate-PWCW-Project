@@ -1,47 +1,46 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  MapPin,
-  Sprout,
-  FlaskConical,
-  Fuel,
-  Tractor,
-  Users,
-  BarChart3,
-  ShieldCheck,
-  Trees,
-  ChevronDown,
-  Link2,
-  Wrench,
-  ReceiptText,
-  TrendingUp,
-  ShoppingBag,
-  FolderTree,
-  BookOpen,
-  Calendar,
-  DollarSign,
-  Layers,
-  FileText,
-  Receipt,
-  Award,
-  X,
-  LogOut,
-  Settings,
-  Warehouse,
-  PackageCheck,
-  Send,
-  History,
-  Scale,
-  Store,
-  CalendarCheck,
-  CircleDollarSign,
-  Wallet,
-  ClipboardList,
+BarChart3,
+BookOpen,
+Boxes,
+Calendar,
+CalendarCheck,
+ChevronDown,
+CircleDollarSign,
+ClipboardList,
+DollarSign,
+FileText,
+FlaskConical,
+FolderTree,
+Fuel,
+History,
+Layers,
+LayoutDashboard,
+Link2,
+LogOut,
+MapPin,
+PackageCheck,
+Receipt,
+ReceiptText,
+Scale,
+Send,
+Settings,
+ShieldCheck,
+Sprout,
+Store,
+Tractor,
+Trees,
+TrendingUp,
+Users,
+Wallet,
+Warehouse,
+Wrench,
+X
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname,useRouter } from "next/navigation";
+import React,{ useEffect,useState } from "react";
 
 export interface SubNavItem {
   title: string;
@@ -73,6 +72,7 @@ export const navItems: NavItem[] = [
     title: "Plot Operations",
     icon: Wrench,
     children: [
+      { title: "Items", href: "/items", icon: Boxes },
       { title: "Machinery Register & Logs", href: "/machines", icon: Tractor },
       { title: "Fertilizer", href: "/fertilizer", icon: FlaskConical },
       { title: "Diesel", href: "/diesel", icon: Fuel },
@@ -96,12 +96,12 @@ export const navItems: NavItem[] = [
     ],
   },
   {
-    title: "Purchases",
-    icon: ShoppingBag,
+    title: "Vouchers",
+    icon: Receipt,
     children: [
-      { title: "Purchase Voucher", href: "/purchases", icon: Receipt },
-      { title: "Purchase Register", href: "/purchases/register", icon: BookOpen },
-      { title: "Retailers/Purchaser", href: "/purchases/retailers", icon: Store },
+      { title: "Voucher Entry", href: "/purchases", icon: ReceiptText },
+      { title: "Voucher Register", href: "/purchases/register", icon: BookOpen },
+      { title: "Retailers / Suppliers", href: "/purchases/retailers", icon: Store },
     ],
   },
   {
@@ -154,8 +154,8 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    // Clear auth state
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     document.cookie = "estate_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
     try {
       sessionStorage.clear();
@@ -163,7 +163,8 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     } catch (e) {
       console.error(e);
     }
-    router.push("/login");
+    router.replace("/login");
+    router.refresh();
   };
 
   // Dynamic state: Submenus start collapsed by default unless active route belongs to it
@@ -192,7 +193,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     if (onMobileClose) {
       onMobileClose();
     }
-  }, [pathname]);
+  }, [onMobileClose, pathname]);
 
   const toggleMenu = (title: string) => {
     setOpenMenus((prev) => ({

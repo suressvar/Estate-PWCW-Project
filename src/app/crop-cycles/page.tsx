@@ -1,28 +1,23 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect, useCallback, Suspense } from "react";
-import Link from "next/link";
-import {
-  CircleDollarSign,
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  MapPin,
-  Sprout,
-  ArrowRight,
-  Filter,
-  RefreshCw,
-  X,
-  Sparkles,
-  Layers,
-  ChevronRight,
-  Receipt,
-  Scale,
-} from "lucide-react";
 import { PlotsCropsNav } from "@/components/plots-crops-nav";
 import { StatCard } from "@/components/ui/stat-card";
 import { CropCycleStatus } from "@/lib/db-storage";
+import {
+ArrowRight,
+Calendar,
+CircleDollarSign,
+Filter,
+Layers,
+MapPin,
+Plus,
+RefreshCw,
+Sprout,
+X
+} from "lucide-react";
+import Link from "next/link";
+import React,{ Suspense,useCallback,useEffect,useState } from "react";
 
 interface CropCycleListItem {
   id: string;
@@ -74,7 +69,7 @@ function CropCyclesOverviewContent() {
   const [cropName, setCropName] = useState("");
   const [cropType, setCropType] = useState("");
   const [sowingDate, setSowingDate] = useState(new Date().toISOString().split("T")[0]);
-  const [expectedHarvestDate, setExpectedHarvestDate] = useState(
+  const [expectedHarvestDate, setExpectedHarvestDate] = useState(() =>
     new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
   const [status, setStatus] = useState<CropCycleStatus>("SOWN");
@@ -110,7 +105,11 @@ function CropCyclesOverviewContent() {
   }, [plotId]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [fetchData]);
 
   const handleCreateCycle = async (e: React.FormEvent) => {
@@ -148,8 +147,8 @@ function CropCyclesOverviewContent() {
         const err = await res.json();
         setErrorMessage(err.error || "Failed to create crop cycle");
       }
-    } catch (e: any) {
-      setErrorMessage(e.message || "An unexpected error occurred");
+    } catch (e) {
+      setErrorMessage(getErrorMessage(e) || "An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }

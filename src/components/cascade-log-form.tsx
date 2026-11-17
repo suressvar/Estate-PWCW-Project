@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import type { PlotItem, PlotCropAssociation } from "@/types/estate";
+import type { PlotCropAssociation,PlotItem } from "@/types/estate";
+import React,{ useEffect,useState } from "react";
 
 interface CascadeLogFormProps<T = Record<string, unknown>> {
   moduleTitle: string;
@@ -27,15 +27,18 @@ export function CascadeLogForm<T = Record<string, unknown>>({
   const [notes, setNotes] = useState<string>("");
   const [extraState, setExtraState] = useState<T>(initialExtraState);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function loadMasterData() {
+      try {
       const [plotsRes, assocRes] = await Promise.all([
         fetch("/api/plots"),
         fetch("/api/plot-crops"),
       ]);
       const plotsData: PlotItem[] = await plotsRes.json();
       const assocData: PlotCropAssociation[] = await assocRes.json();
+      if (!plotsRes.ok || !assocRes.ok) throw new Error('Unable to load plots and crops. Please try again.');
 
       setPlots(plotsData);
       setAssociations(assocData);
@@ -47,6 +50,7 @@ export function CascadeLogForm<T = Record<string, unknown>>({
         setFilteredPlotCrops(filtered);
         if (filtered.length > 0) setSelectedPlotCropId(filtered[0].id);
       }
+      } catch { setError('Unable to load plots and crops. Please try again.'); }
     }
     loadMasterData();
   }, []);
@@ -66,6 +70,7 @@ export function CascadeLogForm<T = Record<string, unknown>>({
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setError('');
     try {
       const activeAssoc = associations.find((a) => a.id === selectedPlotCropId);
       const activePlot = plots.find((p) => p.id === selectedPlotId);
@@ -88,9 +93,13 @@ export function CascadeLogForm<T = Record<string, unknown>>({
       if (res.ok) {
         setNotes("");
         onSuccess();
+      } else {
+        const response = await res.json();
+        setError(response.error || 'Unable to save the entry. Please try again.');
       }
     } catch (err) {
       console.error("Failed to submit entry", err);
+      setError('Unable to save the entry. Please try again. Your entries have been retained.');
     } finally {
       setIsSubmitting(false);
     }
@@ -98,6 +107,7 @@ export function CascadeLogForm<T = Record<string, unknown>>({
 
   return (
     <form onSubmit={handleSubmit} className="glass-panel rounded-xl p-5 shadow-xs space-y-4 max-w-xl">
+      {error && <div role="alert" className="text-sm text-rose-700">{error}</div>}
       <div className="border-b border-slate-200/80 pb-3">
         <h3 className="text-sm font-bold text-slate-900">New {moduleTitle} Entry</h3>
       </div>

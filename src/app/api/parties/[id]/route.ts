@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { deleteParty,getPartyById,updateParty } from "@/lib/parties-data";
 import { NextResponse } from "next/server";
-import { updateParty, deleteParty, getPartyById } from "@/lib/parties-data";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,8 +20,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Party not found" }, { status: 404 });
     }
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update party" }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) || "Failed to update party" }, { status: 400 });
   }
 }
 

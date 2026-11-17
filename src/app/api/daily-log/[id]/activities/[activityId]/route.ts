@@ -1,5 +1,6 @@
+import { deleteWorkActivity,updateActivityStatus } from "@/lib/daily-log-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { NextResponse } from "next/server";
-import { updateActivityStatus, deleteWorkActivity } from "@/lib/daily-log-data";
 
 export async function PATCH(
   request: Request,
@@ -26,9 +27,9 @@ export async function PATCH(
 
     const result = updateActivityStatus(activityId, status, reasonIfNotDone);
     return NextResponse.json(result);
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Failed to update activity status" },
+      { error: getErrorMessage(err) || "Failed to update activity status" },
       { status: 400 }
     );
   }
@@ -45,7 +46,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Activity not found" }, { status: 404 });
     }
     return NextResponse.json(result);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

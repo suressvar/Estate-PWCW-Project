@@ -1,31 +1,33 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
-import {
-  ShoppingBag,
-  Store,
-  Search,
-  Calendar,
-  Printer,
-  FileText,
-  Trash2,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  DollarSign,
-  Layers,
-  Tag,
-  Plus,
-  LayoutGrid,
-  List,
-  FileSpreadsheet,
-  X,
-} from "lucide-react";
+import { StatCard } from "@/components/ui/stat-card";
+import { VoucherSlipData,VoucherSlipModal } from "@/components/voucher-slip-modal";
 import type { PurchaseVoucherItem } from "@/types/estate";
 import { DEFAULT_PURCHASE_CATEGORIES } from "@/types/estate";
-import { StatCard } from "@/components/ui/stat-card";
-import { VoucherSlipModal, VoucherSlipData } from "@/components/voucher-slip-modal";
+import {
+AlertCircle,
+Calendar,
+CheckCircle2,
+Clock,
+DollarSign,
+FileSpreadsheet,
+FileText,
+Layers,
+LayoutGrid,
+List,
+Maximize2,
+Plus,
+Printer,
+Receipt,
+Search,
+ShoppingBag,
+Store,
+Tag,
+Trash2,
+X,
+} from "lucide-react";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 export default function PurchaseRegisterPage() {
   const [logs, setLogs] = useState<PurchaseVoucherItem[]>([]);
@@ -33,10 +35,10 @@ export default function PurchaseRegisterPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, ] = useState("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [viewMode, setViewMode] = useState<"grouped" | "table">("grouped");
+  const [viewMode, setViewMode] = useState<"cards" | "grouped" | "table">("cards");
   const [activeModalVoucher, setActiveModalVoucher] = useState<VoucherSlipData | null>(null);
 
   // Category Management Modal State
@@ -67,7 +69,11 @@ export default function PurchaseRegisterPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchLogsAndCats();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
   const handleAddCategory = async (e: React.FormEvent) => {
@@ -88,7 +94,7 @@ export default function PurchaseRegisterPage() {
         setMsg({ type: "success", text: `Category "${newCatName.trim()}" created successfully!` });
         setTimeout(() => setMsg(null), 3500);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
     } finally {
       setSavingCat(false);
@@ -174,7 +180,7 @@ export default function PurchaseRegisterPage() {
   };
 
   // Filter records by date, search, and category
-  const filteredLogs = useMemo(() => {
+  const filteredLogs = (() => {
     return logs.filter((log) => {
       const d = log.date || "";
       if (startDate && d < startDate) return false;
@@ -211,13 +217,13 @@ export default function PurchaseRegisterPage() {
         cat.includes(query)
       );
     });
-  }, [logs, startDate, endDate, categoryFilter, statusFilter, searchTerm]);
+  })();
 
   const totalCost = filteredLogs.reduce((acc, l) => acc + (Number(l.cost) || 0), 0);
   const totalTransactions = filteredLogs.length;
 
   // Category wise breakdown for summary & grouped view
-  const categoryGroups = useMemo(() => {
+  const categoryGroups = (() => {
     const map = new Map<string, PurchaseVoucherItem[]>();
 
     categories.forEach((cat) => map.set(cat, []));
@@ -242,7 +248,7 @@ export default function PurchaseRegisterPage() {
     });
 
     return groups.sort((a, b) => b.totalCost - a.totalCost);
-  }, [filteredLogs, categories, categoryFilter]);
+  })();
 
   const openSlipModal = (log: PurchaseVoucherItem) => {
     const slipData: VoucherSlipData = {
@@ -289,13 +295,13 @@ export default function PurchaseRegisterPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4 border border-slate-200 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#15803d] text-white flex items-center justify-center font-black shadow-xs">
-            <ShoppingBag className="w-5 h-5" />
+            <Receipt className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Purchase Register</span>
+              <span>Voucher Register</span>
               <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                Official Ledger
+                Official Voucher Ledger
               </span>
             </h1>
           </div>
@@ -325,7 +331,7 @@ export default function PurchaseRegisterPage() {
             className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-all cursor-pointer"
           >
             <Store className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Retailers / Purchaser</span>
+            <span>Retailers / Suppliers</span>
           </Link>
 
           <Link
@@ -333,7 +339,7 @@ export default function PurchaseRegisterPage() {
             className="flex items-center gap-1.5 px-4 py-2 bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>New Purchase Voucher</span>
+            <span>New Voucher</span>
           </Link>
         </div>
       </div>
@@ -355,7 +361,7 @@ export default function PurchaseRegisterPage() {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
-          title="Total Purchases Expenses"
+          title="Total Voucher Expenses"
           value={`₹${totalCost.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
           subtitle="Net procurement expenditure"
           icon={DollarSign}
@@ -363,7 +369,7 @@ export default function PurchaseRegisterPage() {
         <StatCard
           title="Total Recorded Entries"
           value={totalTransactions}
-          subtitle="Registered purchase vouchers"
+          subtitle="Registered estate vouchers"
           icon={Layers}
         />
         <StatCard
@@ -476,8 +482,20 @@ export default function PurchaseRegisterPage() {
           )}
         </div>
 
-        {/* View Mode Toggle */}
+        {/* View Mode Toggle: Cards, Category Grouped, Table */}
         <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+          <button
+            onClick={() => setViewMode("cards")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === "cards"
+                ? "bg-white text-[#15803d] shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+            title="Display vouchers as interactive cards"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>Cards View</span>
+          </button>
           <button
             onClick={() => setViewMode("grouped")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -487,7 +505,7 @@ export default function PurchaseRegisterPage() {
             }`}
             title="Display vouchers grouped Category-wise"
           >
-            <LayoutGrid className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5" />
             <span>Category View</span>
           </button>
           <button
@@ -505,7 +523,7 @@ export default function PurchaseRegisterPage() {
         </div>
       </div>
 
-      {/* Main Content Area: Category Grouped View OR Table View */}
+      {/* Main Content Area: Cards View OR Category Grouped View OR Table View */}
       {loading ? (
         <div className="p-12 text-center text-xs text-slate-500 bg-white rounded-2xl border border-slate-200">
           Loading purchase vouchers...
@@ -525,6 +543,104 @@ export default function PurchaseRegisterPage() {
           >
             Go to Purchase Voucher
           </Link>
+        </div>
+      ) : viewMode === "cards" ? (
+        /* ========================================================================= */
+        /* VOUCHER CARDS GRID VIEW - EXPANDABLE TO FULL PAGE                         */
+        /* ========================================================================= */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredLogs.map((log) => (
+            <div
+              key={log.id}
+              className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md transition-all p-5 flex flex-col justify-between group hover:border-emerald-300"
+            >
+              <div>
+                {/* Card Header: Voucher No, Date, Status */}
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-xl bg-emerald-50 text-[#15803d]">
+                      <Receipt className="w-4 h-4" />
+                    </span>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        VOUCHER NO
+                      </span>
+                      <span className="font-mono font-bold text-xs text-slate-900">
+                        {log.voucherNo || `VCH-${log.id}`}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        log.paymentStatus === "PAID" || !log.paymentStatus
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          : log.paymentStatus === "PENDING"
+                          ? "bg-amber-100 text-amber-800 border border-amber-200"
+                          : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      }`}
+                    >
+                      {log.paymentStatus || "PAID"}
+                    </span>
+                    <div className="text-[11px] text-slate-500 font-medium mt-0.5">{log.date}</div>
+                  </div>
+                </div>
+
+                {/* Vendor & Amount */}
+                <div className="space-y-1 mb-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-slate-900 text-sm truncate max-w-[180px]">
+                      {log.vendorName || "General Supplier"}
+                    </h3>
+                    <span className="font-mono font-black text-slate-900 text-base">
+                      ₹{Number(log.cost || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  {log.vendorBillNo && (
+                    <div className="text-[11px] text-slate-500 font-mono">Bill/Inv: {log.vendorBillNo}</div>
+                  )}
+                </div>
+
+                {/* Category & Plot Box */}
+                <div className="bg-slate-50/80 rounded-xl p-3 space-y-1 text-xs text-slate-600 mb-4 border border-slate-100">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Category:</span>
+                    <span className="font-bold text-slate-800">{log.category || "General"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Plot:</span>
+                    <span className="font-bold text-emerald-800">{log.plotName || "General Estate"}</span>
+                  </div>
+                  {log.description && (
+                    <div className="pt-1 text-[11px] text-slate-500 truncate">
+                      {log.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card Actions: Expand to Full Page & Print */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button
+                  onClick={() => openSlipModal(log)}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#15803d] hover:bg-[#166534] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  title="Expand Voucher to Full Page View"
+                >
+                  <Maximize2 className="w-3.5 h-3.5 text-emerald-200" />
+                  <span>Expand Voucher</span>
+                </button>
+
+                <button
+                  onClick={() => openSlipModal(log)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  title="Print Voucher Slip"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Slip</span>
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       ) : viewMode === "grouped" ? (
         /* ========================================================================= */

@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { deleteLeave,updateLeave } from "@/lib/hr-data";
 import { NextResponse } from "next/server";
-import { updateLeave, deleteLeave } from "@/lib/hr-data";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -8,8 +9,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const updated = updateLeave(id, body);
     if (!updated) return NextResponse.json({ error: "Leave not found" }, { status: 404 });
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 

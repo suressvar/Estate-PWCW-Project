@@ -1,9 +1,10 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { createMultiItemSale,getOtherSales } from "@/lib/sales-data";
 import { NextResponse } from "next/server";
-import { getOtherSales, createMultiItemSale } from "@/lib/sales-data";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: Promise<{ s_type: string }> }) {
+export async function GET() {
   return NextResponse.json(getOtherSales());
 }
 
@@ -13,8 +14,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ s_type:
     const body = await req.json();
     const result = createMultiItemSale(s_type, body);
     return NextResponse.json(result, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 
@@ -24,15 +25,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ s_typ
   const id = searchParams.get("id");
 
   try {
-    const { deleteSale, clearAllSales } = await import("@/lib/sales-data");
+    const { deleteSale } = await import("@/lib/sales-data");
     if (id) {
       deleteSale(s_type, id);
       return NextResponse.json({ success: true, message: `Sale ${id} deleted.` });
     } else {
-      clearAllSales();
-      return NextResponse.json({ success: true, message: "All sales entries cleared successfully." });
+      return NextResponse.json({ error: 'A sale ID is required. Use the backed-up reset in Settings to intentionally clear all estate records.' }, { status: 400 });
     }
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

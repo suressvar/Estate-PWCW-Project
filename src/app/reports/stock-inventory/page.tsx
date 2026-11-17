@@ -1,20 +1,19 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { InventoryType,StockInventoryItem } from "@/lib/inventory-data";
 import {
-  Layers,
-  Pill,
-  Syringe,
-  AlertTriangle,
-  FileSpreadsheet,
-  Printer,
-  Edit2,
-  CheckCircle2,
-  ShieldAlert,
-  ArrowRight,
+AlertTriangle,
+CheckCircle2,
+Edit2,
+FileSpreadsheet,
+Layers,
+Pill,
+Printer,
+ShieldAlert,
+Syringe
 } from "lucide-react";
-import { StockInventoryItem, InventoryType } from "@/lib/inventory-data";
+import React,{ useEffect,useState } from "react";
 
 export default function StockInventoryReportPage() {
   const [activeTab, setActiveTab] = useState<InventoryType>("feed");
@@ -22,7 +21,7 @@ export default function StockInventoryReportPage() {
   const [medItems, setMedItems] = useState<StockInventoryItem[]>([]);
   const [vacItems, setVacItems] = useState<StockInventoryItem[]>([]);
   const [alerts, setAlerts] = useState<StockInventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<StockInventoryItem | null>(null);
@@ -59,7 +58,11 @@ export default function StockInventoryReportPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchInventory();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
   const openEditModal = (item: StockInventoryItem) => {
@@ -91,8 +94,8 @@ export default function StockInventoryReportPage() {
         fetchInventory();
         setTimeout(() => setMsg(null), 4000);
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 

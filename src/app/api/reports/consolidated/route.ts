@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import {
-  getConsolidatedReport,
-  generateConsolidatedReportCsv,
+generateConsolidatedReportCsv,
+getConsolidatedReport,
 } from "@/lib/consolidated-report-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,9 +34,9 @@ export async function GET(request: NextRequest) {
 
     const report = getConsolidatedReport(filters);
     return NextResponse.json({ success: true, data: report });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to generate consolidated report" },
+      { success: false, error: getErrorMessage(error) || "Failed to generate consolidated report" },
       { status: 500 }
     );
   }

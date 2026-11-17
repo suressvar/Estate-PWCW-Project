@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
 
 test.describe("Login Authentication & Password Toggle Flow", () => {
   test("1. Unauthenticated user is redirected to /login", async ({ page, context }) => {
@@ -34,7 +34,7 @@ test.describe("Login Authentication & Password Toggle Flow", () => {
     await page.goto("http://localhost:3000/login");
 
     await page.fill("#login-username", "Admin");
-    await page.fill("#login-password", "Admin123");
+    await page.fill("#login-password", "Integration-Test-Password-Only-2026!");
     await page.click("#login-submit-btn");
 
 

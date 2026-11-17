@@ -1,41 +1,31 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { StatCard } from "@/components/ui/stat-card";
+import { CropCycleFinancialSummary } from "@/lib/crop-cycle-data";
+import {
+CropCycleItem,
+CropCycleStatus,
+CropExpenseCategory,
+CropExpenseItem,
+CropIncomeItem,
+CropIncomeSource,
+} from "@/lib/db-storage";
+import {
+AlertTriangle,
+ArrowLeft,
+CheckCircle2,
+CircleDollarSign,
+Plus,
+Receipt,
+RefreshCw,
+RotateCcw,
+Trash2,
+X
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import {
-  ArrowLeft,
-  CircleDollarSign,
-  Plus,
-  Calendar,
-  MapPin,
-  TrendingUp,
-  TrendingDown,
-  RefreshCw,
-  X,
-  AlertTriangle,
-  RotateCcw,
-  CheckCircle2,
-  Receipt,
-  FileText,
-  Trash2,
-  Sparkles,
-  Layers,
-  ChevronRight,
-  Clock,
-  Sprout,
-  Package,
-} from "lucide-react";
-import { StatCard } from "@/components/ui/stat-card";
-import {
-  CropCycleItem,
-  CropExpenseItem,
-  CropIncomeItem,
-  CropCycleStatus,
-  CropExpenseCategory,
-  CropIncomeSource,
-} from "@/lib/db-storage";
-import { CropCycleFinancialSummary } from "@/lib/crop-cycle-data";
+import React,{ useCallback,useEffect,useState } from "react";
 
 const EXPENSE_CATEGORIES: { label: string; value: CropExpenseCategory; color: string }[] = [
   { label: "Seeds & Saplings", value: "SEEDS", color: "bg-emerald-500" },
@@ -65,6 +55,7 @@ export default function CropCycleDetailPage() {
   const [incomes, setIncomes] = useState<CropIncomeItem[]>([]);
   const [dailyLogs, setDailyLogs] = useState<{ id: string; date: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [activeTab, setActiveTab] = useState<"expenses" | "incomes" | "timeline">("expenses");
   const [actionAlert, setActionAlert] = useState<{ type: "success" | "warning" | "error"; text: string } | null>(null);
 
@@ -93,14 +84,13 @@ export default function CropCycleDetailPage() {
 
   const fetchCycleData = useCallback(async () => {
     try {
-      if (!cycle) {
-        setLoading(true);
-      }
+      setLoading(true);
       const res = await fetch(`/api/crop-cycles/${id}`, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache" },
       });
       if (res.ok) {
+        setLoadError('');
         const data = await res.json();
         setCycle(data.cycle);
         setFinancials(data.financials);
@@ -117,16 +107,21 @@ export default function CropCycleDetailPage() {
             setDailyLogs(dlData);
           }
         }
-      }
+      } else setLoadError(res.status === 404 ? 'Crop cycle not found.' : 'Unable to load crop cycle.');
     } catch (e) {
       console.error("Failed to load crop cycle details", e);
+      setLoadError('Unable to load crop cycle. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [id, cycle]);
+  }, [id]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchCycleData();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [fetchCycleData]);
 
   // Update Status
@@ -165,8 +160,8 @@ export default function CropCycleDetailPage() {
       } else {
         setActionAlert({ type: "error", text: data.error || "Failed to sync operations." });
       }
-    } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Error syncing operations." });
+    } catch (e) {
+      setActionAlert({ type: "error", text: getErrorMessage(e) || "Error syncing operations." });
     } finally {
       setIsSyncing(false);
     }
@@ -215,8 +210,8 @@ export default function CropCycleDetailPage() {
       } else {
         setActionAlert({ type: "error", text: data.error || "Failed to log expense." });
       }
-    } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Error logging expense." });
+    } catch (e) {
+      setActionAlert({ type: "error", text: getErrorMessage(e) || "Error logging expense." });
     } finally {
       setIsSubmittingExpense(false);
     }
@@ -271,8 +266,8 @@ export default function CropCycleDetailPage() {
       } else {
         setActionAlert({ type: "error", text: data.error || "Failed to log income." });
       }
-    } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Error logging income." });
+    } catch (e) {
+      setActionAlert({ type: "error", text: getErrorMessage(e) || "Error logging income." });
     } finally {
       setIsSubmittingIncome(false);
     }
@@ -310,6 +305,7 @@ export default function CropCycleDetailPage() {
     }
   };
 
+  if (loadError) return <div role="alert" className="p-12 text-center text-slate-600">{loadError}</div>;
   if (loading || !cycle) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center text-slate-500 text-sm font-bold">

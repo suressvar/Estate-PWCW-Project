@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
 import {
-  getDailyLogs,
-  upsertDailyLog,
-  getDailyLogByPlotAndDate,
-  autoTransitionPastPlannedActivities,
-  DailyLogStatus,
+autoTransitionPastPlannedActivities,
+DailyLogStatus,
+getDailyLogByPlotAndDate,
+getDailyLogs,
+upsertDailyLog,
 } from "@/lib/daily-log-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(log, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to upsert daily log" }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) || "Failed to upsert daily log" }, { status: 400 });
   }
 }

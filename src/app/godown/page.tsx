@@ -1,37 +1,28 @@
 "use client";
+import type { ExpenseUnit } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import {
-  Warehouse,
-  PackageCheck,
-  Send,
-  History,
-  PlusCircle,
-  Search,
-  SlidersHorizontal,
-  AlertTriangle,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  Tag,
-  ArrowRight,
-  TrendingDown,
-  X,
-  MapPin,
-  Sprout,
-  ShieldAlert,
-  Boxes,
-  Truck,
-  Fuel,
-  FlaskConical,
-  Tractor,
-  DollarSign,
-  Info,
-} from "lucide-react";
-import { StatCard } from "@/components/ui/stat-card";
 import { RoleBadge } from "@/components/ui/role-badge";
-import type { GodownItem, GodownStockMovement, PlotItem, PlotCropAssociation } from "@/types/estate";
+import { StatCard } from "@/components/ui/stat-card";
+import type { GodownItem,PlotCropAssociation,PlotItem } from "@/types/estate";
+import {
+AlertTriangle,
+Boxes,
+CheckCircle2,
+DollarSign,
+ExternalLink,
+History,
+MapPin,
+PackageCheck,
+PlusCircle,
+Search,
+Send,
+ShieldAlert,
+Warehouse,
+X
+} from "lucide-react";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 interface GodownStats {
   totalItems: number;
@@ -71,7 +62,7 @@ export default function GodownPage() {
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedPlotId, setSelectedPlotId] = useState("");
   const [selectedPlotCropId, setSelectedPlotCropId] = useState("");
-  const [issuedTo, setIssuedTo] = useState("Field Supervisor");
+  const [issuedTo, ] = useState("Field Supervisor");
   const [issuing, setIssuing] = useState(false);
 
   // Direct Inward Modal
@@ -85,7 +76,7 @@ export default function GodownPage() {
   const [inwardLocation, setInwardLocation] = useState("");
   const [inwardMinAlert, setInwardMinAlert] = useState<number | "">(5);
   const [inwarding, setInwarding] = useState(false);
-  const [availableUnits, setAvailableUnits] = useState<any[]>([]);
+  const [availableUnits, setAvailableUnits] = useState<ExpenseUnit[]>([]);
 
   // Feedback banner
   const [feedback, setFeedback] = useState<{
@@ -124,7 +115,7 @@ export default function GodownPage() {
 
       if (Array.isArray(plotsData) && plotsData.length > 0) {
         setSelectedPlotId(plotsData[0].id);
-        const filtered = Array.isArray(pcData) ? pcData.filter((p: any) => p.plotId === plotsData[0].id) : [];
+        const filtered = Array.isArray(pcData) ? pcData.filter((p: PlotCropAssociation) => p.plotId === plotsData[0].id) : [];
         if (filtered.length > 0) setSelectedPlotCropId(filtered[0].id);
       }
     } catch (err) {
@@ -135,11 +126,17 @@ export default function GodownPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
   // Update crop activities when plot changes
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     if (!selectedPlotId) return;
     const filtered = plotCrops.filter((p) => p.plotId === selectedPlotId);
     if (filtered.length > 0) {
@@ -147,6 +144,8 @@ export default function GodownPage() {
     } else {
       setSelectedPlotCropId("");
     }
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [selectedPlotId, plotCrops]);
 
   // Open Issue Modal for a specific item
@@ -233,9 +232,9 @@ export default function GodownPage() {
       } else {
         alert(data.error || "Failed to issue item.");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(err.message || "An error occurred while issuing.");
+      alert(getErrorMessage(err) || "An error occurred while issuing.");
     } finally {
       setIssuing(false);
     }
@@ -286,8 +285,8 @@ export default function GodownPage() {
         const errData = await res.json();
         alert(errData.error || "Failed to add inward item.");
       }
-    } catch (err: any) {
-      alert(err.message || "Error adding item to Godown.");
+    } catch (err) {
+      alert(getErrorMessage(err) || "Error adding item to Godown.");
     } finally {
       setInwarding(false);
     }

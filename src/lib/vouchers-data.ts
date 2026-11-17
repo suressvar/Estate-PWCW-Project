@@ -1,39 +1,48 @@
-import {
-  getDatabase,
-  saveDatabase,
-  ExpenseUnit,
-  FeedPurchase,
-  MedicinePurchase,
-  VaccinePurchase,
-  OtherVoucher,
-} from "./db-storage";
+import { randomUUID } from "node:crypto";
+import { withTransaction } from "./db-storage";
 import { getExpenseLedgerById } from "./accounting-data";
+import {
+ExpenseUnit,
+FeedPurchase,
+getDatabase,
+MedicinePurchase,
+OtherVoucher,
+saveDatabase,
+VaccinePurchase,
+} from "./db-storage";
+import { dateKey,finiteNumber,oneOf,positiveNumber,ValidationError } from "./validation";
 
 export type VoucherType = "feed" | "medicine" | "vaccine" | "other";
 
-export type { ExpenseUnit, FeedPurchase, MedicinePurchase, VaccinePurchase, OtherVoucher };
+export type { ExpenseUnit,FeedPurchase,MedicinePurchase,OtherVoucher,VaccinePurchase };
 
 export function getExpenseUnits(): ExpenseUnit[] {
   return getDatabase().expenseUnits;
 }
 
 export function createExpenseUnit(payload: { unitName: string; unitSymbol: string }): ExpenseUnit {
+  return withTransaction(() => {
   const db = getDatabase();
   const newUnit: ExpenseUnit = {
-    id: `u_${Date.now()}`,
+    id: `u_${randomUUID()}`,
     unitName: payload.unitName,
     unitSymbol: payload.unitSymbol,
   };
   db.expenseUnits.push(newUnit);
   saveDatabase(db);
   return newUnit;
+
+  });
 }
 
 export function deleteExpenseUnit(id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   db.expenseUnits = db.expenseUnits.filter((u) => u.id !== id);
   saveDatabase(db);
   return true;
+
+  });
 }
 
 export function getVouchersSummary() {
@@ -50,7 +59,15 @@ export function getVouchersSummary() {
   };
 }
 
-export function getVouchers(type: VoucherType | string): any[] {
+type Voucher = FeedPurchase | MedicinePurchase | VaccinePurchase | OtherVoucher;
+type VoucherRecord = FeedPurchase & MedicinePurchase & VaccinePurchase & OtherVoucher;
+type VoucherInput = Partial<VoucherRecord>;
+export function getVouchers(type: "feed"): FeedPurchase[];
+export function getVouchers(type: "medicine"): MedicinePurchase[];
+export function getVouchers(type: "vaccine"): VaccinePurchase[];
+export function getVouchers(type: "other"): OtherVoucher[];
+export function getVouchers(type: string): Voucher[];
+export function getVouchers(type: VoucherType | string): Voucher[] {
   const db = getDatabase();
   switch (type) {
     case "feed":
@@ -68,18 +85,30 @@ export function getVouchers(type: VoucherType | string): any[] {
 
 export function getVoucherById(type: VoucherType | string, id: string) {
   const list = getVouchers(type);
-  return (list as any[]).find((item) => item.id === id);
+  return list.find((item) => item.id === id);
 }
 
-export function createVoucher(type: VoucherType | string, payload: any) {
+function createVoucherImpl(type: VoucherType | string, payload: VoucherInput) {
+  oneOf(type, ["feed", "medicine", "vaccine", "other"], "Voucher type");
+  if (payload.quantity !== undefined) payload.quantity = positiveNumber(payload.quantity, "Quantity");
+  if (payload.cost !== undefined) payload.cost = finiteNumber(payload.cost, "Cost");
+  if (payload.amount !== undefined) payload.amount = finiteNumber(payload.amount, "Amount");
+  if (payload.purchaseDate) dateKey(payload.purchaseDate);
+  if (payload.voucherDate) dateKey(payload.voucherDate);
   const db = getDatabase();
   const ledger = payload.ledgerId ? getExpenseLedgerById(payload.ledgerId) : undefined;
   const particularName = ledger ? ledger.ledgerName : payload.particularName || "Direct Expenses";
   const pnlCategory = ledger?.groupType === "EXPENSE" ? "Purchase" : payload.pnlCategory || "Purchase";
 
-  const record: any = {
+  const record: VoucherRecord = {
+    feedName: payload.feedName || "Procured Item", medicineName: payload.medicineName || "Procured Item",
+    vaccineName: payload.vaccineName || "Procured Item", quantity: payload.quantity ?? 1,
+    unit: payload.unit || "units", cost: payload.cost ?? payload.amount ?? 0,
+    amount: payload.amount ?? payload.cost ?? 0,
+    purchaseDate: payload.purchaseDate || new Date().toISOString().slice(0, 10),
+    voucherDate: payload.voucherDate || new Date().toISOString().slice(0, 10),
     ...payload,
-    id: `${type.slice(0, 2)}_${Date.now()}`,
+    id: `${type.slice(0, 2)}_${randomUUID()}`,
     ledgerId: payload.ledgerId || "",
     particularName,
     pnlCategory,
@@ -128,7 +157,7 @@ export function createVoucher(type: VoucherType | string, payload: any) {
     if (!db.godownMovements) db.godownMovements = [];
 
     const gdnItem = {
-      id: `gdn_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      id: `gdn_${randomUUID()}_${Math.floor(Math.random() * 1000)}`,
       name: itemName,
       category,
       sourceVoucherId: record.id,
@@ -150,7 +179,7 @@ export function createVoucher(type: VoucherType | string, payload: any) {
     db.godownItems.unshift(gdnItem);
 
     db.godownMovements.unshift({
-      id: `mov_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      id: `mov_${randomUUID()}_${Math.floor(Math.random() * 1000)}`,
       godownItemId: gdnItem.id,
       itemName: gdnItem.name,
       category: gdnItem.category,
@@ -174,12 +203,38 @@ export function createVoucher(type: VoucherType | string, payload: any) {
   return record;
 }
 
-export function updateVoucher(type: VoucherType | string, id: string, payload: any) {
+function updateVoucherImpl(type: VoucherType | string, id: string, payload: VoucherInput) {
+  oneOf(type, ["feed", "medicine", "vaccine", "other"], "Voucher type");
+  if (payload.id !== undefined && payload.id !== id) throw new ValidationError("Voucher ID cannot be changed.");
+  if (payload.quantity !== undefined) payload.quantity = positiveNumber(payload.quantity, "Quantity");
+  if (payload.cost !== undefined) payload.cost = finiteNumber(payload.cost, "Cost");
+  if (payload.amount !== undefined) payload.amount = finiteNumber(payload.amount, "Amount");
+  if (payload.purchaseDate) dateKey(payload.purchaseDate);
+  if (payload.voucherDate) dateKey(payload.voucherDate);
   const db = getDatabase();
+  const linked = (db.godownItems || []).filter(item => item.sourceVoucherId === id);
+  // Validate every correction before mutating any row.
+  const corrections = linked.map(item => {
+    const quantity = payload.quantity ?? item.totalReceivedQuantity;
+    const amount = payload.amount ?? payload.cost ?? quantity * item.ratePerUnit;
+    const rate = amount / quantity;
+    const issued = item.totalReceivedQuantity - item.availableQuantity;
+    if (quantity < issued) throw new ValidationError("Corrected quantity cannot be lower than stock already issued.");
+    if (issued > 0 && Math.abs(rate - item.ratePerUnit) > 0.00001) throw new ValidationError("The rate cannot be changed after stock has been issued. Record a separate adjustment.");
+    return { item, quantity, amount, rate, available: quantity - issued };
+  });
+  for (const correction of corrections) {
+    Object.assign(correction.item, { totalReceivedQuantity: correction.quantity, availableQuantity: correction.available, ratePerUnit: correction.rate, totalValue: correction.available * correction.rate, lastUpdated: new Date().toISOString() });
+    for (const movement of db.godownMovements || []) {
+      if (movement.godownItemId === correction.item.id && movement.movementType === "INWARD_PURCHASE") {
+        Object.assign(movement, { quantity: correction.quantity, ratePerUnit: correction.rate, totalCost: correction.amount });
+      }
+    }
+  }
   const ledger = payload.ledgerId ? getExpenseLedgerById(payload.ledgerId) : undefined;
   const particularName = ledger ? ledger.ledgerName : payload.particularName;
 
-  const updateHelper = (list: any[]) =>
+  const updateHelper = <T extends Voucher>(list: T[]) =>
     list.map((item) => (item.id === id ? { ...item, ...payload, particularName: particularName || item.particularName } : item));
 
   switch (type) {
@@ -204,8 +259,14 @@ export function updateVoucher(type: VoucherType | string, id: string, payload: a
   }
 }
 
-export function deleteVoucher(type: VoucherType | string, id: string): boolean {
+function deleteVoucherImpl(type: VoucherType | string, id: string): boolean {
   const db = getDatabase();
+  oneOf(type, ["feed", "medicine", "vaccine", "other"], "Voucher type");
+  const linked = (db.godownItems || []).filter(item => item.sourceVoucherId === id);
+  if (linked.some(item => item.availableQuantity < item.totalReceivedQuantity)) throw new ValidationError("This purchase has issued stock and cannot be deleted. Record a reversal or adjustment first.");
+  const itemIds = new Set(linked.map(item => item.id));
+  db.godownItems = (db.godownItems || []).filter(item => !itemIds.has(item.id));
+  db.godownMovements = (db.godownMovements || []).filter(movement => !itemIds.has(movement.godownItemId));
   switch (type) {
     case "feed":
       db.feedPurchases = db.feedPurchases.filter((i) => i.id !== id);
@@ -229,10 +290,25 @@ export function deleteVoucher(type: VoucherType | string, id: string): boolean {
 }
 
 export function resetVouchersData() {
+  return withTransaction(() => {
   const db = getDatabase();
   db.feedPurchases = [];
   db.medicinePurchases = [];
   db.vaccinePurchases = [];
   db.otherVouchers = [];
   saveDatabase(db);
+
+  });
+}
+
+export function createVoucher(...args: Parameters<typeof createVoucherImpl>) {
+  return withTransaction(() => createVoucherImpl(...args));
+}
+
+export function updateVoucher(...args: Parameters<typeof updateVoucherImpl>) {
+  return withTransaction(() => updateVoucherImpl(...args));
+}
+
+export function deleteVoucher(...args: Parameters<typeof deleteVoucherImpl>) {
+  return withTransaction(() => deleteVoucherImpl(...args));
 }

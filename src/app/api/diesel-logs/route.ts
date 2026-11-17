@@ -1,5 +1,5 @@
+import { addDieselLog,getDieselLogs } from "@/lib/transaction-logs";
 import { NextResponse } from "next/server";
-import { getDieselLogs, addDieselLog } from "@/lib/transaction-logs";
 
 export async function GET() {
   return NextResponse.json(getDieselLogs());

@@ -1,8 +1,9 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import { LedgerGroupItem, GroupType, PnLSide } from "@/lib/accounting-data";
-import { FolderTree, Plus, Edit2, Trash2, ShieldAlert, CheckCircle2, Search, Filter, Tags, X, Tag } from "lucide-react";
+import { LedgerGroupItem,PnLSide } from "@/lib/accounting-data";
+import { CheckCircle2,Edit2,Filter,FolderTree,Plus,Search,ShieldAlert,Tags,Trash2 } from "lucide-react";
+import React,{ useEffect,useState } from "react";
 
 export default function LedgerGroupsPage() {
   const [groups, setGroups] = useState<LedgerGroupItem[]>([]);
@@ -49,7 +50,11 @@ export default function LedgerGroupsPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchGroupsAndTypes();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
   const openAdd = () => {
@@ -123,8 +128,8 @@ export default function LedgerGroupsPage() {
         const err = await res.json();
         setMsg({ type: "error", text: err.error || "Failed to save group" });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 
@@ -162,7 +167,7 @@ export default function LedgerGroupsPage() {
         setTypeManagerMsg({ type: "success", text: `Group type "${trimmed}" created successfully!` });
         setTimeout(() => setTypeManagerMsg(null), 3000);
       }
-    } catch (err) {
+    } catch  {
       setTypeManagerMsg({ type: "error", text: "Failed to create group type." });
     }
   };

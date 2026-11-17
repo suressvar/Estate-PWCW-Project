@@ -1,30 +1,31 @@
 "use client";
+import { useCallback } from 'react';
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import {
-  Search,
-  Calendar,
-  Printer,
-  Edit2,
-  Trash2,
-  CheckCircle2,
-  PlusCircle,
-  X,
-  Tag,
-  DollarSign,
-  Receipt,
-  Layers,
-  ArrowLeft,
-  Check,
-  TrendingUp,
-  FileSpreadsheet,
-  Store,
-} from "lucide-react";
-import { ExpenseLedgerItem, LedgerGroupItem } from "@/lib/accounting-data";
-import { ExpenseUnit, OtherVoucher } from "@/lib/vouchers-data";
-import { VoucherSlipModal, VoucherSlipData } from "@/components/voucher-slip-modal";
 import { StatCard } from "@/components/ui/stat-card";
+import { VoucherSlipData,VoucherSlipModal } from "@/components/voucher-slip-modal";
+import { ExpenseLedgerItem,LedgerGroupItem } from "@/lib/accounting-data";
+import { ExpenseUnit,OtherVoucher } from "@/lib/vouchers-data";
+import {
+ArrowLeft,
+Calendar,
+Check,
+CheckCircle2,
+DollarSign,
+Edit2,
+FileSpreadsheet,
+Layers,
+PlusCircle,
+Printer,
+Receipt,
+Search,
+Store,
+Trash2,
+TrendingUp,
+X
+} from "lucide-react";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 export default function OtherPurchasesVoucherPage() {
   const [logs, setLogs] = useState<OtherVoucher[]>([]);
@@ -67,7 +68,7 @@ export default function OtherPurchasesVoucherPage() {
   const [activeSlip, setActiveSlip] = useState<VoucherSlipData | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [logsRes, ledgersRes, groupsRes, unitsRes] = await Promise.all([
         fetch("/api/vouchers/other"),
@@ -94,11 +95,15 @@ export default function OtherPurchasesVoucherPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [newLedgerGroupId]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
-  }, []);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchData]);
 
   const openNewEntryModal = () => {
     setDate(new Date().toISOString().split("T")[0]);
@@ -170,8 +175,8 @@ export default function OtherPurchasesVoucherPage() {
 
       closeVoucherModal();
       fetchData();
-    } catch (err: any) {
-      setFeedback({ type: "error", text: err.message || "An error occurred" });
+    } catch (err) {
+      setFeedback({ type: "error", text: getErrorMessage(err) || "An error occurred" });
     }
   };
 
@@ -195,8 +200,8 @@ export default function OtherPurchasesVoucherPage() {
       if (!res.ok) throw new Error("Failed to delete voucher");
       setFeedback({ type: "success", text: "Voucher deleted successfully." });
       fetchData();
-    } catch (err: any) {
-      setFeedback({ type: "error", text: err.message });
+    } catch (err) {
+      setFeedback({ type: "error", text: getErrorMessage(err) });
     }
   };
 
@@ -226,8 +231,8 @@ export default function OtherPurchasesVoucherPage() {
       setNewLedgerName("");
       setNewLedgerDescription("");
       setFeedback({ type: "success", text: `Ledger "${created.ledgerName}" created and selected!` });
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
   };
 
@@ -253,8 +258,8 @@ export default function OtherPurchasesVoucherPage() {
       setNewUnitName("");
       setNewUnitSymbol("");
       setFeedback({ type: "success", text: `Unit "${created.unitSymbol}" added and selected!` });
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
   };
 
@@ -315,18 +320,18 @@ export default function OtherPurchasesVoucherPage() {
           <Link
             href="/purchases"
             className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors"
-            title="Go to Purchase Vouchers"
+            title="Go to Vouchers"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Purchases Module
+                Vouchers Module
               </span>
             </div>
             <h1 className="text-xl font-bold text-slate-900 mt-1">
-              Other Purchases Voucher
+              Other Operational Voucher
             </h1>
           </div>
         </div>
@@ -337,7 +342,7 @@ export default function OtherPurchasesVoucherPage() {
             href="/purchases/retailers"
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-2xs"
           >
-            <Store className="w-3.5 h-3.5 text-emerald-700" /> Retailers / Purchaser
+            <Store className="w-3.5 h-3.5 text-emerald-700" /> Retailers / Suppliers
           </Link>
 
           <button

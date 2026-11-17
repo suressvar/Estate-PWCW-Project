@@ -1,5 +1,5 @@
+import { createCrop,deleteCrop,getCrops,updateCrop } from "@/lib/master-data";
 import { NextResponse } from "next/server";
-import { getCrops, createCrop, updateCrop, deleteCrop } from "@/lib/master-data";
 
 export async function GET() {
   return NextResponse.json(getCrops());

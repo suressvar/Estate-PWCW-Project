@@ -1,22 +1,23 @@
+import { withTransaction } from "./db-storage";
+import { assertRecordId } from "./validation";
+import { randomUUID } from "node:crypto";
 import {
-  getDatabase,
-  saveDatabase,
-  CropCycleItem,
-  CropExpenseItem,
-  CropIncomeItem,
-  CropCycleStatus,
-  CropExpenseCategory,
-  CropIncomeSource,
+CropCycleItem,
+CropCycleStatus,
+CropExpenseCategory,
+CropExpenseItem,
+CropIncomeItem,
+CropIncomeSource,
+getDatabase,
+saveDatabase,
 } from "./db-storage";
 import { getPlots } from "./master-data";
+import { dateKey,dateRange,oneOf,positiveNumber,referenceExists,requiredText } from "./validation";
 
 export type {
-  CropCycleItem,
-  CropExpenseItem,
-  CropIncomeItem,
-  CropCycleStatus,
-  CropExpenseCategory,
-  CropIncomeSource,
+CropCycleItem,CropCycleStatus,
+CropExpenseCategory,CropExpenseItem,
+CropIncomeItem,CropIncomeSource
 };
 
 export interface CropCycleFinancialSummary {
@@ -95,8 +96,8 @@ export function validateCropCycleDateRange(
   const [ey, em, ed] = entryDateStr.split("-").map(Number);
   const entryDate = new Date(ey, em - 1, ed);
 
-  const minStr = minDate.toISOString().split("T")[0];
-  const maxStr = maxDate.toISOString().split("T")[0];
+  
+  
 
   if (entryDate < minDate || entryDate > maxDate) {
     return {
@@ -182,6 +183,12 @@ export function createCropCycle(data: {
   status?: CropCycleStatus;
   notes?: string;
 }): CropCycleItem {
+  return withTransaction(() => {
+  requiredText(data.cropName, "Crop name");
+  dateRange(data.sowingDate, data.expectedHarvestDate);
+  if (data.actualHarvestDate) dateKey(data.actualHarvestDate);
+  if (data.status !== undefined) oneOf(data.status, ["SOWN", "GROWING", "HARVESTED", "SOLD", "CLOSED"], "Cycle status");
+  referenceExists(data.plotId, getPlots(), "Plot");
   const db = getDatabase();
   if (!db.cropCycles) db.cropCycles = [];
 
@@ -190,7 +197,7 @@ export function createCropCycle(data: {
   const now = new Date().toISOString();
 
   const newCycle: CropCycleItem = {
-    id: `cc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `cc_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
     plotId: data.plotId,
     plotName: plot ? plot.name : "Unknown Plot",
     cropName: data.cropName.trim(),
@@ -207,6 +214,8 @@ export function createCropCycle(data: {
   db.cropCycles.unshift(newCycle);
   saveDatabase(db);
   return newCycle;
+
+  });
 }
 
 /**
@@ -216,6 +225,15 @@ export function updateCropCycle(
   id: string,
   data: Partial<CropCycleItem>
 ): CropCycleItem | undefined {
+  return withTransaction(() => {
+  assertRecordId(id, data);
+  const current = getCropCycleById(id);
+  if (!current) return undefined;
+  const merged = { ...current, ...data };
+  if (merged.actualHarvestDate) dateKey(merged.actualHarvestDate);
+  requiredText(merged.cropName, "Crop name"); dateRange(merged.sowingDate, merged.expectedHarvestDate);
+  referenceExists(merged.plotId, getPlots(), "Plot");
+  oneOf(merged.status, ["SOWN", "GROWING", "HARVESTED", "SOLD", "CLOSED"], "Cycle status");
   const db = getDatabase();
   if (!db.cropCycles) return undefined;
 
@@ -231,12 +249,15 @@ export function updateCropCycle(
   db.cropCycles[idx] = updated;
   saveDatabase(db);
   return updated;
+
+  });
 }
 
 /**
  * Delete a CropCycle and all its associated expenses and incomes.
  */
 export function deleteCropCycle(id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.cropCycles) return false;
 
@@ -252,6 +273,8 @@ export function deleteCropCycle(id: string): boolean {
 
   saveDatabase(db);
   return db.cropCycles.length < initialCount;
+
+  });
 }
 
 /**
@@ -266,6 +289,9 @@ export function addCropExpense(data: {
   linkedDailyLogId?: string | null;
   sourceRefId?: string | null;
 }): { expense: CropExpenseItem; warning?: string } {
+  return withTransaction(() => {
+  data.amount = positiveNumber(data.amount, "Expense amount");
+  dateKey(data.date);
   const cycle = getCropCycleById(data.cropCycleId);
   if (!cycle) {
     throw new Error(`Crop cycle with id ${data.cropCycleId} not found.`);
@@ -288,7 +314,7 @@ export function addCropExpense(data: {
 
   const now = new Date().toISOString();
   const newExpense: CropExpenseItem = {
-    id: `ce_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `ce_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
     cropCycleId: data.cropCycleId,
     category: data.category,
     amount: Number(data.amount),
@@ -304,12 +330,15 @@ export function addCropExpense(data: {
   saveDatabase(db);
 
   return { expense: newExpense, warning };
+
+  });
 }
 
 /**
  * Delete a crop expense entry.
  */
 export function deleteCropExpense(expenseId: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.cropExpenses) return false;
 
@@ -317,6 +346,8 @@ export function deleteCropExpense(expenseId: string): boolean {
   db.cropExpenses = db.cropExpenses.filter((e) => e.id !== expenseId);
   saveDatabase(db);
   return db.cropExpenses.length < initial;
+
+  });
 }
 
 /**
@@ -333,6 +364,11 @@ export function addCropIncome(data: {
   buyerName?: string;
   invoiceNo?: string;
 }): { income: CropIncomeItem; warning?: string } {
+  return withTransaction(() => {
+  data.quantitySold = positiveNumber(data.quantitySold, "Quantity sold");
+  data.ratePerUnit = positiveNumber(data.ratePerUnit, "Rate per unit");
+  if (data.amount !== undefined) data.amount = positiveNumber(data.amount, "Income amount");
+  dateKey(data.date);
   const cycle = getCropCycleById(data.cropCycleId);
   if (!cycle) {
     throw new Error(`Crop cycle with id ${data.cropCycleId} not found.`);
@@ -355,7 +391,7 @@ export function addCropIncome(data: {
 
   const now = new Date().toISOString();
   const newIncome: CropIncomeItem = {
-    id: `ci_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `ci_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
     cropCycleId: data.cropCycleId,
     source: data.source,
     quantitySold: qty,
@@ -373,12 +409,15 @@ export function addCropIncome(data: {
   saveDatabase(db);
 
   return { income: newIncome, warning };
+
+  });
 }
 
 /**
  * Delete a crop income entry.
  */
 export function deleteCropIncome(incomeId: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.cropIncomes) return false;
 
@@ -386,6 +425,8 @@ export function deleteCropIncome(incomeId: string): boolean {
   db.cropIncomes = db.cropIncomes.filter((i) => i.id !== incomeId);
   saveDatabase(db);
   return db.cropIncomes.length < initial;
+
+  });
 }
 
 /**
@@ -620,6 +661,7 @@ export function syncOperationsToCropCycle(cropCycleId: string): {
   totalExpensesAdded: number;
   message: string;
 } {
+  return withTransaction(() => {
   const cycle = getCropCycleById(cropCycleId);
   if (!cycle) {
     throw new Error(`Crop cycle with id ${cropCycleId} not found.`);
@@ -660,7 +702,7 @@ export function syncOperationsToCropCycle(cropCycleId: string): {
     } else {
       // Insert new
       db.cropExpenses.push({
-        id: `ce_sync_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        id: `ce_sync_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
         cropCycleId,
         category: "LABOR",
         amount,
@@ -701,7 +743,7 @@ export function syncOperationsToCropCycle(cropCycleId: string): {
       db.cropExpenses[existingIndex].updatedAt = new Date().toISOString();
     } else {
       db.cropExpenses.push({
-        id: `ce_sync_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        id: `ce_sync_${randomUUID()}_${Math.random().toString(36).substring(2, 6)}`,
         cropCycleId,
         category: "MACHINERY",
         amount,
@@ -723,4 +765,6 @@ export function syncOperationsToCropCycle(cropCycleId: string): {
     totalExpensesAdded,
     message: `Synced ${syncedCount} operational entries into crop expenses.`,
   };
+
+  });
 }

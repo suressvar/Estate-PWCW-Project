@@ -1,7 +1,8 @@
-import { getVouchers } from "./vouchers-data";
-import { getOtherSales } from "./sales-data";
 import { getWages } from "./hr-data";
+import { dateRange } from './validation';
 import { getStockValuations } from "./inventory-data";
+import { getOtherSales } from "./sales-data";
+import { getVouchers } from "./vouchers-data";
 
 export interface PnLLineItem {
   name: string;
@@ -27,10 +28,12 @@ export interface PnLStatementResult {
     openingStock: number;
     closingStock: number;
     isProfitable: boolean;
+    stockValuationMatched: boolean;
   };
 }
 
 export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: string = "2027-03-31"): PnLStatementResult {
+  dateRange(fromDate, toDate);
   // Date filtering helper
   const inRange = (dStr: string) => {
     if (!dStr) return true;
@@ -39,40 +42,41 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
 
   // Stock Valuations
   const valuations = getStockValuations();
-  const currentValuation = valuations[0] || { openingStock: 0, closingStock: 0, periodName: "FY 2026-27" };
+  const matchingValuation = valuations.find(item => item.fromDate === fromDate && item.toDate === toDate);
+  const currentValuation = matchingValuation || { openingStock: 0, closingStock: 0, periodName: `${fromDate} to ${toDate}` };
   const openingStock = currentValuation.openingStock;
   const closingStock = currentValuation.closingStock;
 
   // Purchases
-  const feedPurchases = getVouchers("feed").filter((f: any) => inRange(f.purchaseDate));
-  const medPurchases = getVouchers("medicine").filter((m: any) => inRange(m.purchaseDate));
-  const vacPurchases = getVouchers("vaccine").filter((v: any) => inRange(v.purchaseDate));
-  const otherVouchers = getVouchers("other").filter((o: any) => inRange(o.voucherDate));
+  const feedPurchases = getVouchers("feed").filter((f) => inRange(f.purchaseDate));
+  const medPurchases = getVouchers("medicine").filter((m) => inRange(m.purchaseDate));
+  const vacPurchases = getVouchers("vaccine").filter((v) => inRange(v.purchaseDate));
+  const otherVouchers = getVouchers("other").filter((o) => inRange(o.voucherDate));
 
-  const totalFeedPurchases = feedPurchases.reduce((acc: number, i: any) => acc + i.cost, 0);
-  const totalMedPurchases = medPurchases.reduce((acc: number, i: any) => acc + i.cost, 0);
-  const totalVacPurchases = vacPurchases.reduce((acc: number, i: any) => acc + i.cost, 0);
+  const totalFeedPurchases = feedPurchases.reduce((acc: number, i) => acc + i.cost, 0);
+  const totalMedPurchases = medPurchases.reduce((acc: number, i) => acc + i.cost, 0);
+  const totalVacPurchases = vacPurchases.reduce((acc: number, i) => acc + i.cost, 0);
 
   // Other vouchers categorized
   const directExpenses = otherVouchers
-    .filter((o: any) => o.pnlCategory === "Direct Expenses")
-    .reduce((acc: number, i: any) => acc + i.amount, 0);
+    .filter((o) => o.pnlCategory === "Direct Expenses")
+    .reduce((acc: number, i) => acc + i.amount, 0);
 
   const indirectExpenses = otherVouchers
-    .filter((o: any) => o.pnlCategory === "Indirect Expenses")
-    .reduce((acc: number, i: any) => acc + i.amount, 0);
+    .filter((o) => o.pnlCategory === "Indirect Expenses")
+    .reduce((acc: number, i) => acc + i.amount, 0);
 
   const adminExpenses = otherVouchers
-    .filter((o: any) => o.pnlCategory === "Administrative Expenses")
-    .reduce((acc: number, i: any) => acc + i.amount, 0);
+    .filter((o) => o.pnlCategory === "Administrative Expenses")
+    .reduce((acc: number, i) => acc + i.amount, 0);
 
   const equipmentPurchases = otherVouchers
-    .filter((o: any) => o.pnlCategory === "Purchase" || o.particularName?.includes("Equipment"))
-    .reduce((acc: number, i: any) => acc + i.amount, 0);
+    .filter((o) => o.pnlCategory === "Purchase" || o.particularName?.includes("Equipment"))
+    .reduce((acc: number, i) => acc + i.amount, 0);
 
   // Wages
   const paidWages = getWages()
-    .filter((w) => w.status === "PAID")
+    .filter((w) => w.status === "PAID" && Boolean(w.paymentDate || (w.year && w.month)) && inRange(w.paymentDate || `${w.year}-${String(w.month).padStart(2, "0")}-01`))
     .reduce((acc, w) => acc + w.netSalary, 0);
 
   // Sales & Incomes
@@ -80,8 +84,8 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
   const totalOtherSales = otherSales.reduce((acc, s) => acc + s.totalAmount, 0);
 
   const directIncome = otherVouchers
-    .filter((o: any) => o.pnlCategory === "Direct Income")
-    .reduce((acc: number, i: any) => acc + i.amount, 0);
+    .filter((o) => o.pnlCategory === "Direct Income")
+    .reduce((acc: number, i) => acc + i.amount, 0);
 
   // Build Left Side (DEBIT / EXPENSES) - only include items with transactions/amount > 0
   const allDebitItems: PnLLineItem[] = [
@@ -89,20 +93,21 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
     {
       name: "To PWCW Inputs & Nutritional Feed",
       amount: totalFeedPurchases,
-      subItems: feedPurchases.map((f: any) => ({ name: f.feedName, amount: f.cost })),
+      subItems: feedPurchases.map((f) => ({ name: f.feedName, amount: f.cost })),
     },
     {
       name: "To Crop Protection & Bio-Medicine",
       amount: totalMedPurchases,
-      subItems: medPurchases.map((m: any) => ({ name: m.medicineName, amount: m.cost })),
+      subItems: medPurchases.map((m) => ({ name: m.medicineName, amount: m.cost })),
     },
     {
       name: "To Bio-Cultures & Inoculants",
       amount: totalVacPurchases,
-      subItems: vacPurchases.map((v: any) => ({ name: v.vaccineName, amount: v.cost })),
+      subItems: vacPurchases.map((v) => ({ name: v.vaccineName, amount: v.cost })),
     },
     { name: "To PWCW Worker Wages & Labor Settlements", amount: paidWages },
     { name: "To Direct Operational PWCW Expenses", amount: directExpenses },
+    { name: "To Indirect Operational Expenses", amount: indirectExpenses },
     { name: "To Electricity, Irrigation & Administration", amount: adminExpenses },
     { name: "To Equipment & Maintenance Procurement", amount: equipmentPurchases },
   ];
@@ -146,7 +151,7 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
   }
 
   const totalRevenue = totalOtherSales + directIncome;
-  const totalExpenses = totalFeedPurchases + totalMedPurchases + totalVacPurchases + paidWages + directExpenses + adminExpenses + equipmentPurchases;
+  const totalExpenses = totalFeedPurchases + totalMedPurchases + totalVacPurchases + paidWages + directExpenses + indirectExpenses + adminExpenses + equipmentPurchases;
 
   return {
     periodName: currentValuation.periodName,
@@ -165,6 +170,7 @@ export function generatePnLStatement(fromDate: string = "2026-04-01", toDate: st
       openingStock,
       closingStock,
       isProfitable: totalCreditGross >= totalDebitGross,
+      stockValuationMatched: Boolean(matchingValuation),
     },
   };
 }

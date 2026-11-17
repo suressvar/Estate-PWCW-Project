@@ -1,8 +1,10 @@
 "use client";
+import { useCallback } from 'react';
+import type { AttendanceSummary } from "@/types/api";
 
-import React, { useState, useEffect } from "react";
+import { ArrowLeft,FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
-import { ArrowLeft, FileSpreadsheet, Calendar, Filter, Users, TrendingUp } from "lucide-react";
+import { useEffect,useState } from "react";
 
 export default function AttendanceSummaryPage() {
   const now = new Date();
@@ -10,10 +12,10 @@ export default function AttendanceSummaryPage() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [workingDays, setWorkingDays] = useState(26);
 
-  const [summary, setSummary] = useState<any[]>([]);
+  const [summary, setSummary] = useState<AttendanceSummary>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`/api/attendance/summary?year=${year}&month=${month}&workingDays=${workingDays}`);
@@ -24,11 +26,15 @@ export default function AttendanceSummaryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [month, workingDays, year]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchSummary();
-  }, [year, month, workingDays]);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [year, month, workingDays, fetchSummary]);
 
   const exportCSV = () => {
     if (summary.length === 0) return;

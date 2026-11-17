@@ -1,45 +1,33 @@
 "use client";
+import type { CropCycleItem,DailyLogItem,PlotItem } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import type { MonthlyWorkerSummary,WorkerSheet } from "@/types/api";
 
-import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { StatCard } from "@/components/ui/stat-card";
 import {
-  Users,
-  Calendar,
-  Clock,
-  DollarSign,
-  FileSpreadsheet,
-  CheckCircle2,
-  AlertTriangle,
-  X,
-  Plus,
-  ArrowLeft,
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  UserCheck,
-  UserX,
-  Sparkles,
-  CreditCard,
-  Briefcase,
-  Layers,
-  Search,
-  Filter,
-  Download,
-  Trash2,
-  Edit2,
-  RefreshCw,
-  Sprout,
-  Check,
-} from "lucide-react";
-import {
-  WorkerItem,
-  WorkerAttendanceItem,
-  WorkerActivityLogItem,
-  WageEntryItem,
-  WorkerAttendanceStatus,
-  WagePaidStatus,
+WageEntryItem,
+WorkerActivityLogItem,
+WorkerAttendanceItem,
+WorkerAttendanceStatus,
+WorkerItem
 } from "@/lib/db-storage";
+import {
+AlertTriangle,
+Briefcase,
+Calendar,
+CheckCircle2,
+ChevronLeft,
+ChevronRight,
+Download,
+FileSpreadsheet,
+Plus,
+Trash2,
+UserCheck,
+Users,
+X
+} from "lucide-react";
+import Link from "next/link";
+import React,{ useCallback,useEffect,useState } from "react";
 
 export default function WorkersManagementPage() {
   const todayStr = new Date().toISOString().split("T")[0];
@@ -63,19 +51,19 @@ export default function WorkersManagementPage() {
       wage?: WageEntryItem;
       activities?: WorkerActivityLogItem[];
     })[];
-    summary: any;
+    summary: WorkerSheet["summary"];
   } | null>(null);
 
   const [activitiesList, setActivitiesList] = useState<WorkerActivityLogItem[]>([]);
-  const [monthlySummary, setMonthlySummary] = useState<any>(null);
+  const [monthlySummary, setMonthlySummary] = useState<MonthlyWorkerSummary | null>(null);
 
   // External Reference Data (Plots, Crop Cycles, Daily Logs)
-  const [plots, setPlots] = useState<any[]>([]);
-  const [cropCycles, setCropCycles] = useState<any[]>([]);
-  const [dailyLogs, setDailyLogs] = useState<any[]>([]);
+  const [plots, setPlots] = useState<PlotItem[]>([]);
+  const [cropCycles, setCropCycles] = useState<CropCycleItem[]>([]);
+  const [dailyLogs, setDailyLogs] = useState<DailyLogItem[]>([]);
 
   // Loading & Alert States
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [actionAlert, setActionAlert] = useState<{
     type: "success" | "error" | "warning";
     text: string;
@@ -177,6 +165,8 @@ export default function WorkersManagementPage() {
 
   // Tab-based data trigger
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchWorkers();
     if (activeTab === "attendance") {
       fetchDailySheet();
@@ -185,6 +175,8 @@ export default function WorkersManagementPage() {
     } else if (activeTab === "summary") {
       fetchMonthlySummary();
     }
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [activeTab, fetchWorkers, fetchDailySheet, fetchActivities, fetchMonthlySummary]);
 
   // Date Navigation Helpers
@@ -225,8 +217,8 @@ export default function WorkersManagementPage() {
           text: `Attendance and wage computed for ${selectedDate}.`,
         });
       }
-    } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Failed to update attendance." });
+    } catch (e) {
+      setActionAlert({ type: "error", text: getErrorMessage(e) || "Failed to update attendance." });
     }
   };
 
@@ -256,7 +248,7 @@ export default function WorkersManagementPage() {
         type: "success",
         text: `Marked all active workers as PRESENT for ${selectedDate}!`,
       });
-    } catch (e: any) {
+    } catch  {
       setActionAlert({ type: "error", text: "Error updating attendance." });
     } finally {
       setLoading(false);
@@ -290,7 +282,7 @@ export default function WorkersManagementPage() {
         type: "success",
         text: `Calculated all active workers as LEAVE for Sunday ${selectedDate} (No salary, absent not marked).`,
       });
-    } catch (e: any) {
+    } catch  {
       setActionAlert({ type: "error", text: "Error updating attendance." });
     } finally {
       setLoading(false);
@@ -314,8 +306,8 @@ export default function WorkersManagementPage() {
         const err = await res.json();
         setActionAlert({ type: "error", text: err.error || "Failed to remove worker." });
       }
-    } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Failed to remove worker." });
+    } catch (e) {
+      setActionAlert({ type: "error", text: getErrorMessage(e) || "Failed to remove worker." });
     }
   };
 
@@ -349,8 +341,8 @@ export default function WorkersManagementPage() {
         fetchDailySheet();
         setActionAlert({ type: "success", text: "Worker activity logged successfully." });
       }
-    } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Failed to log activity." });
+    } catch (e) {
+      setActionAlert({ type: "error", text: getErrorMessage(e) || "Failed to log activity." });
     }
   };
 
@@ -365,8 +357,8 @@ export default function WorkersManagementPage() {
         fetchActivities();
         setActionAlert({ type: "success", text: "Activity log removed." });
       }
-    } catch (e: any) {
-      setActionAlert({ type: "error", text: e.message || "Failed to delete activity." });
+    } catch (e) {
+      setActionAlert({ type: "error", text: getErrorMessage(e) || "Failed to delete activity." });
     }
   };
 
@@ -900,7 +892,7 @@ export default function WorkersManagementPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {monthlySummary?.summaries && monthlySummary.summaries.length > 0 ? (
-                    monthlySummary.summaries.map((s: any) => (
+                    monthlySummary.summaries.map((s) => (
                       <tr key={s.workerId} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-3 px-4">
                           <div className="font-bold text-slate-900">{s.workerName}</div>

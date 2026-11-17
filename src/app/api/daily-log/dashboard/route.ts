@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { getDashboardPendingWork } from "@/lib/daily-log-data";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

@@ -1,5 +1,5 @@
+import { addLaborLog,getLaborLogs } from "@/lib/transaction-logs";
 import { NextResponse } from "next/server";
-import { getLaborLogs, addLaborLog } from "@/lib/transaction-logs";
 
 export async function GET() {
   return NextResponse.json(getLaborLogs());

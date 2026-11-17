@@ -1,8 +1,9 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Tag, Ruler, CheckCircle2, AlertCircle } from "lucide-react";
 import type { ExpenseUnit } from "@/lib/db-storage";
+import { AlertCircle,CheckCircle2,Tag,Trash2 } from "lucide-react";
+import React,{ useEffect,useState } from "react";
 
 export default function UnitsManagementPage() {
   const [units, setUnits] = useState<ExpenseUnit[]>([]);
@@ -26,7 +27,11 @@ export default function UnitsManagementPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchUnits();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
   const handleAddUnit = async (e: React.FormEvent) => {
@@ -59,8 +64,8 @@ export default function UnitsManagementPage() {
         const data = await res.json();
         setMsg({ type: "error", text: data.error || "Failed to add unit" });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message || "Failed to add unit" });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) || "Failed to add unit" });
     } finally {
       setSubmitting(false);
     }

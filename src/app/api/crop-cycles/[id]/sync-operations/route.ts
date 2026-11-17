@@ -1,5 +1,6 @@
+import { getCropCycleFinancials,syncOperationsToCropCycle } from "@/lib/crop-cycle-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { NextResponse } from "next/server";
-import { syncOperationsToCropCycle, getCropCycleFinancials } from "@/lib/crop-cycle-data";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function POST(
       ...syncReport,
       financials,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

@@ -1,21 +1,20 @@
+import { randomUUID } from "node:crypto";
+import { withTransaction } from "./db-storage";
 import {
-  getDatabase,
-  saveDatabase,
-  GodownItem,
-  GodownStockMovement,
-  FertilizerLogItem,
-  DieselLogItem,
-  MachineryLogItem,
-  GeneralPurchaseLogItem,
+getDatabase,
+GodownItem,
+GodownStockMovement,
+saveDatabase
 } from "./db-storage";
 import {
-  addFertilizerLog,
-  addDieselLog,
-  addMachineryLog,
-  addGeneralPurchaseLog,
+addDieselLog,
+addFertilizerLog,
+addGeneralPurchaseLog,
+addMachineryLog,
 } from "./transaction-logs";
+import { dateKey,finiteNumber,positiveNumber,requiredText,ValidationError } from "./validation";
 
-export type { GodownItem, GodownStockMovement };
+export type { GodownItem,GodownStockMovement };
 
 export interface IssueItemPayload {
   godownItemId: string;
@@ -94,11 +93,14 @@ export function getGodownStats() {
 }
 
 export function clearAllGodownData(): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   db.godownItems = [];
   db.godownMovements = [];
   saveDatabase(db);
   return true;
+
+  });
 }
 
 export function addGodownItem(
@@ -106,6 +108,13 @@ export function addGodownItem(
     status?: "IN_STOCK" | "LOW_STOCK" | "EXHAUSTED";
   }
 ): GodownItem {
+  return withTransaction(() => {
+  payload.name = requiredText(payload.name, "Item name");
+  payload.totalReceivedQuantity = positiveNumber(payload.totalReceivedQuantity, "Received quantity");
+  payload.availableQuantity = finiteNumber(payload.availableQuantity, "Available quantity", 0, payload.totalReceivedQuantity);
+  if (payload.availableQuantity > payload.totalReceivedQuantity) throw new ValidationError("Available quantity cannot exceed received quantity.");
+  payload.ratePerUnit = finiteNumber(payload.ratePerUnit, "Rate per unit", 0, 0);
+  if (payload.receivedDate) dateKey(payload.receivedDate);
   const db = getDatabase();
   if (!db.godownItems) db.godownItems = [];
   if (!db.godownMovements) db.godownMovements = [];
@@ -114,11 +123,11 @@ export function addGodownItem(
   const totalQty = Number(payload.totalReceivedQuantity) || 1;
   const availableQty = payload.availableQuantity !== undefined ? Number(payload.availableQuantity) : totalQty;
   const rate = Number(payload.ratePerUnit) || 0;
-  const minAlert = Number(payload.minStockAlert) || Math.max(1, Math.round(totalQty * 0.2));
+  const minAlert = finiteNumber(payload.minStockAlert, 'Stock alert', 0, Math.max(1, Math.round(totalQty * 0.2)));
   const status = calculateGodownItemStatus(availableQty, minAlert);
 
   const newItem: GodownItem = {
-    id: `gdn_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    id: `gdn_${randomUUID()}_${Math.floor(Math.random() * 1000)}`,
     name: payload.name.trim(),
     category: payload.category || "General Estate Supplies",
     sourceVoucherId: payload.sourceVoucherId,
@@ -142,7 +151,7 @@ export function addGodownItem(
 
   // Record Inward Movement
   const movement: GodownStockMovement = {
-    id: `mov_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    id: `mov_${randomUUID()}_${Math.floor(Math.random() * 1000)}`,
     godownItemId: newItem.id,
     itemName: newItem.name,
     category: newItem.category,
@@ -163,12 +172,14 @@ export function addGodownItem(
 
   saveDatabase(db);
   return newItem;
+
+  });
 }
 
 /**
  * Automatically inward items from a purchase voucher into the Godown.
  */
-export function inwardPurchasedItems(
+function inwardPurchasedItemsImpl(
   voucherItems: Array<{ description: string; quantity: number; unit: string; rate: number; amount: number }>,
   voucherInfo: {
     voucherId?: string;
@@ -240,12 +251,12 @@ function determineDefaultGodownLocation(category?: string, name?: string): strin
  * - Creates a GodownStockMovement audit record
  * - Automatically registers the transaction in the destination module's log
  */
-export function issueGodownItemToMenu(payload: IssueItemPayload): {
+function issueGodownItemToMenuImpl(payload: IssueItemPayload): {
   success: boolean;
   message: string;
   updatedItem: GodownItem;
   movement: GodownStockMovement;
-  destinationLog?: any;
+  destinationLog?: ReturnType<typeof addFertilizerLog> | ReturnType<typeof addDieselLog> | ReturnType<typeof addMachineryLog> | ReturnType<typeof addGeneralPurchaseLog> | null;
 } {
   const db = getDatabase();
   if (!db.godownItems) db.godownItems = [];
@@ -284,7 +295,7 @@ export function issueGodownItemToMenu(payload: IssueItemPayload): {
 
   // Determine Destination Route and create destination log
   let destinationRoute = "/godown";
-  let destinationLog: any = null;
+  let destinationLog: ReturnType<typeof addFertilizerLog> | ReturnType<typeof addDieselLog> | ReturnType<typeof addMachineryLog> | ReturnType<typeof addGeneralPurchaseLog> | null = null;
   const dest = (payload.destinationMenu || "").toLowerCase();
 
   if (dest.includes("fertilizer")) {
@@ -339,7 +350,7 @@ export function issueGodownItemToMenu(payload: IssueItemPayload): {
       description: `${item.name} (${reqQty} ${item.unit}) issued to ${payload.plotName || "estate operations"}`,
       items: [
         {
-          id: `item_${Date.now()}`,
+          id: `item_${randomUUID()}`,
           description: item.name,
           quantity: reqQty,
           unit: item.unit,
@@ -359,7 +370,7 @@ export function issueGodownItemToMenu(payload: IssueItemPayload): {
 
   // Create Movement Log
   const movement: GodownStockMovement = {
-    id: `mov_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    id: `mov_${randomUUID()}_${Math.floor(Math.random() * 1000)}`,
     godownItemId: item.id,
     itemName: item.name,
     category: item.category,
@@ -492,4 +503,12 @@ export function getModuleStockSummary(module: string) {
     purchases,
     consumptions,
   };
+}
+
+export function inwardPurchasedItems(...args: Parameters<typeof inwardPurchasedItemsImpl>) {
+  return withTransaction(() => inwardPurchasedItemsImpl(...args));
+}
+
+export function issueGodownItemToMenu(...args: Parameters<typeof issueGodownItemToMenuImpl>) {
+  return withTransaction(() => issueGodownItemToMenuImpl(...args));
 }

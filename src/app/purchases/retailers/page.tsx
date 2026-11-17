@@ -1,27 +1,29 @@
 "use client";
+import { useCallback } from 'react';
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
+import type { PartyItem,PartyType } from "@/lib/parties-data";
 import {
-  Store,
-  PlusCircle,
-  Search,
-  ArrowLeft,
-  Building2,
-  Phone,
-  Mail,
-  MapPin,
-  Edit2,
-  Trash2,
-  CheckCircle2,
-  AlertCircle,
-  X,
-  Receipt,
-  Users,
-  RefreshCw,
-  ExternalLink,
+AlertCircle,
+ArrowLeft,
+Building2,
+CheckCircle2,
+Edit2,
+ExternalLink,
+Mail,
+MapPin,
+Phone,
+PlusCircle,
+Receipt,
+RefreshCw,
+Search,
+Store,
+Trash2,
+Users,
+X,
 } from "lucide-react";
-import type { PartyItem, PartyType } from "@/lib/parties-data";
+import Link from "next/link";
+import React,{ useEffect,useMemo,useState } from "react";
 
 export default function RetailersPurchasersPage() {
   const [parties, setParties] = useState<PartyItem[]>([]);
@@ -54,7 +56,7 @@ export default function RetailersPurchasersPage() {
     }, 4000);
   };
 
-  const fetchParties = async () => {
+  const fetchParties = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/parties");
@@ -64,16 +66,20 @@ export default function RetailersPurchasersPage() {
       } else {
         showToast("error", "Failed to fetch retailers and purchasers.");
       }
-    } catch (err: any) {
-      showToast("error", err.message || "Network error loading parties");
+    } catch (err) {
+      showToast("error", getErrorMessage(err) || "Network error loading parties");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchParties();
-  }, []);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchParties]);
 
   const openCreateModal = () => {
     setEditingParty(null);
@@ -148,8 +154,8 @@ export default function RetailersPurchasersPage() {
           showToast("error", err.error || "Failed to create party");
         }
       }
-    } catch (err: any) {
-      showToast("error", err.message || "Failed to save record");
+    } catch (err) {
+      showToast("error", getErrorMessage(err) || "Failed to save record");
     } finally {
       setSubmitting(false);
     }
@@ -171,8 +177,8 @@ export default function RetailersPurchasersPage() {
         const err = await res.json();
         showToast("error", err.error || "Could not delete party");
       }
-    } catch (err: any) {
-      showToast("error", err.message || "Delete failed");
+    } catch (err) {
+      showToast("error", getErrorMessage(err) || "Delete failed");
     }
   };
 
@@ -237,21 +243,21 @@ export default function RetailersPurchasersPage() {
           <Link
             href="/purchases"
             className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors"
-            title="Return to Purchase Vouchers"
+            title="Return to Vouchers"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
-                Purchases Module
+                Vouchers Module
               </span>
               <span className="text-slate-300">•</span>
               <span className="text-xs text-slate-500 font-medium">Party Directory</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 flex items-center gap-2">
               <Store className="w-6 h-6 text-emerald-700" />
-              Retailers & Purchasers Directory
+              Retailers & Suppliers Directory
             </h1>
           </div>
         </div>

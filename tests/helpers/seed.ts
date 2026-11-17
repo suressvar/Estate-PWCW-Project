@@ -1,0 +1,32 @@
+import { createPlot, createCrop, createPlotCrop } from '../../src/lib/master-data';
+import { createEmployee, createEmployeeRole, markAttendance, calculateSalariesForMonth } from '../../src/lib/hr-data';
+import { createCropCycle, addCropExpense, addCropIncome } from '../../src/lib/crop-cycle-data';
+import { createLedgerGroup, createExpenseLedger } from '../../src/lib/accounting-data';
+import { createParty } from '../../src/lib/parties-data';
+import { createOperationItem } from '../../src/lib/operation-items-data';
+import { createMachine } from '../../src/lib/machinery-data';
+import { addGodownItem } from '../../src/lib/godown-data';
+import { createMultiItemSale } from '../../src/lib/sales-data';
+import { addExpense } from '../../src/lib/expenses-data';
+export function seedRecords() {
+  const date = new Date().toISOString().slice(0, 10);
+  const plot = createPlot({ name: 'North Test Plot', location: 'Estate', areaAcres: 5, status: 'ACTIVE' });
+  const crop = createCrop({ name: 'Test Tomato', type: 'CROP' });
+  const association = createPlotCrop(plot.id, crop.id, date);
+  const role = createEmployeeRole('Test Supervisor');
+  const employee = createEmployee({ name: 'Test Worker', roleId: role.id, wageType: 'DAILY', wageRate: 600, status: 'ACTIVE' });
+  markAttendance({ employeeId: employee.id, attendanceDate: date, status: 'PRESENT' });
+  calculateSalariesForMonth(Number(date.slice(0, 4)), Number(date.slice(5, 7)));
+  const cycle = createCropCycle({ plotId: plot.id, cropName: 'Test Tomato Cycle', sowingDate: date, expectedHarvestDate: '2027-12-31' });
+  addCropExpense({ cropCycleId: cycle.id, category: 'SEEDS', amount: 100, date, description: 'Test seeds' });
+  addCropIncome({ cropCycleId: cycle.id, source: 'MARKET_SALE', quantitySold: 10, unit: 'kg', ratePerUnit: 20, date, buyerName: 'Test Buyer' });
+  const group = createLedgerGroup({ groupName: 'Test Inputs', groupType: 'EXPENSE', pnlSide: 'DEBIT', description: 'Test' });
+  const ledger = createExpenseLedger({ ledgerName: 'Test Supplies', groupId: group.id });
+  const party = createParty({ name: 'Test Supplier', type: 'Both', city: 'Test City' });
+  createOperationItem({ itemCode: 'TEST-001', name: 'Test Urea', category: 'Fertilizer & Nutrition', unit: 'kg', defaultRate: 20, currentStock: 10, minStockAlert: 5, status: 'ACTIVE' });
+  const machine = createMachine({ name: 'Test Tractor', type: 'TRACTOR', registrationNumber: 'TEST-01', fuelType: 'Diesel', active: true });
+  const stock = addGodownItem({ name: 'Test Urea', category: 'Fertilizer & Nutrition', totalReceivedQuantity: 100, availableQuantity: 100, unit: 'kg', ratePerUnit: 20, minStockAlert: 5, receivedDate: date, location: 'Test Bay' });
+  addExpense({ category: 'GENERAL', amount: 50, date, description: 'Test overhead', plotId: plot.id, cropCycleId: cycle.id });
+  const sale = createMultiItemSale('other', { buyerName: 'Test Buyer', dateOfSale: date, items: [{ itemName: 'Test Tomato', quantity: 10, pricePerUnit: 20 }] });
+  return { date, plot, crop, association, role, employee, cycle, ledger, group, party, machine, stock, sale };
+}

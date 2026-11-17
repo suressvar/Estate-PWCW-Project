@@ -1,19 +1,17 @@
 "use client";
+import { useCallback } from 'react';
+import type { AttendanceRecord } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { AttendanceStatus,EmployeeItem } from "@/lib/hr-data";
 import {
-  Calendar,
-  CheckCircle2,
-  Users,
-  Clock,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  FileSpreadsheet,
-  ShieldAlert,
+Calendar,
+CheckCircle2,
+FileSpreadsheet,
+ShieldAlert
 } from "lucide-react";
-import { AttendanceStatus, EmployeeItem } from "@/lib/hr-data";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 export default function AttendanceGridPage() {
   const now = new Date();
@@ -21,7 +19,7 @@ export default function AttendanceGridPage() {
   const [month, setMonth] = useState(now.getMonth() + 1);
 
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Cell Click Modal
@@ -42,7 +40,7 @@ export default function AttendanceGridPage() {
   const daysInMonth = new Date(year, month, 0).getDate();
   const dayNumbers = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  const fetchGrid = async () => {
+  const fetchGrid = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`/api/attendance/grid?year=${year}&month=${month}`);
@@ -54,17 +52,21 @@ export default function AttendanceGridPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [month, year]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchGrid();
-  }, [year, month]);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [year, month, fetchGrid]);
 
   const isSunday = (day: number) => {
     return new Date(year, month - 1, day).getDay() === 0;
   };
 
-  const getRecordForCell = (empId: string, day: number) => {
+  const getRecordForCell = (empId: string, day: number): Partial<AttendanceRecord> | undefined => {
     const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const found = records.find((r) => r.employeeId === empId && r.attendanceDate === dayStr);
     if (!found && isSunday(day)) {
@@ -126,8 +128,8 @@ export default function AttendanceGridPage() {
         });
         setModalData(null);
       }
-    } catch (err: any) {
-      alert("Error marking attendance: " + err.message);
+    } catch (err) {
+      alert("Error marking attendance: " + getErrorMessage(err));
     }
   };
 
@@ -147,8 +149,8 @@ export default function AttendanceGridPage() {
         fetchGrid();
         setTimeout(() => setMsg(null), 4000);
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 
@@ -266,7 +268,7 @@ export default function AttendanceGridPage() {
                 employees.map((emp) => {
                   let pCount = 0;
                   let hCount = 0;
-                  let aCount = 0;
+                  
 
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/50">
@@ -294,7 +296,7 @@ export default function AttendanceGridPage() {
                           } else if (rec.status === "ABSENT") {
                             badgeBg = "bg-rose-600 text-white font-bold shadow-xs";
                             letter = "A";
-                            aCount++;
+                            
                           } else if (rec.status === "LEAVE") {
                             badgeBg = "bg-emerald-800 text-white font-bold shadow-xs";
                             letter = "L";

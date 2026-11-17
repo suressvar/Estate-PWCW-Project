@@ -1,13 +1,14 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft, Plus, Edit2, Trash2, CheckCircle2, ShieldAlert, Layers } from "lucide-react";
 import { ManualStockValuationItem } from "@/lib/inventory-data";
+import { ArrowLeft,CheckCircle2,Edit2,Plus,ShieldAlert,Trash2 } from "lucide-react";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 export default function StockValuationsPage() {
   const [valuations, setValuations] = useState<ManualStockValuationItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -33,7 +34,11 @@ export default function StockValuationsPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchValuations();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
   const openAdd = () => {
@@ -91,8 +96,8 @@ export default function StockValuationsPage() {
         const err = await res.json();
         setMsg({ type: "error", text: err.error || "Failed to save valuation" });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 

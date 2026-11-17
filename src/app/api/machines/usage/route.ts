@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
-  getMachineUsageLogs,
-  addMachineUsageLog,
-  updateMachineUsageLog,
-  deleteMachineUsageLog,
+addMachineUsageLog,
+deleteMachineUsageLog,
+getMachineUsageLogs,
+updateMachineUsageLog,
 } from "@/lib/machinery-data";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,9 +26,9 @@ export async function GET(request: NextRequest) {
       endDate,
     });
     return NextResponse.json({ success: true, data: logs });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch usage logs" },
+      { success: false, error: getErrorMessage(error) || "Failed to fetch usage logs" },
       { status: 500 }
     );
   }
@@ -38,9 +39,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const log = addMachineUsageLog(body);
     return NextResponse.json({ success: true, data: log }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to log machine usage" },
+      { success: false, error: getErrorMessage(error) || "Failed to log machine usage" },
       { status: 400 }
     );
   }
@@ -64,9 +65,9 @@ export async function PUT(request: NextRequest) {
       );
     }
     return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to update usage log" },
+      { success: false, error: getErrorMessage(error) || "Failed to update usage log" },
       { status: 400 }
     );
   }
@@ -90,9 +91,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
     return NextResponse.json({ success: true, message: "Usage log deleted successfully" });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to delete usage log" },
+      { success: false, error: getErrorMessage(error) || "Failed to delete usage log" },
       { status: 500 }
     );
   }

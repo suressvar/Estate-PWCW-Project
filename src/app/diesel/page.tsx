@@ -1,24 +1,26 @@
 "use client";
+import { useCallback } from 'react';
+import type { DieselLogItem } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import type { ModuleStockSummary } from "@/types/api";
 
-import React, { useState, useEffect } from "react";
-import {
-  Fuel,
-  Package,
-  ShoppingCart,
-  TrendingDown,
-  Plus,
-  Warehouse,
-  History,
-  CheckCircle2,
-  AlertCircle,
-  Tractor,
-  X,
-  Send,
-  SlidersHorizontal,
-} from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
-import type { PlotItem, PlotCropAssociation } from "@/types/estate";
 import type { GodownItem } from "@/lib/godown-data";
+import type { PlotCropAssociation,PlotItem } from "@/types/estate";
+import {
+AlertCircle,
+CheckCircle2,
+Fuel,
+History,
+Plus,
+Send,
+ShoppingCart,
+Tractor,
+TrendingDown,
+Warehouse,
+X
+} from "lucide-react";
+import React,{ useEffect,useState } from "react";
 
 const ESTATE_MACHINES = [
   "John Deere 5050D Tractor",
@@ -33,14 +35,14 @@ const ESTATE_MACHINES = [
 
 export default function DieselPage() {
   const [activeTab, setActiveTab] = useState<"consumption" | "purchases" | "stock">("consumption");
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Master Data
   const [plots, setPlots] = useState<PlotItem[]>([]);
-  const [associations, setAssociations] = useState<PlotCropAssociation[]>([]);
+  const [, setAssociations] = useState<PlotCropAssociation[]>([]);
 
   // Module Stock Data from Godown
-  const [stockSummary, setStockSummary] = useState<any>({
+  const [stockSummary, setStockSummary] = useState<ModuleStockSummary>({
     itemsCount: 0,
     totalAvailableQty: 0,
     totalValuation: 0,
@@ -54,7 +56,7 @@ export default function DieselPage() {
   });
 
   // Diesel Logs
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<DieselLogItem[]>([]);
 
   // Dispense Consumption Form State
   const [selectedPlotId, setSelectedPlotId] = useState("");
@@ -63,7 +65,7 @@ export default function DieselPage() {
   const [selectedMachine, setSelectedMachine] = useState(ESTATE_MACHINES[0]);
   const [dispenseQty, setDispenseQty] = useState<number | "">("");
   const [dispenseDate, setDispenseDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [driverName, setDriverName] = useState("Ramasamy V. / Operator");
+  const [driverName, ] = useState("Ramasamy V. / Operator");
   const [submittingDispense, setSubmittingDispense] = useState(false);
 
   // Inward Purchase Modal State
@@ -78,7 +80,7 @@ export default function DieselPage() {
   // Feedback Notification
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const loadAllData = async () => {
+  const loadAllData = useCallback(async () => {
     try {
       setLoading(true);
       const [plotsRes, pcRes, stockRes, logsRes] = await Promise.all([
@@ -100,7 +102,7 @@ export default function DieselPage() {
 
       if (Array.isArray(plotsData) && plotsData.length > 0 && !selectedPlotId) {
         setSelectedPlotId(plotsData[0].id);
-        const filtered = (Array.isArray(pcData) ? pcData : []).filter((a: any) => a.plotId === plotsData[0].id);
+        const filtered = (Array.isArray(pcData) ? pcData : []).filter((a: PlotCropAssociation) => a.plotId === plotsData[0].id);
         if (filtered.length > 0) setSelectedCropActivityId(filtered[0].id);
       }
 
@@ -113,21 +115,17 @@ export default function DieselPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedGodownItemId, selectedPlotId]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     loadAllData();
-  }, []);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [loadAllData]);
 
-  const handlePlotSelect = (plotId: string) => {
-    setSelectedPlotId(plotId);
-    const filtered = associations.filter((a) => a.plotId === plotId);
-    if (filtered.length > 0) {
-      setSelectedCropActivityId(filtered[0].id);
-    } else {
-      setSelectedCropActivityId("");
-    }
-  };
+  
 
   const selectedGodownItem = stockSummary.items.find((i: GodownItem) => i.id === selectedGodownItemId);
 
@@ -141,7 +139,7 @@ export default function DieselPage() {
     }
 
     const activePlot = plots.find((p) => p.id === selectedPlotId);
-    const activeCrop = associations.find((a) => a.id === selectedCropActivityId);
+    
 
     try {
       setSubmittingDispense(true);
@@ -208,8 +206,8 @@ export default function DieselPage() {
       setDispenseQty("");
       loadAllData();
       setTimeout(() => setFeedback(null), 4000);
-    } catch (err: any) {
-      setFeedback({ type: "error", message: err.message || "Failed to log fuel dispense" });
+    } catch (err) {
+      setFeedback({ type: "error", message: getErrorMessage(err) || "Failed to log fuel dispense" });
     } finally {
       setSubmittingDispense(false);
     }
@@ -253,8 +251,8 @@ export default function DieselPage() {
 
       loadAllData();
       setTimeout(() => setFeedback(null), 4000);
-    } catch (err: any) {
-      setFeedback({ type: "error", message: err.message || "Failed to inward fuel" });
+    } catch (err) {
+      setFeedback({ type: "error", message: getErrorMessage(err) || "Failed to inward fuel" });
     } finally {
       setSubmittingInward(false);
     }
@@ -401,6 +399,7 @@ export default function DieselPage() {
                     </span>
                   </label>
                   <select
+                    aria-label="Diesel stock item"
                     value={selectedGodownItemId}
                     onChange={(e) => setSelectedGodownItemId(e.target.value)}
                     className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
@@ -414,7 +413,7 @@ export default function DieselPage() {
                   </select>
                   {stockSummary.items.length === 0 && (
                     <p className="text-[11px] text-amber-600 font-medium">
-                      No fuel stock found in Godown. Click "+ Refill Storage Tank" to inward fuel.
+                      No fuel stock found in Godown. Click &quot;+ Refill Storage Tank&quot; to inward fuel.
                     </p>
                   )}
                 </div>
@@ -447,6 +446,7 @@ export default function DieselPage() {
                     step="any"
                     max={selectedGodownItem?.availableQuantity}
                     placeholder="e.g. 35"
+                    aria-label="Diesel quantity"
                     value={dispenseQty}
                     onChange={(e) => setDispenseQty(e.target.value === "" ? "" : Number(e.target.value))}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
@@ -573,11 +573,11 @@ export default function DieselPage() {
                 {(!stockSummary.purchases || stockSummary.purchases.length === 0) ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-500">
-                      No fuel delivery records found in Godown. Click "+ Refill Storage Tank" to inward bulk fuel.
+                      No fuel delivery records found in Godown. Click &quot;+ Refill Storage Tank&quot; to inward bulk fuel.
                     </td>
                   </tr>
                 ) : (
-                  stockSummary.purchases.map((m: any) => (
+                  stockSummary.purchases.map((m) => (
                     <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">{m.date}</td>
                       <td className="p-3.5 font-bold text-slate-900">{m.itemName}</td>
@@ -638,7 +638,7 @@ export default function DieselPage() {
                 {(!stockSummary.items || stockSummary.items.length === 0) ? (
                   <tr>
                     <td colSpan={8} className="p-8 text-center text-slate-500">
-                      No diesel storage records in Godown. Click "+ Refill Storage Tank" to inward fuel.
+                      No diesel storage records in Godown. Click &quot;+ Refill Storage Tank&quot; to inward fuel.
                     </td>
                   </tr>
                 ) : (

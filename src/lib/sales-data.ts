@@ -1,5 +1,11 @@
-import { getDatabase, saveDatabase, OtherSaleItem } from "./db-storage";
+import { withTransaction } from "./db-storage";
+import { money } from './money';
+import { nextReference } from './references';
+import { assertRecordId } from "./validation";
+import { randomUUID } from "node:crypto";
 import { getExpenseLedgerById } from "./accounting-data";
+import { getDatabase,OtherSaleItem,saveDatabase } from "./db-storage";
+import { dateKey,finiteNumber,oneOf,positiveNumber,requiredText,ValidationError } from "./validation";
 
 export type SaleType = "crop" | "other";
 
@@ -48,6 +54,7 @@ export function getSalesCategories(): string[] {
 }
 
 export function addSalesCategory(category: string): string[] {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.salesCategories) db.salesCategories = [];
   const trimmed = category.trim();
@@ -56,41 +63,58 @@ export function addSalesCategory(category: string): string[] {
     saveDatabase(db);
   }
   return db.salesCategories;
+
+  });
 }
 
 export function deleteSalesCategory(category: string): string[] {
+  return withTransaction(() => {
   const db = getDatabase();
   if (!db.salesCategories) return [];
   db.salesCategories = db.salesCategories.filter((c) => c !== category.trim());
   saveDatabase(db);
   return db.salesCategories;
+
+  });
 }
 
-export function createMultiItemSale(type: string, payload: any) {
+type SaleInput = Partial<OtherSaleItem> & { items: Partial<OtherSaleItem>[]; recordNo?: string };
+export function createMultiItemSale(type: string, payload: SaleInput) {
+  return withTransaction(() => {
+  oneOf(type, ["crop", "other"], "Sale type");
+  if (!Array.isArray(payload.items) || payload.items.length === 0) throw new ValidationError("At least one invoice item is required.");
+  if (payload.dateOfSale) dateKey(payload.dateOfSale);
+  for (const item of payload.items) {
+    requiredText(item.itemName, "Item name"); positiveNumber(item.quantity, "Quantity"); finiteNumber(item.pricePerUnit, "Price per unit");
+  }
   const db = getDatabase();
-  const invoiceGroupId = `inv_${Date.now()}`;
+  const invoiceGroupId = `inv_${randomUUID()}`;
+  if (payload.recordNo !== undefined && payload.recordNo !== '') {
+    payload.recordNo = requiredText(payload.recordNo, 'Record number');
+    if (db.otherSales.some(item => item.srNo === payload.recordNo)) throw new ValidationError('Sales record number already exists.');
+  }
   const ledger = payload.ledgerId ? getExpenseLedgerById(payload.ledgerId) : undefined;
   const particularName = ledger ? ledger.ledgerName : payload.particularName || "Crop & Produce Sales";
   const category = payload.category?.trim() || "General Estate Sales";
 
   const created: OtherSaleItem[] = [];
   const items = payload.items || [];
-  items.forEach((item: any, idx: number) => {
+  items.forEach((item, idx: number) => {
     const srNo = payload.recordNo
       ? String(payload.recordNo)
-      : `OSR-${String(db.otherSales.length + 1 + idx).padStart(4, "0")}`;
-    const qty = Number(item.quantity) || 1;
-    const rate = Number(item.pricePerUnit) || 0;
+      : nextReference(db, 'OSR-', db.otherSales.map(item => item.srNo), 4);
+    const qty = positiveNumber(item.quantity, "Quantity");
+    const rate = finiteNumber(item.pricePerUnit, "Price per unit");
     const record: OtherSaleItem = {
-      id: `os_${Date.now()}_${idx}`,
+      id: `os_${randomUUID()}_${idx}`,
       srNo,
       itemName: item.itemName || "Crop Produce",
       quantity: qty,
       unit: item.unit || "kg",
       pricePerUnit: rate,
-      totalAmount: qty * rate,
+      totalAmount: money(qty * rate),
       dateOfSale: payload.dateOfSale || new Date().toISOString().split("T")[0],
-      buyerName: payload.buyerName,
+      buyerName: payload.buyerName || "Walk-in Customer",
       buyerCity: payload.buyerCity,
       buyerContact: payload.buyerContact,
       ledgerId: payload.ledgerId,
@@ -107,9 +131,16 @@ export function createMultiItemSale(type: string, payload: any) {
 
   saveDatabase(db);
   return { invoiceGroupId, items: created };
+
+  });
 }
 
-export function updateSale(type: string, id: string, payload: any) {
+export function updateSale(type: string, id: string, payload: Partial<OtherSaleItem>) {
+  return withTransaction(() => {
+  assertRecordId(id, payload);
+  if (payload.quantity !== undefined) positiveNumber(payload.quantity, "Quantity");
+  if (payload.pricePerUnit !== undefined) finiteNumber(payload.pricePerUnit, "Price per unit");
+  if (payload.dateOfSale !== undefined) dateKey(payload.dateOfSale);
   const db = getDatabase();
   db.otherSales = db.otherSales.map((s) => {
     if (s.id === id) {
@@ -120,20 +151,25 @@ export function updateSale(type: string, id: string, payload: any) {
         ...payload,
         quantity: qty,
         pricePerUnit: rate,
-        totalAmount: qty * rate,
+        totalAmount: money(qty * rate),
       };
     }
     return s;
   });
   saveDatabase(db);
   return db.otherSales.find((s) => s.id === id);
+
+  });
 }
 
 export function deleteSale(type: string, id: string): boolean {
+  return withTransaction(() => {
   const db = getDatabase();
   db.otherSales = db.otherSales.filter((s) => s.id !== id);
   saveDatabase(db);
   return true;
+
+  });
 }
 
 export function calculateSalesAnalytics() {
@@ -186,11 +222,14 @@ export const updateSaleItem = updateSale;
 export const deleteSaleItem = deleteSale;
 
 export function resetSalesData() {
+  return withTransaction(() => {
   const db = getDatabase();
   db.otherSales = [];
   db.salesLogs = [];
   saveDatabase(db);
   return true;
+
+  });
 }
 
 export const clearAllSales = resetSalesData;

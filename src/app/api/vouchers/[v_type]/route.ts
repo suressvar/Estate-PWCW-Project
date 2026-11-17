@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { createVoucher,getVouchers,VoucherType } from "@/lib/vouchers-data";
 import { NextResponse } from "next/server";
-import { getVouchers, createVoucher, VoucherType } from "@/lib/vouchers-data";
 
 export async function GET(req: Request, { params }: { params: Promise<{ v_type: string }> }) {
   const { v_type } = await params;
@@ -13,7 +14,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ v_type:
     const body = await req.json();
     const created = createVoucher(v_type as VoucherType, body);
     return NextResponse.json(created, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

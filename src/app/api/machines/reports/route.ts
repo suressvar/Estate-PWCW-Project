@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
-  getMachineryReport,
-  getPlotMachineryConsumptionReport,
+getMachineryReport,
+getPlotMachineryConsumptionReport,
 } from "@/lib/machinery-data";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,9 +17,9 @@ export async function GET(request: NextRequest) {
 
     const machineReport = getMachineryReport();
     return NextResponse.json({ success: true, data: machineReport });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to generate machinery report" },
+      { success: false, error: getErrorMessage(error) || "Failed to generate machinery report" },
       { status: 500 }
     );
   }

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { Eye,EyeOff,Lock,ShieldAlert,Trees,User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Trees, Eye, EyeOff, Lock, User, ShieldAlert } from "lucide-react";
+import React,{ useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,28 +12,25 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (!username.trim() || !password.trim()) {
+    if (!username.trim() || !password) {
       setError("Please enter both username and password.");
       return;
     }
-
-    if (username !== "Admin" || password !== "Admin123") {
-      setError("Invalid username or password.");
-      return;
-    }
-
     setIsLoading(true);
-
-    // Store auth state in cookie/sessionStorage
-    setTimeout(() => {
-      document.cookie = "estate_authenticated=true; path=/";
-      sessionStorage.setItem("user", username);
-      router.push("/");
-    }, 600);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const result = await response.json();
+      if (!response.ok) { setError(result.error || 'Unable to sign in.'); return; }
+      router.replace('/');
+      router.refresh();
+    } catch { setError('Unable to connect. Please try again.'); }
+    finally { setIsLoading(false); }
   };
 
   return (

@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { calculateSalariesForMonth,getWages } from "@/lib/hr-data";
 import { NextResponse } from "next/server";
-import { calculateSalariesForMonth, getWages } from "@/lib/hr-data";
 
 export async function GET(req: Request) {
   try {
@@ -8,8 +9,8 @@ export async function GET(req: Request) {
     const month = Number(searchParams.get("month")) || new Date().getMonth() + 1;
     const wages = getWages(year, month);
     return NextResponse.json(wages);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }
 
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     }
     const computed = calculateSalariesForMonth(Number(year), Number(month), Number(workingDays) || 26);
     return NextResponse.json(computed);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

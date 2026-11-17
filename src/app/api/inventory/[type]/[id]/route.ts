@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { InventoryType,updateInventoryRecord } from "@/lib/inventory-data";
 import { NextResponse } from "next/server";
-import { updateInventoryRecord, InventoryType } from "@/lib/inventory-data";
 
 export async function POST(req: Request, { params }: { params: Promise<{ type: string; id: string }> }) {
   const { type, id } = await params;
@@ -8,7 +9,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ type: s
     const updated = updateInventoryRecord(type as InventoryType, id, body);
     if (!updated) return NextResponse.json({ error: "Item not found" }, { status: 404 });
     return NextResponse.json(updated);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

@@ -1,36 +1,39 @@
 "use client";
+import type { SaleRow } from "@/types/api";
 
-import React, { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
-import {
-  Layers,
-  Search,
-  Calendar,
-  FileSpreadsheet,
-  Plus,
-  Printer,
-  Trash2,
-  CheckCircle2,
-  ExternalLink,
-  DollarSign,
-  TrendingUp,
-  Tag,
-  FolderTree,
-  X,
-  LayoutGrid,
-  List,
-} from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
+import { VoucherSlipData,VoucherSlipModal } from "@/components/voucher-slip-modal";
+import {
+Calendar,
+CheckCircle2,
+DollarSign,
+ExternalLink,
+FileSpreadsheet,
+Layers,
+LayoutGrid,
+List,
+Maximize2,
+Plus,
+Printer,
+Receipt,
+Search,
+Tag,
+Trash2,
+X
+} from "lucide-react";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 export default function MainSalesRegisterPage() {
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<SaleRow[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [viewMode, setViewMode] = useState<"grouped" | "table">("grouped");
+  const [viewMode, setViewMode] = useState<"cards" | "grouped" | "table">("cards");
+  const [activeModalVoucher, setActiveModalVoucher] = useState<VoucherSlipData | null>(null);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Category Management Modal State
@@ -58,7 +61,11 @@ export default function MainSalesRegisterPage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchSalesAndCats();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
   const handleAddCategory = async (e: React.FormEvent) => {
@@ -79,7 +86,7 @@ export default function MainSalesRegisterPage() {
         setMsg({ type: "success", text: `Category "${newCatName.trim()}" created successfully!` });
         setTimeout(() => setMsg(null), 3500);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
     } finally {
       setSavingCat(false);
@@ -169,8 +176,41 @@ export default function MainSalesRegisterPage() {
     document.body.removeChild(link);
   };
 
+  const openSalesVoucher = (r: SaleRow) => {
+    const slipData: VoucherSlipData = {
+      voucherType: "SALES",
+      voucherNo: r.srNo || `SAL-VCH-${String(r.id).slice(-6).toUpperCase()}`,
+      date: r.dateOfSale || new Date().toISOString().split("T")[0],
+      title: "Official Produce Sales Voucher",
+      category: r.category || "Produce Sales",
+      partyName: r.buyerName || "Walk-in Retail Buyer",
+      partyContact: r.buyerContact || undefined,
+      partyAddress: r.buyerCity || undefined,
+      plotName: r.plotName || "Ranga Estate Harvest Fields",
+      cropActivityName: r.itemName || "Crop Harvest Sale",
+      items: [
+        {
+          id: r.id,
+          description: `${r.itemName} (${r.particularName || r.category || "Estate Harvest"})`,
+          quantity: Number(r.quantity) || 1,
+          unit: r.unit || "kg",
+          rate: Number(r.pricePerUnit) || Number(r.totalAmount) || 0,
+          amount: Number(r.totalAmount) || 0,
+        },
+      ],
+      subtotal: Number(r.totalAmount) || 0,
+      totalAmount: Number(r.totalAmount) || 0,
+      paymentMode: r.paymentMode || "Cash",
+      paymentStatus: "PAID",
+      referenceNo: r.invoiceGroupId || r.id,
+      loggedBy: "Sales Accounts Division",
+      notes: `Official sale of ${r.itemName} recorded in estate registry. ${r.notes || ""}`,
+    };
+    setActiveModalVoucher(slipData);
+  };
+
   // Filter records by date, search, and category tab
-  const filtered = useMemo(() => {
+  const filtered = (() => {
     return records.filter((r) => {
       const d = r.dateOfSale || "";
       if (startDate && d < startDate) return false;
@@ -196,14 +236,14 @@ export default function MainSalesRegisterPage() {
         cat.includes(query)
       );
     });
-  }, [records, startDate, endDate, selectedCategory, search]);
+  })();
 
   const totalRevenue = filtered.reduce((acc, r) => acc + Number(r.totalAmount || 0), 0);
   const totalTransactions = filtered.length;
 
   // Category wise breakdown for summary & grouped view
-  const categoryGroups = useMemo(() => {
-    const map = new Map<string, any[]>();
+  const categoryGroups = (() => {
+    const map = new Map<string, SaleRow[]>();
 
     // Initialize all existing categories so empty ones can also be seen if desired
     categories.forEach((cat) => map.set(cat, []));
@@ -214,7 +254,7 @@ export default function MainSalesRegisterPage() {
       map.get(cat)!.push(r);
     });
 
-    const groups: { name: string; records: any[]; totalAmount: number }[] = [];
+    const groups: { name: string; records: SaleRow[]; totalAmount: number }[] = [];
     map.forEach((items, name) => {
       if (selectedCategory === "ALL" || selectedCategory === name) {
         if (items.length > 0 || selectedCategory === name) {
@@ -228,7 +268,7 @@ export default function MainSalesRegisterPage() {
     });
 
     return groups.sort((a, b) => b.totalAmount - a.totalAmount);
-  }, [filtered, categories, selectedCategory]);
+  })();
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-16">
@@ -415,23 +455,35 @@ export default function MainSalesRegisterPage() {
           )}
         </div>
 
-        {/* View Mode Toggle */}
+        {/* View Mode Toggle: Cards, Category Grouped, Table */}
         <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
           <button
+            onClick={() => setViewMode("cards")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === "cards"
+                ? "bg-white text-[#15803d] shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+            title="Display sales vouchers as interactive cards"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>Cards View</span>
+          </button>
+          <button
             onClick={() => setViewMode("grouped")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               viewMode === "grouped"
                 ? "bg-white text-[#15803d] shadow-2xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
             title="Display bills grouped Category-wise"
           >
-            <LayoutGrid className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5" />
             <span>Category View</span>
           </button>
           <button
             onClick={() => setViewMode("table")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               viewMode === "table"
                 ? "bg-white text-[#15803d] shadow-2xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -464,6 +516,111 @@ export default function MainSalesRegisterPage() {
           >
             Go to Sales Entry
           </Link>
+        </div>
+      ) : viewMode === "cards" ? (
+        /* ========================================================================= */
+        /* VOUCHER CARDS GRID VIEW - EXPANDABLE TO FULL PAGE                         */
+        /* ========================================================================= */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((r) => {
+            const invoiceId = r.invoiceGroupId || r.id;
+            return (
+              <div
+                key={r.id}
+                className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md transition-all p-5 flex flex-col justify-between group hover:border-emerald-300"
+              >
+                <div>
+                  {/* Top Bar: Voucher No & Category Badge */}
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="p-2 rounded-xl bg-emerald-50 text-[#15803d]">
+                        <Receipt className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                          SALES VOUCHER
+                        </span>
+                        <span className="font-mono font-bold text-xs text-slate-900">
+                          {r.srNo || `SAL-${String(r.id).slice(-6).toUpperCase()}`}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        {r.category || "Produce"}
+                      </span>
+                      <div className="text-[11px] text-slate-500 font-medium mt-0.5">{r.dateOfSale}</div>
+                    </div>
+                  </div>
+
+                  {/* Produce Item & Amount */}
+                  <div className="space-y-1 mb-3">
+                    <h3 className="font-bold text-slate-900 text-sm">{r.itemName}</h3>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-xs text-slate-500 font-medium">
+                        {r.quantity} {r.unit} @ ₹{Number(r.pricePerUnit).toFixed(2)}/{r.unit}
+                      </span>
+                      <span className="font-mono font-black text-emerald-800 text-base">
+                        ₹{Number(r.totalAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Buyer & Ledger Details Box */}
+                  <div className="bg-slate-50/80 rounded-xl p-3 space-y-1 text-xs text-slate-600 mb-4 border border-slate-100">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Buyer:</span>
+                      <span className="font-bold text-slate-900">{r.buyerName || "Walk-in Retail Buyer"}</span>
+                    </div>
+                    {(r.buyerCity || r.buyerContact) && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Location/Phone:</span>
+                        <span className="font-medium text-slate-700">
+                          {[r.buyerCity, r.buyerContact].filter(Boolean).join(" • ")}
+                        </span>
+                      </div>
+                    )}
+                    {r.particularName && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Ledger:</span>
+                        <span className="font-medium text-slate-700">{r.particularName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Actions: Expand to Full Page & Print */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => openSalesVoucher(r)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#15803d] hover:bg-[#166534] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    title="Expand to Full Page Voucher View"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-emerald-200" />
+                    <span>Expand Voucher</span>
+                  </button>
+
+                  <Link
+                    href={`/sales-invoice/${invoiceId}?print=true`}
+                    target="_blank"
+                    className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                    title="Print Bill"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print</span>
+                  </Link>
+
+                  <Link
+                    href={`/sales-invoice/${invoiceId}`}
+                    className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl transition-colors cursor-pointer"
+                    title="View Invoice Page"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : viewMode === "grouped" ? (
         /* ========================================================================= */
@@ -800,6 +957,14 @@ export default function MainSalesRegisterPage() {
           </div>
         </div>
       )}
+
+      {/* Official Sales Voucher Slip Modal - Expand to Full Page */}
+      <VoucherSlipModal
+        isOpen={!!activeModalVoucher}
+        onClose={() => setActiveModalVoucher(null)}
+        voucher={activeModalVoucher}
+        initialFullPage={true}
+      />
     </div>
   );
 }

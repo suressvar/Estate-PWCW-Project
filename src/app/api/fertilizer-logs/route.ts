@@ -1,5 +1,5 @@
+import { addFertilizerLog,getFertilizerLogs } from "@/lib/transaction-logs";
 import { NextResponse } from "next/server";
-import { getFertilizerLogs, addFertilizerLog } from "@/lib/transaction-logs";
 
 export async function GET() {
   return NextResponse.json(getFertilizerLogs());

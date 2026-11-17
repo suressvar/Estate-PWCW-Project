@@ -1,19 +1,20 @@
 "use client";
+import type { WorkActivityItem } from "@/lib/db-storage";
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  ClipboardList,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  ArrowRight,
-  RefreshCw,
-  MapPin,
-  RotateCcw,
-  Sparkles,
-  Users,
+AlertCircle,
+ArrowRight,
+CheckCircle2,
+ClipboardList,
+Clock,
+MapPin,
+RefreshCw,
+RotateCcw,
+Sparkles,
+Users,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect,useState } from "react";
 
 interface PendingSummary {
   date: string;
@@ -30,9 +31,9 @@ interface PendingSummary {
     plotName: string;
     dailyLogId: string;
     status: string;
-    pendingActivities: any[];
-    notDoneActivities: any[];
-    completedActivities: any[];
+    pendingActivities: WorkActivityItem[];
+    notDoneActivities: WorkActivityItem[];
+    completedActivities: WorkActivityItem[];
   }[];
 }
 
@@ -56,10 +57,14 @@ export function PendingWorkWidget() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchSummary();
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, []);
 
-  const totalOutstanding = (data?.totalPending || 0) + (data?.totalNotDone || 0);
+  
 
   return (
     <div

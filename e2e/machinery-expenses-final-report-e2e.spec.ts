@@ -1,10 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+import { authenticate } from "./auth";
 
 test.describe("Epic: Machinery Register, Petty Cash Tracker & Final Consolidated Master Report", () => {
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      { name: "estate_authenticated", value: "true", domain: "localhost", path: "/" },
-    ]);
+    await authenticate(context);
   });
 
   test("1. Machinery Register: Register tractor, log usage with fuel and maintenance, verify report", async ({

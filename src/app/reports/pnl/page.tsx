@@ -1,27 +1,21 @@
 "use client";
+import { useCallback } from 'react';
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import {
-  FileText,
-  Printer,
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Layers,
-  ArrowRight,
-  ShieldAlert,
-} from "lucide-react";
 import { PnLStatementResult } from "@/lib/pnl-data";
+import {
+Calendar,
+FileText,
+Printer
+} from "lucide-react";
+import { useEffect,useState } from "react";
 
 export default function ProfitAndLossReportPage() {
   const [fromDate, setFromDate] = useState("2026-04-01");
   const [toDate, setToDate] = useState("2027-03-31");
   const [report, setReport] = useState<PnLStatementResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
-  const fetchPnL = async () => {
+  const fetchPnL = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`/api/reports/pnl?fromDate=${fromDate}&toDate=${toDate}`);
@@ -32,14 +26,19 @@ export default function ProfitAndLossReportPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fromDate, toDate]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchPnL();
-  }, [fromDate, toDate]);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchPnL, fromDate, toDate]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      {report && !report.summary.stockValuationMatched && <p role="status" className="text-sm text-amber-800">No stock valuation matches these dates. Opening and closing stock are shown as zero; add a valuation for this exact period to include them.</p>}
       {/* Top Controls (Hidden on Print) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4 print:hidden">
         <div>

@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
-  getPettyCashLedger,
-  getPettyCashStatus,
-  topUpPettyCash,
-  recalculatePettyCashLedger,
+getPettyCashLedger,
+getPettyCashStatus,
+recalculatePettyCashLedger,
+topUpPettyCash,
 } from "@/lib/expenses-data";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,9 +20,9 @@ export async function GET(request: NextRequest) {
     const ledger = getPettyCashLedger();
     const status = getPettyCashStatus();
     return NextResponse.json({ success: true, data: { status, ledger } });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch petty cash data" },
+      { success: false, error: getErrorMessage(error) || "Failed to fetch petty cash data" },
       { status: 500 }
     );
   }
@@ -54,9 +55,9 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to process petty cash transaction" },
+      { success: false, error: getErrorMessage(error) || "Failed to process petty cash transaction" },
       { status: 400 }
     );
   }

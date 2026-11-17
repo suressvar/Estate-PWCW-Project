@@ -1,15 +1,28 @@
-import { NextResponse } from "next/server";
-import { upsertDailyLog, addWorkActivity, ActivityType } from "@/lib/daily-log-data";
-import {
-  addFertilizerLog,
-  addDieselLog,
-  addMachineryLog,
-  addLaborLog,
-  addSalesLog,
-  addGeneralPurchaseLog,
-} from "@/lib/transaction-logs";
-import { getPlots, getPlotCrops } from "@/lib/master-data";
+import { ActivityType,addWorkActivity,upsertDailyLog } from "@/lib/daily-log-data";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { inwardPurchasedItems } from "@/lib/godown-data";
+import { getPlotCrops,getPlots } from "@/lib/master-data";
+import {
+addDieselLog,
+addFertilizerLog,
+addGeneralPurchaseLog,
+addLaborLog,
+addMachineryLog,
+addSalesLog,
+} from "@/lib/transaction-logs";
+import { NextResponse } from "next/server";
+
+export interface MasterSheetDispatch {
+  dailyLog?: { id: string; plotName: string; date: string };
+  activity?: { id: string; activityType: string; customActivity?: string; status: string };
+  labor?: { id: string; menCount: number; womenCount: number; workingHours: number; totalCost: number };
+  fertilizer?: { id: string; fertilizerName: string; quantityKg: number; cost: number };
+  diesel?: { id: string; quantityLiters: number; cost: number };
+  machinery?: { id: string; machineName: string; runningHours: number; dieselConsumedLiters: number };
+  sales?: { id: string; cropName: string; quantityKg: number; value: number };
+  purchase?: { id: string; description: string; cost: number };
+}
+export interface MasterSheetResult { success: boolean; message: string; dispatchedCount: number; dispatched: MasterSheetDispatch }
 
 export interface MasterDailySheetPayload {
   date: string; // YYYY-MM-DD
@@ -31,6 +44,7 @@ export interface MasterDailySheetPayload {
   labor?: {
     menCount?: number | string;
     womenCount?: number | string;
+    workingHours?: number | string;
     menWageRate?: number | string;
     womenWageRate?: number | string;
     totalCost?: number | string;
@@ -101,16 +115,7 @@ export async function POST(request: Request) {
     const loggedBy = body.loggedBy?.trim() || "Field Supervisor";
     const date = body.date;
 
-    const dispatched: {
-      dailyLog?: any;
-      activity?: any;
-      labor?: any;
-      fertilizer?: any;
-      diesel?: any;
-      machinery?: any;
-      sales?: any;
-      purchase?: any;
-    } = {};
+    const dispatched: MasterSheetDispatch = {};
 
     let dispatchedCount = 0;
 
@@ -150,9 +155,10 @@ export async function POST(request: Request) {
     if (body.labor) {
       const men = Number(body.labor.menCount) || 0;
       const women = Number(body.labor.womenCount) || 0;
+      const workingHours = Number(body.labor.workingHours) || 8;
       const menRate = Number(body.labor.menWageRate) || 600;
       const womenRate = Number(body.labor.womenWageRate) || 500;
-      const calculatedCost = men * menRate + women * womenRate;
+      const calculatedCost = Math.round((men * menRate + women * womenRate) * (workingHours / 8));
       const totalCost = Number(body.labor.totalCost) || calculatedCost;
 
       if (men > 0 || women > 0 || totalCost > 0) {
@@ -162,18 +168,20 @@ export async function POST(request: Request) {
           cropActivityName,
           menCount: men,
           womenCount: women,
+          workingHours,
           menWageRate: menRate,
           womenWageRate: womenRate,
           totalCost,
           date,
           loggedBy,
-          notes: body.labor.notes?.trim() || `Daily master sheet labor record for ${plotName}`,
+          notes: body.labor.notes?.trim() || `Daily master sheet labor record for ${plotName} (${workingHours} hrs)`,
         });
 
         dispatched.labor = {
           id: laborLog.id,
           menCount: men,
           womenCount: women,
+          workingHours,
           totalCost,
         };
         dispatchedCount++;
@@ -272,7 +280,7 @@ export async function POST(request: Request) {
           quantityKg: qtyKg,
           value: val,
           buyerName: body.sales.buyerName?.trim() || "Local Mandi / Market",
-          paymentMode: (body.sales.paymentMode as any) || "Bank Transfer",
+          paymentMode: (body.sales.paymentMode as "Cash" | "Bank Transfer" | "UPI / QR" | "Cheque" | "Credit / On Account") || "Bank Transfer",
           paymentStatus: body.sales.paymentStatus || "PAID",
           date,
           loggedBy,
@@ -306,7 +314,7 @@ export async function POST(request: Request) {
           description: desc || "Daily Field Purchase / Procurement",
           subtotal: cost,
           cost,
-          paymentMode: (body.purchase.paymentMode as any) || "Cash",
+          paymentMode: (body.purchase.paymentMode as "Cash" | "Bank Transfer" | "UPI / QR" | "Cheque" | "Credit") || "Cash",
           paymentStatus: "PAID",
           date,
           loggedBy,
@@ -347,10 +355,10 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in master-sheet route:", err);
     return NextResponse.json(
-      { success: false, error: err.message || "Failed to process master daily sheet" },
+      { success: false, error: getErrorMessage(err) || "Failed to process master daily sheet" },
       { status: 500 }
     );
   }

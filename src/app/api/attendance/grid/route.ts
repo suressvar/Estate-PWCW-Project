@@ -1,5 +1,5 @@
+import { getAttendanceForMonth,getEmployees } from "@/lib/hr-data";
 import { NextResponse } from "next/server";
-import { getAttendanceForMonth, getEmployees } from "@/lib/hr-data";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

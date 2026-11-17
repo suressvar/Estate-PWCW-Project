@@ -1,19 +1,16 @@
 "use client";
+import { useCallback } from 'react';
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { EmployeeItem,LeaveRecord,LeaveStatus,LeaveType } from "@/lib/hr-data";
 import {
-  Calendar,
-  Plus,
-  Search,
-  Filter,
-  CheckCircle2,
-  Trash2,
-  ShieldAlert,
-  Clock,
-  UserCheck,
+Calendar,
+CheckCircle2,
+Plus,
+ShieldAlert,
+Trash2
 } from "lucide-react";
-import { LeaveRecord, LeaveType, LeaveStatus, EmployeeItem } from "@/lib/hr-data";
+import React,{ useEffect,useState } from "react";
 
 export default function LeaveManagementPage() {
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
@@ -35,7 +32,7 @@ export default function LeaveManagementPage() {
   const [approvedBy, setApprovedBy] = useState("Estate Manager");
   const [notes, setNotes] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [leavesRes, empRes] = await Promise.all([
         fetch("/api/leaves"),
@@ -53,11 +50,15 @@ export default function LeaveManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     fetchData();
-  }, []);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [fetchData]);
 
   const openAdd = () => {
     if (employees.length > 0) setEmployeeId(employees[0].id);
@@ -98,8 +99,8 @@ export default function LeaveManagementPage() {
         const err = await res.json();
         setMsg({ type: "error", text: err.error || "Failed to record leave" });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 
@@ -297,7 +298,7 @@ export default function LeaveManagementPage() {
                 <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Leave Classification *</label>
                 <select
                   value={leaveType}
-                  onChange={(e) => setLeaveType(e.target.value as any)}
+                  onChange={(e) => setLeaveType(e.target.value as typeof leaveType)}
                   className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
                 >
                   <option value="CASUAL">Casual Leave (CL)</option>
@@ -351,7 +352,7 @@ export default function LeaveManagementPage() {
                   <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Status</label>
                   <select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as any)}
+                    onChange={(e) => setStatus(e.target.value as typeof status)}
                     className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
                   >
                     <option value="APPROVED">Approved (Syncs Grid)</option>

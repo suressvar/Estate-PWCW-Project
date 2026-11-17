@@ -1,32 +1,33 @@
 "use client";
+import { useCallback } from 'react';
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import type { VoucherView } from "@/types/api";
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  Plus,
-  Search,
-  Calendar,
-  Filter,
-  Printer,
-  Edit2,
-  Trash2,
-  CheckCircle2,
-  ShieldAlert,
-  FileSpreadsheet,
-} from "lucide-react";
-import { ExpenseLedgerItem, LedgerGroupItem } from "@/lib/accounting-data";
+import { ExpenseLedgerItem,LedgerGroupItem } from "@/lib/accounting-data";
 import { ExpenseUnit } from "@/lib/vouchers-data";
+import {
+ArrowLeft,
+Calendar,
+CheckCircle2,
+Edit2,
+Plus,
+Printer,
+Search,
+ShieldAlert,
+Trash2
+} from "lucide-react";
+import Link from "next/link";
+import { useParams,useRouter } from "next/navigation";
+import React,{ useEffect,useState } from "react";
 
 export default function VoucherRegisterPage() {
   const params = useParams();
   const router = useRouter();
   const v_type = (params.v_type as string) === "goat" ? "feed" : (params.v_type as string) || "feed";
 
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<VoucherView[]>([]);
   const [ledgers, setLedgers] = useState<ExpenseLedgerItem[]>([]);
-  const [groups, setGroups] = useState<LedgerGroupItem[]>([]);
+  const [, setGroups] = useState<LedgerGroupItem[]>([]);
   const [units, setUnits] = useState<ExpenseUnit[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -63,7 +64,7 @@ export default function VoucherRegisterPage() {
   const [doseUnit, setDoseUnit] = useState("vials");
   const [cost, setCost] = useState<number | "">(5000);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [logsRes, ledgersRes, groupsRes, unitsRes] = await Promise.all([
         fetch(`/api/vouchers/${v_type}`),
@@ -91,15 +92,19 @@ export default function VoucherRegisterPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ledgerId, v_type]);
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     if (params.v_type === "other") {
       router.replace("/purchases/other");
       return;
     }
     fetchData();
-  }, [v_type, params.v_type, router]);
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+  }, [v_type, params.v_type, router, fetchData]);
 
   const handleLedgerChange = (lId: string) => {
     setLedgerId(lId);
@@ -147,7 +152,7 @@ export default function VoucherRegisterPage() {
     setShowModal(true);
   };
 
-  const openEdit = (item: any) => {
+  const openEdit = (item: VoucherView) => {
     setEditingId(item.id);
     setPurchaseDate(item.purchaseDate || item.voucherDate || "");
     setBillDate(item.billDate || "");
@@ -161,7 +166,7 @@ export default function VoucherRegisterPage() {
     setLedgerGroupText(matchedLedger?.groupName || "Direct Expenses");
 
     if (v_type === "goat") {
-      setTagId(item.tagId);
+      setTagId(item.tagId || "");
       setBreed(item.breed || "");
       setGender(item.gender || "Female");
       setWeight(item.weight || 0);
@@ -191,7 +196,7 @@ export default function VoucherRegisterPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let payload: any = {
+      let payload: Omit<VoucherView, "id"> = {
         billDate,
         billNo,
         ledgerId,
@@ -274,8 +279,8 @@ export default function VoucherRegisterPage() {
         const err = await res.json();
         setMsg({ type: "error", text: err.error || "Failed to save voucher" });
       }
-    } catch (err: any) {
-      setMsg({ type: "error", text: err.message });
+    } catch (err) {
+      setMsg({ type: "error", text: getErrorMessage(err) });
     }
   };
 
@@ -656,7 +661,7 @@ export default function VoucherRegisterPage() {
                     <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Gender</label>
                     <select
                       value={gender}
-                      onChange={(e) => setGender(e.target.value as any)}
+                      onChange={(e) => setGender(e.target.value as typeof gender)}
                       className="w-full p-2 bg-white border border-slate-300 rounded-lg font-medium text-slate-900"
                     >
                       <option value="Female">Female (Doe)</option>

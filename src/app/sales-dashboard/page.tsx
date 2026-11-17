@@ -1,21 +1,21 @@
 "use client";
+import type { SalesAnalytics } from "@/types/api";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import {
-  TrendingUp,
-  DollarSign,
-  Award,
-  Calendar,
-  Layers,
-  ArrowUpRight,
-  Receipt,
-  Sprout,
-} from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
+import {
+ArrowUpRight,
+Award,
+Calendar,
+DollarSign,
+Layers,
+Receipt,
+TrendingUp
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect,useState } from "react";
 
 export default function SalesDashboardPage() {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<SalesAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function SalesDashboardPage() {
 
           {/* Styled CSS Bar Chart */}
           <div className="h-56 flex items-end justify-between gap-3 pt-6 px-2">
-            {monthlyRevenue.map((m: any, idx: number) => {
+            {monthlyRevenue.map((m, idx: number) => {
               const heightPercent = Math.min(100, Math.round((m.revenue / 120000) * 100));
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
@@ -145,7 +145,7 @@ export default function SalesDashboardPage() {
           </h2>
 
           <div className="space-y-3.5 pt-2">
-            {categoryDistribution.map((cat: any, idx: number) => {
+            {categoryDistribution.map((cat, idx: number) => {
               const percent = kpis.totalRevenue > 0 ? Math.round((cat.value / kpis.totalRevenue) * 100) : 0;
               return (
                 <div key={idx} className="space-y-1.5">
@@ -195,7 +195,7 @@ export default function SalesDashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {recentTransactions.map((tx: any, idx: number) => (
+              {recentTransactions.map((tx, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="p-3 font-medium text-slate-700">{tx.dateOfSale}</td>
                   <td className="p-3 font-mono font-bold text-slate-800">{tx.srNo}</td>

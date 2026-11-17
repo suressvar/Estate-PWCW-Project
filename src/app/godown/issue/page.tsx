@@ -1,30 +1,24 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Send,
-  Warehouse,
-  ArrowLeft,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  MapPin,
-  Sprout,
-  Package,
-  Layers,
-  FlaskConical,
-  Fuel,
-  Tractor,
-  DollarSign,
-  ShieldAlert,
-} from "lucide-react";
 import { RoleBadge } from "@/components/ui/role-badge";
-import type { GodownItem, PlotItem, PlotCropAssociation } from "@/types/estate";
+import type { GodownItem,PlotCropAssociation,PlotItem } from "@/types/estate";
+import {
+ArrowLeft,
+CheckCircle2,
+ExternalLink,
+Fuel,
+MapPin,
+Send,
+ShieldAlert,
+Sprout,
+Tractor
+} from "lucide-react";
+import Link from "next/link";
+import React,{ useEffect,useState } from "react";
 
 export default function GodownIssuePage() {
-  const router = useRouter();
+  
   const [items, setItems] = useState<GodownItem[]>([]);
   const [plots, setPlots] = useState<PlotItem[]>([]);
   const [plotCrops, setPlotCrops] = useState<PlotCropAssociation[]>([]);
@@ -37,7 +31,7 @@ export default function GodownIssuePage() {
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedPlotId, setSelectedPlotId] = useState("");
   const [selectedPlotCropId, setSelectedPlotCropId] = useState("");
-  const [issuedTo, setIssuedTo] = useState("Field Supervisor");
+  const [issuedTo, ] = useState("Field Supervisor");
   const [submitting, setSubmitting] = useState(false);
 
   const [feedback, setFeedback] = useState<{
@@ -50,6 +44,21 @@ export default function GodownIssuePage() {
   // RBAC
   const [canEdit, setCanEdit] = useState(true);
   const [roleName, setRoleName] = useState("Admin");
+
+  const autoSelectMenu = (item: GodownItem) => {
+    const cat = item.category.toLowerCase();
+    const name = item.name.toLowerCase();
+    if (cat.includes("fertilizer") || name.includes("urea") || name.includes("npk")) {
+      setDestinationMenu("Fertilizer");
+    } else if (cat.includes("diesel") || cat.includes("fuel") || name.includes("diesel")) {
+      setDestinationMenu("Diesel");
+    } else if (cat.includes("machinery") || name.includes("blade") || name.includes("spare")) {
+      setDestinationMenu("Machinery");
+    } else {
+      setDestinationMenu("General Purchases / Plot Ops");
+    }
+  };
+
 
   useEffect(() => {
     async function load() {
@@ -78,7 +87,7 @@ export default function GodownIssuePage() {
 
         if (Array.isArray(plotsData) && plotsData.length > 0) {
           setSelectedPlotId(plotsData[0].id);
-          const filtered = Array.isArray(pcData) ? pcData.filter((p: any) => p.plotId === plotsData[0].id) : [];
+          const filtered = Array.isArray(pcData) ? pcData.filter((p: PlotCropAssociation) => p.plotId === plotsData[0].id) : [];
           if (filtered.length > 0) setSelectedPlotCropId(filtered[0].id);
         }
       } catch (e) {
@@ -90,19 +99,6 @@ export default function GodownIssuePage() {
     load();
   }, []);
 
-  const autoSelectMenu = (item: GodownItem) => {
-    const cat = item.category.toLowerCase();
-    const name = item.name.toLowerCase();
-    if (cat.includes("fertilizer") || name.includes("urea") || name.includes("npk")) {
-      setDestinationMenu("Fertilizer");
-    } else if (cat.includes("diesel") || cat.includes("fuel") || name.includes("diesel")) {
-      setDestinationMenu("Diesel");
-    } else if (cat.includes("machinery") || name.includes("blade") || name.includes("spare")) {
-      setDestinationMenu("Machinery");
-    } else {
-      setDestinationMenu("General Purchases / Plot Ops");
-    }
-  };
 
   const handleItemChange = (itemId: string) => {
     setSelectedItemId(itemId);
@@ -114,6 +110,8 @@ export default function GodownIssuePage() {
   };
 
   useEffect(() => {
+    let dispose: void | (() => void);
+    const pending = setTimeout(() => { dispose = (() => {
     if (!selectedPlotId) return;
     const filtered = plotCrops.filter((p) => p.plotId === selectedPlotId);
     if (filtered.length > 0) {
@@ -121,6 +119,8 @@ export default function GodownIssuePage() {
     } else {
       setSelectedPlotCropId("");
     }
+  })(); }, 0);
+    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [selectedPlotId, plotCrops]);
 
   const activeItem = items.find((i) => i.id === selectedItemId);
@@ -188,8 +188,8 @@ export default function GodownIssuePage() {
       } else {
         alert(data.error || "Failed to issue item.");
       }
-    } catch (err: any) {
-      alert(err.message || "An error occurred.");
+    } catch (err) {
+      alert(getErrorMessage(err) || "An error occurred.");
     } finally {
       setSubmitting(false);
     }

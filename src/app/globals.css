@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import "./shadcn-utilities.css";
 
 /* Hide Next.js Dev Indicator Badge Overlay */
 [data-nextjs-toast],

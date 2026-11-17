@@ -1,5 +1,6 @@
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { createLeave,getLeaves } from "@/lib/hr-data";
 import { NextResponse } from "next/server";
-import { getLeaves, createLeave } from "@/lib/hr-data";
 
 export async function GET() {
   const leaves = getLeaves();
@@ -11,7 +12,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const newLeave = createLeave(body);
     return NextResponse.json(newLeave, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });
   }
 }

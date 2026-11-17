@@ -1,20 +1,20 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
 import {
-  upsertDailyLog,
-  getDailyLogs,
-  getDailyLogByPlotAndDate,
-  addWorkActivity,
-  updateActivityStatus,
-  autoTransitionPastPlannedActivities,
-  getDashboardPendingWork,
-  computeDailyLogStatus,
+addWorkActivity,
+autoTransitionPastPlannedActivities,
+computeDailyLogStatus,
+getDailyLogByPlotAndDate,
+getDailyLogs,
+updateActivityStatus,
+upsertDailyLog
 } from "../src/lib/daily-log-data";
+import { createPlot,getPlots } from "../src/lib/master-data";
 
 test.describe("Daily Work Tracking - Core Unit & Integration Logic", () => {
-  const testPlotId = "p1"; // Plot A - North Field
+  let testPlotId = "p1"; // Plot A - North Field
   const testDatePast = "2026-07-01";
-  const testDateNext = "2026-07-02";
 
+  test.beforeAll(() => { testPlotId = getPlots()[0]?.id || createPlot({ name: "Daily Test Plot", location: "Test", areaAcres: 5, status: "ACTIVE" }).id; });
   test("1. Enforces unique constraint per plot + date via upsert logic", () => {
     // First upsert creates
     const log1 = upsertDailyLog({
@@ -97,29 +97,29 @@ test.describe("Daily Work Tracking - Core Unit & Integration Logic", () => {
   test("4. Computes DailyLog status dynamically from activity states", () => {
     // When all activities done -> COMPLETED
     const statusCompleted = computeDailyLogStatus([
-      { completedFlag: true, plannedFlag: false } as any,
-      { completedFlag: true, plannedFlag: false } as any,
+      { completedFlag: true, plannedFlag: false },
+      { completedFlag: true, plannedFlag: false },
     ]);
     expect(statusCompleted).toBe("COMPLETED");
 
     // When some done -> IN_PROGRESS
     const statusInProgress = computeDailyLogStatus([
-      { completedFlag: true, plannedFlag: false } as any,
-      { completedFlag: false, plannedFlag: true } as any,
+      { completedFlag: true, plannedFlag: false },
+      { completedFlag: false, plannedFlag: true },
     ]);
     expect(statusInProgress).toBe("IN_PROGRESS");
 
     // When all not done -> NOT_DONE
     const statusNotDone = computeDailyLogStatus([
-      { completedFlag: false, plannedFlag: false } as any,
-      { completedFlag: false, plannedFlag: false } as any,
+      { completedFlag: false, plannedFlag: false },
+      { completedFlag: false, plannedFlag: false },
     ]);
     expect(statusNotDone).toBe("NOT_DONE");
 
     // When all pending -> PLANNED
     const statusPlanned = computeDailyLogStatus([
-      { completedFlag: false, plannedFlag: true } as any,
-      { completedFlag: false, plannedFlag: true } as any,
+      { completedFlag: false, plannedFlag: true },
+      { completedFlag: false, plannedFlag: true },
     ]);
     expect(statusPlanned).toBe("PLANNED");
   });
@@ -240,36 +240,36 @@ test.describe("Daily Work Tracking - Core Unit & Integration Logic", () => {
     const db = getDatabase();
 
     // 1. Verify Daily Log & Activity
-    const dl = (db.dailyLogs || []).find((l: any) => l.plotId === testPlotId && l.date === testDate);
+    const dl = (db.dailyLogs || []).find((l) => l.plotId === testPlotId && l.date === testDate);
     expect(dl).toBeDefined();
-    expect(dl?.activities.some((a: any) => a.activityType === "IRRIGATION" && a.completedFlag)).toBe(true);
+    expect(dl?.activities.some((a) => a.activityType === "IRRIGATION" && a.completedFlag)).toBe(true);
 
     // 2. Verify Labor Log
-    const labor = db.laborLogs.find((l: any) => l.date === testDate && l.totalCost === 3400);
+    const labor = db.laborLogs.find((l) => l.date === testDate && l.totalCost === 3400);
     expect(labor).toBeDefined();
     expect(labor?.menCount).toBe(4);
     expect(labor?.womenCount).toBe(2);
 
     // 3. Verify Fertilizer Log
-    const fert = db.fertilizerLogs.find((l: any) => l.date === testDate && l.fertilizerName === "Urea (46% N)");
+    const fert = db.fertilizerLogs.find((l) => l.date === testDate && l.fertilizerName === "Urea (46% N)");
     expect(fert).toBeDefined();
     expect(fert?.quantityKg).toBe(75);
 
     // 4. Verify Diesel Log & Machinery Log
-    const diesel = db.dieselLogs.find((l: any) => l.date === testDate && l.quantityLiters === 18.0);
+    const diesel = db.dieselLogs.find((l) => l.date === testDate && l.quantityLiters === 18.0);
     expect(diesel).toBeDefined();
-    const mach = db.machineryLogs.find((l: any) => l.date === testDate && l.machineName === "John Deere Tractor");
+    const mach = db.machineryLogs.find((l) => l.date === testDate && l.machineName === "John Deere Tractor");
     expect(mach).toBeDefined();
     expect(mach?.runningHours).toBe(4.0);
 
     // 5. Verify Sales Log
-    const sale = db.salesLogs.find((l: any) => l.date === testDate && l.cropActivityName === "Coffee Arabica");
+    const sale = db.salesLogs.find((l) => l.date === testDate && l.cropActivityName === "Coffee Arabica");
     expect(sale).toBeDefined();
     expect(sale?.value).toBe(24000);
     expect(sale?.buyerName).toBe("Coimbatore Coffee Traders");
 
     // 6. Verify Purchase Voucher
-    const pur = db.generalPurchaseLogs.find((l: any) => l.date === testDate && l.description === "Irrigation drip lateral pipes 16mm");
+    const pur = db.generalPurchaseLogs.find((l) => l.date === testDate && l.description === "Irrigation drip lateral pipes 16mm");
     expect(pur).toBeDefined();
     expect(pur?.cost).toBe(1500);
   });

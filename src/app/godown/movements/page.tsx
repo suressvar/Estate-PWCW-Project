@@ -1,22 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import {
-  History,
-  Warehouse,
-  ArrowLeft,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Search,
-  ExternalLink,
-  Calendar,
-  Filter,
-  Package,
-  Layers,
-  Send,
-} from "lucide-react";
 import type { GodownStockMovement } from "@/types/estate";
+import {
+ArrowDownLeft,
+ArrowLeft,
+ArrowUpRight,
+History,
+Search,
+Send,
+Warehouse
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect,useState } from "react";
 
 export default function GodownMovementsPage() {
   const [movements, setMovements] = useState<GodownStockMovement[]>([]);
@@ -55,7 +50,7 @@ export default function GodownMovementsPage() {
 
   const inwardCount = movements.filter((m) => m.movementType === "INWARD_PURCHASE").length;
   const outwardCount = movements.filter((m) => m.movementType === "ISSUE_TO_MENU").length;
-  const totalCostMoved = movements.reduce((acc, curr) => acc + (curr.totalCost || 0), 0);
+  
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">

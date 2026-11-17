@@ -1,13 +1,12 @@
-import {
-  getDatabase,
-  WageEntryItem,
-  WorkerAttendanceItem,
-} from "./db-storage";
-import { getPlots } from "./master-data";
 import { getCropCycles } from "./crop-cycle-data";
 import { getDailyLogs } from "./daily-log-data";
+import {
+getDatabase,
+WageEntryItem,
+WorkerAttendanceItem,
+} from "./db-storage";
+import { getExpenses,getPettyCashStatus } from "./expenses-data";
 import { getMachineUsageLogs } from "./machinery-data";
-import { getExpenses, getPettyCashStatus } from "./expenses-data";
 
 export interface ConsolidatedReportFilters {
   plotId?: string;
@@ -146,7 +145,7 @@ export interface ConsolidatedReportData {
  */
 export function getConsolidatedReport(filters?: ConsolidatedReportFilters): ConsolidatedReportData {
   const db = getDatabase();
-  const plots = getPlots();
+  
   const cropCycles = getCropCycles();
   const pettyStatus = getPettyCashStatus();
 
@@ -211,7 +210,7 @@ export function getConsolidatedReport(filters?: ConsolidatedReportFilters): Cons
   rawExpenses = rawExpenses.filter((e) => inRange(e.date));
   rawIncomes = rawIncomes.filter((i) => inRange(i.date));
 
-  const totalDirectCropExpenses = rawExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+  let totalDirectCropExpenses = rawExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
   const totalCropIncome = rawIncomes.reduce((acc, i) => acc + (Number(i.amount) || 0), 0);
 
   const cyclesBreakdown = rawCycles.map((c) => {
@@ -237,7 +236,14 @@ export function getConsolidatedReport(filters?: ConsolidatedReportFilters): Cons
   if (filters?.cropCycleId) {
     rawWages = rawWages.filter((w: WageEntryItem) => w.cropCycleId === filters.cropCycleId);
   }
+  if (filters?.plotId) {
+    const plotCycles = new Set(cropCycles.filter(c => c.plotId === filters.plotId).map(c => c.id));
+    rawWages = rawWages.filter(w => w.cropCycleId && plotCycles.has(w.cropCycleId));
+  }
   rawWages = rawWages.filter((w: WageEntryItem) => inRange(w.date));
+  if (filters?.plotId || filters?.cropCycleId) {
+    rawAttendance = rawAttendance.filter(a => rawWages.some(w => w.workerId === a.workerId && w.date === a.date));
+  }
   rawAttendance = rawAttendance.filter((a: WorkerAttendanceItem) => inRange(a.date));
 
   const totalWagesComputed = rawWages.reduce((acc: number, w: WageEntryItem) => acc + (Number(w.computedAmount) || 0), 0);
@@ -320,14 +326,15 @@ export function getConsolidatedReport(filters?: ConsolidatedReportFilters): Cons
     .filter((e) => e.category !== "PETTY_CASH")
     .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
 
-  // Consolidated KPIs
-  // Notice: CropExpenses already has synced items for machinery and tagged expenses;
-  // to avoid double-counting in master P&L if viewing unfiltered estate wide:
-  // Direct Ledger Sum:
-  // Expenses = (crop direct non-synced) + wages + machinery operating + general overhead
-  // But simpler and universally verifiable: total expenses is sum of all debit transactions!
-  const totalExpenses =
-    totalDirectCropExpenses + generalOverheadExpenses + pettyCashExpensesTotal;
+  // Original transactions are canonical; synchronized crop rows are views of them.
+  const representedSources = new Set([
+    ...rawWages.map(w => `wage_${w.id}`),
+    ...rawMachineLogs.map(m => `machine_log_${m.id}`),
+    ...rawFarmExpenses.map(e => `expense_${e.id}`),
+  ]);
+  const directExpenses = rawExpenses.filter(e => !e.sourceRefId || !representedSources.has(e.sourceRefId));
+  totalDirectCropExpenses = directExpenses.reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
+  const totalExpenses = totalDirectCropExpenses + totalWagesComputed + totalMachineryOperatingCost + generalOverheadExpenses + pettyCashExpensesTotal;
   const totalIncome = totalCropIncome;
   const netProfitLoss = totalIncome - totalExpenses;
   const isProfitable = netProfitLoss >= 0;
@@ -338,7 +345,7 @@ export function getConsolidatedReport(filters?: ConsolidatedReportFilters): Cons
   const ledger: ConsolidatedLedgerRow[] = [];
 
   // Add Crop Expenses
-  for (const exp of rawExpenses) {
+  for (const exp of directExpenses) {
     const cycle = cropCycles.find((c) => c.id === exp.cropCycleId);
     ledger.push({
       id: exp.id,

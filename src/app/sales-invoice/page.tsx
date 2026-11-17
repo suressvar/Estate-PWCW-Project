@@ -1,13 +1,14 @@
 "use client";
+import type { SaleRow } from "@/types/api";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FileText,Plus } from "lucide-react";
 import Link from "next/link";
-import { FileText, ArrowRight, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
 
 export default function SalesInvoiceIndexPage() {
   const router = useRouter();
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [, setInvoices] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

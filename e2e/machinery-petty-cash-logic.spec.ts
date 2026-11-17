@@ -1,29 +1,26 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
 import {
-  createMachine,
-  getMachines,
-  getMachineById,
-  addMachineUsageLog,
-  getMachineUsageLogs,
-  getMachineryReport,
-  getPlotMachineryConsumptionReport,
-  deleteMachineUsageLog,
-} from "../src/lib/machinery-data";
+generateConsolidatedReportCsv,
+getConsolidatedReport,
+} from "../src/lib/consolidated-report-data";
+import { createCropCycle } from "../src/lib/crop-cycle-data";
+import { getDatabase } from "../src/lib/db-storage";
 import {
-  addExpense,
-  getExpenses,
-  topUpPettyCash,
-  getPettyCashLedger,
-  getPettyCashStatus,
-  recalculatePettyCashLedger,
-  getExpenseSummaryReport,
+addExpense,
+getExpenseSummaryReport,
+getPettyCashLedger,
+getPettyCashStatus,
+recalculatePettyCashLedger,
+topUpPettyCash
 } from "../src/lib/expenses-data";
 import {
-  getConsolidatedReport,
-  generateConsolidatedReportCsv,
-} from "../src/lib/consolidated-report-data";
-import { createCropCycle, getCropCycleById } from "../src/lib/crop-cycle-data";
-import { getDatabase } from "../src/lib/db-storage";
+addMachineUsageLog,
+createMachine,
+getMachineById,
+getMachineryReport,
+getMachines,
+getPlotMachineryConsumptionReport
+} from "../src/lib/machinery-data";
 import { getPlots } from "../src/lib/master-data";
 
 test.describe("Machinery, Petty Cash & Consolidated Report Logic", () => {
@@ -169,7 +166,11 @@ test.describe("Machinery, Petty Cash & Consolidated Report Logic", () => {
     });
 
     expect(report.kpis).toBeDefined();
-    expect(report.kpis.cropDirectExpenses).toBeGreaterThan(0);
+    // Synchronized copies remain in crop detail, but the consolidated ledger counts each original cost once.
+    expect(report.kpis.cropDirectExpenses).toBe(0);
+    expect(report.kpis.machineryOperatingCost).toBe(1850);
+    expect(report.kpis.generalOverheadExpenses).toBe(2400);
+    expect(report.kpis.totalExpenses).toBe(4250);
     expect(report.ledger.length).toBeGreaterThan(0);
 
     // Verify CSV output format
