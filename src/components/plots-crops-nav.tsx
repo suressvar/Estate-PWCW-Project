@@ -1,5 +1,6 @@
 "use client";
-import { CircleDollarSign,Link2,MapPin,Sprout } from "lucide-react";
+
+import { CircleDollarSign, Link2, MapPin, Sprout } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -18,28 +19,24 @@ export function PlotsCropsNav({ stats }: PlotsCropsNavProps) {
   const tabs = [
     {
       title: "Plot-Crops Tracking",
-      description: "Assign & track multiple crops per plot",
       href: "/plot-crops",
       icon: Link2,
       count: stats?.associationsCount,
     },
     {
       title: "Crop Cycles & P&L",
-      description: "Seed-to-harvest financials per plot",
       href: "/crop-cycles",
       icon: CircleDollarSign,
       count: stats?.cyclesCount,
     },
     {
       title: "Land Plots Master",
-      description: "Acreages, sectors & land boundaries",
       href: "/plots",
       icon: MapPin,
       count: stats?.plotsCount,
     },
     {
       title: "Crops & Activities",
-      description: "Harvest crops & field labor tasks",
       href: "/crops",
       icon: Sprout,
       count: stats?.cropsCount,
@@ -47,8 +44,8 @@ export function PlotsCropsNav({ stats }: PlotsCropsNavProps) {
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-1.5 mb-6">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5">
+    <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-1 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = pathname === tab.href;
@@ -57,33 +54,32 @@ export function PlotsCropsNav({ stats }: PlotsCropsNavProps) {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex-1 flex items-center justify-between px-4 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+              prefetch={false}
+              className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all ${
                 isActive
-                  ? "bg-emerald-800 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-[#174D3C] text-white font-semibold shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div
-                  className={`p-1.5 rounded-md shrink-0 ${
-                    isActive
-                      ? "bg-white/15 text-emerald-200"
-                      : "bg-slate-100 text-slate-500"
+                  className={`p-1 rounded-md shrink-0 ${
+                    isActive ? "bg-white/15 text-white" : "text-slate-400"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="truncate text-left">
-                  <div className="font-bold truncate">{tab.title}</div>
+                  <div className="truncate font-semibold">{tab.title}</div>
                 </div>
               </div>
 
               {typeof tab.count === "number" && (
                 <span
-                  className={`ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${
                     isActive
-                      ? "bg-emerald-950/60 text-emerald-200"
-                      : "bg-slate-200 text-slate-700"
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600"
                   }`}
                 >
                   {tab.count}

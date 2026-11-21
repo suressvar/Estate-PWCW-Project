@@ -291,6 +291,7 @@ export function addCropExpense(data: {
 }): { expense: CropExpenseItem; warning?: string } {
   return withTransaction(() => {
   data.amount = positiveNumber(data.amount, "Expense amount");
+  oneOf(data.category, ['SEEDS', 'FERTILIZER', 'PESTICIDE', 'LABOR', 'MACHINERY', 'IRRIGATION', 'TRANSPORT', 'MISC'], 'Expense category');
   dateKey(data.date);
   const cycle = getCropCycleById(data.cropCycleId);
   if (!cycle) {
@@ -365,6 +366,7 @@ export function addCropIncome(data: {
   invoiceNo?: string;
 }): { income: CropIncomeItem; warning?: string } {
   return withTransaction(() => {
+  oneOf(data.source, ['MARKET_SALE', 'DIRECT_BUYER', 'GOVERNMENT_SCHEME', 'OTHER'], 'Income source');
   data.quantitySold = positiveNumber(data.quantitySold, "Quantity sold");
   data.ratePerUnit = positiveNumber(data.ratePerUnit, "Rate per unit");
   if (data.amount !== undefined) data.amount = positiveNumber(data.amount, "Income amount");

@@ -1,3 +1,4 @@
+import { finiteNumber } from "@/lib/validation";
 import { addSalesLog,deleteSalesLog,getSalesLogs } from "@/lib/transaction-logs";
 import { NextResponse } from "next/server";
 
@@ -6,7 +7,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  try {
   const body = await request.json();
+  for (const field of ['quantityKg', 'value', 'totalAmount', 'subtotal', 'taxPercent', 'taxAmount', 'discount', 'cost']) {
+    if (body[field] !== undefined) finiteNumber(body[field], field);
+  }
   const quantityKg = Number(body.quantityKg) || (body.items ? body.items.reduce((acc: number, item: { quantity: unknown }) => acc + (Number(item.quantity) || 0), 0) : 0);
   const value = Number(body.value) || Number(body.totalAmount) || Number(body.subtotal) || 0;
 
@@ -43,6 +48,8 @@ export async function POST(request: Request) {
     notes: body.notes || "",
   });
   return NextResponse.json(newLog, { status: 201 });
+
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid operational log." }, { status: 400 }); }
 }
 
 export async function DELETE(request: Request) {

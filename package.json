@@ -8,15 +8,16 @@
     "start": "next start",
     "lint": "eslint",
     "setup:security": "node scripts/setup-security.mjs",
-    "test:e2e": "node scripts/run-legacy-integration.mjs",
+    "test:e2e": "node scripts/run-test-suites.mjs legacy",
+    "test:all": "node scripts/run-test-suites.mjs all",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:integration:prepare": "node scripts/prepare-integration.mjs",
-    "test:integration:build": "next build .integration-app --webpack",
-    "test:integration": "playwright test -c playwright.integration.config.ts --project=integration-validation",
-    "test:integration:legacy": "node scripts/run-legacy-integration.mjs",
-    "test:cross-browser": "node scripts/run-cross-browser.mjs",
+    "test:integration:build": "node scripts/build-integration.mjs",
+    "test:integration": "node scripts/run-test-suites.mjs integration",
+    "test:integration:legacy": "node scripts/run-test-suites.mjs legacy",
+    "test:cross-browser": "node scripts/run-test-suites.mjs cross",
     "test:integration:report": "node scripts/generate-software-assessment.mjs"
   },
   "dependencies": {
@@ -24,7 +25,6 @@
     "@prisma/client": "^7.8.0",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.5",
-    "@tremor/react": "^3.18.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
@@ -39,7 +39,7 @@
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
-    "@types/node": "^20",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^5.1.0",
@@ -55,6 +55,7 @@
   "overrides": {
     "@typescript-eslint/typescript-estree": {
       "minimatch": "11.0.8"
-    }
+    },
+    "effect": "3.22.1"
   }
 }

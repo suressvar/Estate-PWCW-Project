@@ -1,4 +1,5 @@
 import { expect, type APIRequestContext, type BrowserContext } from '@playwright/test';
+export { testBaseURL } from '../scripts/test-paths.cjs';
 export const testCredentials = { username: 'Admin', password: 'Integration-Test-Password-Only-2026!' };
 export async function signIn(request: APIRequestContext) {
   expect((await request.post('/api/auth/login', { data: testCredentials })).status()).toBe(200);

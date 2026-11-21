@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { authenticate } from './auth';
 test.beforeEach(async ({ context }) => { await authenticate(context); });
 test('Current sales and purchases navigation is available', async ({ page }) => {
@@ -24,7 +24,8 @@ test('Record an itemized sale in the current form and verify invoice and registe
 test('Printable sales voucher contains official totals and buyer details', async ({ page, context }) => {
   await context.request.post('/api/sales/other', { data: { buyerName: 'Printable Buyer', items: [{ itemName: 'Coconut', quantity: 10, pricePerUnit: 30 }] } });
   await page.goto('/sales-register');
-  await page.getByRole('button', { name: 'Expand Voucher' }).first().click();
+  await page.getByPlaceholder(/Search.*buyer.*item.*invoice/i).fill('Printable Buyer');
+  await page.getByRole('button', { name: 'Voucher', exact: true }).click();
   const voucher = page.locator('#voucher-printable-area');
   await expect(voucher).toBeVisible();
   await expect(voucher).toContainText('OFFICIAL SALES VOUCHER');

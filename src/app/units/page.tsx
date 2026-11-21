@@ -1,9 +1,11 @@
 "use client";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
-
+import React, { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, Trash2 } from "lucide-react";
 import type { ExpenseUnit } from "@/lib/db-storage";
-import { AlertCircle,CheckCircle2,Tag,Trash2 } from "lucide-react";
-import React,{ useEffect,useState } from "react";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
 
 export default function UnitsManagementPage() {
   const [units, setUnits] = useState<ExpenseUnit[]>([]);
@@ -28,10 +30,15 @@ export default function UnitsManagementPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchUnits();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchUnits();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, []);
 
   const handleAddUnit = async (e: React.FormEvent) => {
@@ -50,7 +57,7 @@ export default function UnitsManagementPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           unitName: unitName.trim(),
-          unitSymbol: (unitSymbol.trim() || unitName.trim()),
+          unitSymbol: unitSymbol.trim() || unitName.trim(),
         }),
       });
 
@@ -87,18 +94,26 @@ export default function UnitsManagementPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-16">
-      {/* Top Notification */}
+    <PageContainer>
+      <PageHeader
+        title="Units of Measurement"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Settings", href: "/settings" },
+          { label: "Units of Measurement" },
+        ]}
+      />
+
       {msg && (
         <div
-          className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+          className={`p-3 rounded-xl text-xs font-medium flex items-center gap-2 ${
             msg.type === "success"
-              ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+              ? "bg-[#EAF3EE] text-[#174D3C] border border-[#C5DEC8]"
               : "bg-red-50 text-red-900 border border-red-200"
           }`}
         >
           {msg.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+            <CheckCircle2 className="w-4 h-4 text-[#174D3C]" />
           ) : (
             <AlertCircle className="w-4 h-4 text-red-700" />
           )}
@@ -106,86 +121,57 @@ export default function UnitsManagementPage() {
         </div>
       )}
 
-      {/* Main 2-Column Layout matching Picture */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ========================================================================= */}
-        {/* LEFT COLUMN: Add New Unit Form */}
-        {/* ========================================================================= */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          {/* Header with Teal/Emerald Gradient matching screenshot */}
-          <div className="bg-gradient-to-r from-[#14b8a6] to-[#0d9488] px-5 py-4 text-white">
-            <h2 className="text-sm font-bold flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full border-2 border-white/80 flex items-center justify-center text-xs font-black">
-                +
-              </span>
-              <span>Add New Unit</span>
-            </h2>
-          </div>
+        {/* LEFT COLUMN: Add New Unit */}
+        <div className="lg:col-span-4">
+          <ContentCard title="Add Unit" badge="New">
+            <form onSubmit={handleAddUnit} className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#111827]">
+                  Unit Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Kilograms, Nos, Litres"
+                  value={unitName}
+                  onChange={(e) => setUnitName(e.target.value)}
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
+                />
+              </div>
 
-          {/* Form Body */}
-          <form onSubmit={handleAddUnit} className="p-5 space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Unit Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Kilograms, Nos, Litres"
-                value={unitName}
-                onChange={(e) => setUnitName(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#0d9488] focus:border-[#0d9488] transition-all"
-              />
-            </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#111827]">
+                  Symbol / Abbreviation
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. KG, Nos, L"
+                  value={unitSymbol}
+                  onChange={(e) => setUnitSymbol(e.target.value)}
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
+                />
+              </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Symbol / Abbreviation
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. KG, Nos, L"
-                value={unitSymbol}
-                onChange={(e) => setUnitSymbol(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#0d9488] focus:border-[#0d9488] transition-all"
-              />
-            </div>
-
-            <div className="pt-2">
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 px-4 bg-[#0f766e] hover:bg-[#115e59] text-white rounded-full text-xs font-bold shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="w-full py-2 px-4 bg-[#174D3C] hover:bg-[#103C30] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
-                <span className="text-sm font-black">+</span>
+                <span>+</span>
                 <span>{submitting ? "Adding Unit..." : "Add Unit"}</span>
               </button>
-            </div>
-          </form>
+            </form>
+          </ContentCard>
         </div>
 
-        {/* ========================================================================= */}
-        {/* RIGHT COLUMN: All Units 2-Column Grid matching screenshot */}
-        {/* ========================================================================= */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          {/* Card Header */}
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
-              <div className="w-5 h-5 rounded flex items-center justify-center text-teal-700">
-                <Tag className="w-4 h-4" />
-              </div>
-              <span>All Units ({units.length})</span>
-            </div>
-          </div>
-
-          {/* Card Body Grid */}
-          <div className="p-4 sm:p-5">
+        {/* RIGHT COLUMN: Units Grid */}
+        <div className="lg:col-span-8">
+          <ContentCard title="All Units" badge={`${units.length} defined`}>
             {loading ? (
-              <div className="p-8 text-center text-xs text-slate-500 font-medium">
-                Loading units...
-              </div>
+              <div className="p-8 text-center text-xs text-[#64748B]">Loading units...</div>
             ) : units.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-500 font-medium">
+              <div className="p-8 text-center text-xs text-[#64748B]">
                 No units created yet. Add your first unit from the left panel.
               </div>
             ) : (
@@ -193,31 +179,28 @@ export default function UnitsManagementPage() {
                 {units.map((unit) => (
                   <div
                     key={unit.id}
-                    className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 transition-all flex items-center justify-between gap-3 group"
+                    className="p-3 rounded-xl border border-[#E2E8F0] hover:border-[#C5DEC8] hover:bg-[#F8FAFC] transition-colors flex items-center justify-between gap-3 group"
                   >
-                    {/* Left: Badge with Symbol */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="px-3 py-1.5 rounded-lg bg-[#ccfbf1] text-[#0f766e] font-black text-xs shrink-0 tracking-wide">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="px-2.5 py-1 rounded-md bg-[#EAF3EE] text-[#174D3C] font-bold text-xs shrink-0 font-mono">
                         {unit.unitSymbol || unit.unitName}
                       </div>
 
-                      {/* Middle: Name and Symbol subtitle */}
                       <div className="min-w-0">
-                        <div className="font-bold text-xs text-slate-900 truncate">
+                        <div className="font-semibold text-xs text-[#111827] truncate">
                           {unit.unitName}
                         </div>
                         {unit.unitSymbol && unit.unitSymbol !== unit.unitName && (
-                          <div className="text-[11px] text-slate-500 truncate">
+                          <div className="text-[11px] text-[#64748B] truncate">
                             {unit.unitSymbol}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Right: Circular Red Delete Button */}
                     <button
                       onClick={() => handleDeleteUnit(unit.id, unit.unitName)}
-                      className="w-7 h-7 rounded-full border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-400 flex items-center justify-center transition-colors shrink-0"
+                      className="p-1 rounded-md text-[#94A3B8] hover:text-red-700 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0"
                       title="Delete Unit"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -226,9 +209,9 @@ export default function UnitsManagementPage() {
                 ))}
               </div>
             )}
-          </div>
+          </ContentCard>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

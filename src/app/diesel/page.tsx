@@ -5,22 +5,22 @@ import { errorMessage as getErrorMessage } from "@/lib/errors";
 import type { ModuleStockSummary } from "@/types/api";
 
 import { StatCard } from "@/components/ui/stat-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
+import { ContentCard } from "@/components/ui/content-card";
 import type { GodownItem } from "@/lib/godown-data";
-import type { PlotCropAssociation,PlotItem } from "@/types/estate";
+import type { PlotCropAssociation, PlotItem } from "@/types/estate";
 import {
-AlertCircle,
-CheckCircle2,
-Fuel,
-History,
-Plus,
-Send,
-ShoppingCart,
-Tractor,
-TrendingDown,
-Warehouse,
-X
+  AlertCircle,
+  CheckCircle2,
+  Fuel,
+  ShoppingCart,
+  TrendingDown,
+  Warehouse,
+  X,
 } from "lucide-react";
-import React,{ useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 
 const ESTATE_MACHINES = [
   "John Deere 5050D Tractor",
@@ -39,7 +39,7 @@ export default function DieselPage() {
 
   // Master Data
   const [plots, setPlots] = useState<PlotItem[]>([]);
-  const [, setAssociations] = useState<PlotCropAssociation[]>([]);
+  const [associations, setAssociations] = useState<PlotCropAssociation[]>([]);
 
   // Module Stock Data from Godown
   const [stockSummary, setStockSummary] = useState<ModuleStockSummary>({
@@ -65,16 +65,16 @@ export default function DieselPage() {
   const [selectedMachine, setSelectedMachine] = useState(ESTATE_MACHINES[0]);
   const [dispenseQty, setDispenseQty] = useState<number | "">("");
   const [dispenseDate, setDispenseDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [driverName, ] = useState("Ramasamy V. / Operator");
+  const [driverName] = useState("Ramasamy V. / Operator");
   const [submittingDispense, setSubmittingDispense] = useState(false);
 
   // Inward Purchase Modal State
   const [showInwardModal, setShowInwardModal] = useState(false);
-  const [inwardName, setInwardName] = useState("Diesel Fuel Bulk (Tanker)");
+  const [inwardName] = useState("Diesel Fuel Bulk (Tanker)");
   const [inwardQty, setInwardQty] = useState<number | "">("");
-  const [inwardRate, setInwardRate] = useState<number | "">(92.5);
-  const [inwardVendor, setInwardVendor] = useState("HPCL Petroleum Depot");
-  const [inwardLocation, setInwardLocation] = useState("Fuel Yard Tank #1 - Secured Dispenser");
+  const [inwardRate] = useState<number | "">(92.5);
+  const [inwardVendor] = useState("HPCL Petroleum Depot");
+  const [inwardLocation] = useState("Fuel Yard Tank #1 - Secured Dispenser");
   const [submittingInward, setSubmittingInward] = useState(false);
 
   // Feedback Notification
@@ -100,46 +100,54 @@ export default function DieselPage() {
       if (stockData && !stockData.error) setStockSummary(stockData);
       setLogs(Array.isArray(logsData) ? logsData : []);
 
-      if (Array.isArray(plotsData) && plotsData.length > 0 && !selectedPlotId) {
-        setSelectedPlotId(plotsData[0].id);
+      if (Array.isArray(plotsData) && plotsData.length > 0) {
+        setSelectedPlotId((prev) => prev || plotsData[0].id);
         const filtered = (Array.isArray(pcData) ? pcData : []).filter((a: PlotCropAssociation) => a.plotId === plotsData[0].id);
-        if (filtered.length > 0) setSelectedCropActivityId(filtered[0].id);
+        if (filtered.length > 0) setSelectedCropActivityId((prev) => prev || filtered[0].id);
       }
 
-      if (stockData?.items?.length > 0 && !selectedGodownItemId) {
+      if (stockData?.items?.length > 0) {
         const firstAvailable = stockData.items.find((i: GodownItem) => i.availableQuantity > 0);
-        if (firstAvailable) setSelectedGodownItemId(firstAvailable.id);
+        if (firstAvailable) setSelectedGodownItemId((prev) => prev || firstAvailable.id);
       }
     } catch (e) {
-      console.error("Error loading diesel data:", e);
+      console.error("Error loading diesel stock data:", e);
     } finally {
       setLoading(false);
     }
-  }, [selectedGodownItemId, selectedPlotId]);
+  }, []);
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    loadAllData();
-  })(); }, 0);
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        loadAllData();
+      })();
+    }, 0);
     return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [loadAllData]);
 
-  
+  const handlePlotSelect = (plotId: string) => {
+    setSelectedPlotId(plotId);
+    const filtered = associations.filter((a) => a.plotId === plotId);
+    if (filtered.length > 0) {
+      setSelectedCropActivityId(filtered[0].id);
+    } else {
+      setSelectedCropActivityId("");
+    }
+  };
 
   const selectedGodownItem = stockSummary.items.find((i: GodownItem) => i.id === selectedGodownItemId);
 
-  // Dispense Fuel from Godown Tank
   const handleDispenseFuel = async (e: React.FormEvent) => {
     e.preventDefault();
     const qty = Number(dispenseQty);
     if (!qty || qty <= 0) {
-      setFeedback({ type: "error", message: "Please enter a valid dispense volume in Liters." });
+      setFeedback({ type: "error", message: "Please enter a valid fuel dispense quantity in Liters." });
       return;
     }
 
     const activePlot = plots.find((p) => p.id === selectedPlotId);
-    
 
     try {
       setSubmittingDispense(true);
@@ -149,7 +157,7 @@ export default function DieselPage() {
         if (qty > selectedGodownItem.availableQuantity) {
           setFeedback({
             type: "error",
-            message: `Requested ${qty} L exceeds available fuel stock (${selectedGodownItem.availableQuantity} L in tank).`,
+            message: `Requested ${qty} L exceeds available fuel storage (${selectedGodownItem.availableQuantity} L in tank).`,
           });
           setSubmittingDispense(false);
           return;
@@ -164,11 +172,12 @@ export default function DieselPage() {
             quantity: qty,
             date: dispenseDate,
             plotId: selectedPlotId,
-            plotName: activePlot?.name || "Machinery Shed",
+            plotName: activePlot?.name || "General Estate",
             cropActivityId: selectedCropActivityId,
-            cropActivityName: `${selectedMachine} Operation`,
+            cropActivityName: associations.find(association => association.id === selectedCropActivityId)?.cropActivityName,
+            machineName: selectedMachine,
             issuedTo: driverName,
-            notes: "",
+            notes: `Dispensed to machine: ${selectedMachine}`,
           }),
         });
 
@@ -177,16 +186,17 @@ export default function DieselPage() {
 
         setFeedback({
           type: "success",
-          message: `Successfully dispensed ${qty} L to "${selectedMachine}"! Godown fuel tank stock updated.`,
+          message: `Dispensed ${qty} L of diesel to ${selectedMachine}! Storage tank updated.`,
         });
       } else {
-        // Fallback direct log
         const costVal = qty * 92.5;
         const res = await fetch("/api/diesel-logs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            transactionType: "CONSUMPTION",
+            plotCropId: selectedCropActivityId || undefined,
+            plotName: activePlot?.name || "General Estate",
+            machineName: selectedMachine,
             quantityLiters: qty,
             cost: costVal,
             date: dispenseDate,
@@ -213,7 +223,6 @@ export default function DieselPage() {
     }
   };
 
-  // Submit Inward Tanker Purchase into Godown
   const handleInwardDiesel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inwardQty) {
@@ -259,55 +268,48 @@ export default function DieselPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-16">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4 border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black shadow-xs">
-            <Fuel className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Diesel Fuel Operations & Storage</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900">
-                Godown Storage Tank & Dispense Logs
-              </span>
-            </h1>
-          </div>
-        </div>
+    <PageContainer>
+      {/* Page Header */}
+      <PageHeader
+        title="Diesel Fuel Operations & Storage"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Plot Operations", href: "/items" },
+          { label: "Diesel Operations" },
+        ]}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowInwardModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <ShoppingCart className="w-3.5 h-3.5 text-estate-primary" />
+              <span>+ Refill Storage Tank</span>
+            </button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setShowInwardModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition-all"
-          >
-            <ShoppingCart className="w-3.5 h-3.5 text-amber-600" />
-            <span>+ Refill Storage Tank</span>
-          </button>
-
-          <a
-            href="/godown"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold rounded-xl shadow-xs transition-all"
-          >
-            <Warehouse className="w-3.5 h-3.5" />
-            <span>View Godown Inventory</span>
-          </a>
-        </div>
-      </div>
+            <Link
+              href="/godown"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-estate-primary hover:bg-estate-primary-hover text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <Warehouse className="w-3.5 h-3.5" />
+              <span>View Godown Inventory</span>
+            </Link>
+          </div>
+        }
+      />
 
       {/* Notification Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
-            feedback.type === "success"
-              ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
-              : "bg-red-50 text-red-900 border border-red-200"
-          }`}
+          className={`p-3.5 rounded-lg text-xs font-semibold flex items-center gap-2 ${feedback.type === "success"
+            ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+            : "bg-red-50 text-red-900 border border-red-200"
+            }`}
         >
           {feedback.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-700" />
+            <AlertCircle className="w-4 h-4 text-red-700 shrink-0" />
           )}
           <span>{feedback.message}</span>
         </div>
@@ -319,31 +321,27 @@ export default function DieselPage() {
           title="Diesel in Storage Tank"
           value={`${stockSummary.totalAvailableQty.toLocaleString("en-IN")} Liters`}
           subtitle={`Valued at ₹${stockSummary.totalValuation.toLocaleString("en-IN")} in fuel storage`}
-          icon={Fuel}
         />
         <StatCard
           title="Total Fuel Purchased"
           value={`₹${stockSummary.totalPurchasedCost.toLocaleString("en-IN")}`}
           subtitle={`${stockSummary.totalPurchasedQty.toLocaleString("en-IN")} Liters received into Godown`}
-          icon={ShoppingCart}
         />
         <StatCard
           title="Total Fuel Consumed"
           value={`₹${stockSummary.totalConsumedCost.toLocaleString("en-IN")}`}
           subtitle={`${stockSummary.totalConsumedQty.toLocaleString("en-IN")} Liters dispensed to tractors & pumps`}
-          icon={TrendingDown}
         />
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-2">
         <button
           onClick={() => setActiveTab("consumption")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "consumption"
-              ? "bg-[#15803d] text-white shadow-xs"
-              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-          }`}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${activeTab === "consumption"
+            ? "bg-estate-primary text-white shadow-xs"
+            : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+            }`}
         >
           <TrendingDown className="w-3.5 h-3.5" />
           <span>Fuel Dispense & Equipment Logs ({logs.length})</span>
@@ -351,11 +349,10 @@ export default function DieselPage() {
 
         <button
           onClick={() => setActiveTab("purchases")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "purchases"
-              ? "bg-[#15803d] text-white shadow-xs"
-              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-          }`}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${activeTab === "purchases"
+            ? "bg-estate-primary text-white shadow-xs"
+            : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+            }`}
         >
           <ShoppingCart className="w-3.5 h-3.5" />
           <span>Tank Refills & Purchases ({stockSummary.purchases?.length || 0})</span>
@@ -363,11 +360,10 @@ export default function DieselPage() {
 
         <button
           onClick={() => setActiveTab("stock")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "stock"
-              ? "bg-[#15803d] text-white shadow-xs"
-              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-          }`}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${activeTab === "stock"
+            ? "bg-estate-primary text-white shadow-xs"
+            : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+            }`}
         >
           <Fuel className="w-3.5 h-3.5" />
           <span>Storage Tank Balance ({stockSummary.items?.length || 0})</span>
@@ -377,24 +373,16 @@ export default function DieselPage() {
       {/* TAB 1: FUEL CONSUMPTION & DISPENSE */}
       {activeTab === "consumption" && (
         <div className="space-y-6">
-          {/* Dispense Form */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-5 sm:p-6 space-y-5">
-            <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center text-xs font-black">
-                  <Fuel className="w-3.5 h-3.5" />
-                </span>
-                <span>Dispense Diesel to Equipment / Tractor</span>
-              </h3>
-            </div>
-
-            <form onSubmit={handleDispenseFuel} className="space-y-4">
+          <ContentCard
+            title="Dispense Diesel to Equipment / Tractor"
+          >
+            <form onSubmit={handleDispenseFuel} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Source: Fuel Yard Tank */}
                 <div className="space-y-1.5 min-w-0">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                  <label className="font-semibold text-slate-700 flex items-center justify-between">
                     <span>Source Fuel Storage *</span>
-                    <span className="text-[11px] text-emerald-700 font-semibold truncate ml-2">
+                    <span className="text-[11px] text-estate-primary font-medium truncate ml-2">
                       {selectedGodownItem ? `${selectedGodownItem.availableQuantity} L in tank` : ""}
                     </span>
                   </label>
@@ -402,7 +390,7 @@ export default function DieselPage() {
                     aria-label="Diesel stock item"
                     value={selectedGodownItemId}
                     onChange={(e) => setSelectedGodownItemId(e.target.value)}
-                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   >
                     <option value="">-- Select from Godown Fuel Tank --</option>
                     {stockSummary.items.map((item: GodownItem) => (
@@ -412,7 +400,7 @@ export default function DieselPage() {
                     ))}
                   </select>
                   {stockSummary.items.length === 0 && (
-                    <p className="text-[11px] text-amber-600 font-medium">
+                    <p className="text-[11px] text-amber-700 font-medium">
                       No fuel stock found in Godown. Click &quot;+ Refill Storage Tank&quot; to inward fuel.
                     </p>
                   )}
@@ -420,11 +408,11 @@ export default function DieselPage() {
 
                 {/* Target Machine */}
                 <div className="space-y-1.5 min-w-0">
-                  <label className="text-xs font-bold text-slate-700">Target Machine / Equipment *</label>
+                  <label className="font-semibold text-slate-700">Target Machine / Equipment *</label>
                   <select
                     value={selectedMachine}
                     onChange={(e) => setSelectedMachine(e.target.value)}
-                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   >
                     {ESTATE_MACHINES.map((m) => (
                       <option key={m} value={m}>
@@ -436,370 +424,290 @@ export default function DieselPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Target Plot */}
+                <div className="space-y-1.5 min-w-0">
+                  <label className="font-semibold text-slate-700">Target Estate Plot *</label>
+                  <select
+                    required
+                    value={selectedPlotId}
+                    onChange={(e) => handlePlotSelect(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
+                  >
+                    {plots.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.areaAcres} Acres - {p.location})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Target Crop / Activity */}
+                <div className="space-y-1.5 min-w-0">
+                  <label className="font-semibold text-slate-700">Crop Cycle / Operation *</label>
+                  <select
+                    value={selectedCropActivityId}
+                    onChange={(e) => setSelectedCropActivityId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
+                  >
+                    <option value="">General Plot Operations</option>
+                    {associations
+                      .filter((a) => a.plotId === selectedPlotId)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.cropActivityName} ({a.status})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Dispense Liters */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Dispense Volume (Liters) *</label>
+                  <label className="font-semibold text-slate-700">Dispense Volume (Liters) *</label>
                   <input
                     type="number"
                     required
-                    min="1"
+                    min="0.000001"
                     step="any"
                     max={selectedGodownItem?.availableQuantity}
                     placeholder="e.g. 35"
                     aria-label="Diesel quantity"
                     value={dispenseQty}
                     onChange={(e) => setDispenseQty(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-bold font-mono focus:outline-none focus:border-estate-primary text-xs"
                   />
-                  {selectedGodownItem && (
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      Tank Balance: {selectedGodownItem.availableQuantity} L
-                    </div>
-                  )}
                 </div>
 
                 {/* Date */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Dispense Date *</label>
+                  <label className="font-semibold text-slate-700">Dispense Date *</label>
                   <input
                     type="date"
                     required
                     value={dispenseDate}
                     onChange={(e) => setDispenseDate(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end">
+              <div className="flex justify-end pt-2 border-t border-slate-100">
                 <button
                   type="submit"
                   disabled={submittingDispense}
-                  className="px-5 py-2.5 bg-[#15803d] hover:bg-[#166534] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-estate-primary hover:bg-estate-primary-hover text-white text-xs font-semibold rounded-lg shadow-xs transition-colors disabled:opacity-50"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{submittingDispense ? "Dispensing Fuel..." : "Dispense Fuel & Update Stock"}</span>
+                  {submittingDispense ? "Dispensing..." : "Record Fuel Dispense"}
                 </button>
               </div>
             </form>
-          </div>
+          </ContentCard>
 
-          {/* Consumption History Table */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-              <div className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <History className="w-4 h-4 text-amber-600" />
-                <span>Diesel Fuel Dispense & Consumption History ({logs.length})</span>
-              </div>
-            </div>
-
+          {/* Historical Logs */}
+          <ContentCard
+            title="Fuel Dispense Historical Log"
+            noPadding
+          >
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+              <table className="w-full text-left text-xs erp-table">
+                <thead>
                   <tr>
-                    <th className="p-3.5">Date</th>
-                    <th className="p-3.5">Machine / Equipment</th>
-                    <th className="p-3.5 text-right">Fuel Dispensed</th>
-                    <th className="p-3.5 text-right">Cost Value</th>
-                    <th className="p-3.5">Operator / Dispensed By</th>
+                    <th className="p-3">Date</th>
+                    <th className="p-3">Equipment / Machine</th>
+                    <th className="p-3">Allocated Plot</th>
+                    <th className="p-3 text-right">Liters Dispensed</th>
+                    <th className="p-3 text-right">Fuel Spend (₹)</th>
+                    <th className="p-3">Operator / Driver</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody>
                   {logs.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-500">
-                        No fuel dispense logs yet. Dispense fuel from Godown tank using the form above.
+                      <td colSpan={6} className="text-center py-10 text-slate-400">
+                        <Fuel className="w-8 h-8 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
+                        <p className="font-semibold text-slate-700">No diesel dispense logs recorded yet.</p>
                       </td>
                     </tr>
                   ) : (
                     logs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">{log.date}</td>
-                        <td className="p-3.5 font-bold text-slate-900 flex items-center gap-2">
-                          <Tractor className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{log.cropActivityName || "Equipment Operation"}</span>
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold text-amber-700 text-sm">
-                          {log.quantityLiters} L
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold text-slate-900">
-                          ₹{Number(log.cost).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3.5 text-slate-600">{log.loggedBy}</td>
+                        <td className="p-3 text-slate-900 font-medium">{log.date}</td>
+                        <td className="p-3 font-semibold text-slate-900">{log.machineName || "—"}</td>
+                        <td className="p-3 text-slate-700">{log.plotName || "General Operations"}</td>
+                        <td className="p-3 text-right font-bold text-slate-900">{log.quantityLiters ?? log.litersUsed ?? 0} L</td>
+                        <td className="p-3 text-right font-bold text-amber-700 font-mono">₹{log.cost.toLocaleString("en-IN")}</td>
+                        <td className="p-3 text-slate-600">{log.operator || log.loggedBy || "—"}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
             </div>
-          </div>
+          </ContentCard>
         </div>
       )}
 
-      {/* TAB 2: FUEL PURCHASES & TANK REFILLS */}
+      {/* TAB 2: STOCK PURCHASES & INWARD */}
       {activeTab === "purchases" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-amber-600" />
-                <span>Diesel Tank Purchases & Refills ({stockSummary.purchases?.length || 0})</span>
-              </h3>
-            </div>
-
-            <button
-              onClick={() => setShowInwardModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow-2xs transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Refill Storage Tank</span>
-            </button>
-          </div>
-
+        <ContentCard
+          title="Fuel Tank Refill Purchases & Inward Receipts"
+          noPadding
+        >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <table className="w-full text-left text-xs erp-table">
+              <thead>
                 <tr>
-                  <th className="p-3.5">Delivery Date</th>
-                  <th className="p-3.5">Fuel Description</th>
-                  <th className="p-3.5">Supplier / Petrol Depot</th>
-                  <th className="p-3.5 text-right">Liters Inwarded</th>
-                  <th className="p-3.5 text-right">Rate / Liter</th>
-                  <th className="p-3.5 text-right">Total Invoice Cost</th>
-                  <th className="p-3.5">Storage Tank Location</th>
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Fuel Product</th>
+                  <th className="p-3">Depot / Supplier</th>
+                  <th className="p-3 text-right">Volume</th>
+                  <th className="p-3 text-right">Rate / Liter</th>
+                  <th className="p-3 text-right">Total Spend</th>
+                  <th className="p-3">Storage Location</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {(!stockSummary.purchases || stockSummary.purchases.length === 0) ? (
+              <tbody>
+                {stockSummary.purchases?.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-500">
-                      No fuel delivery records found in Godown. Click &quot;+ Refill Storage Tank&quot; to inward bulk fuel.
+                    <td colSpan={7} className="text-center py-10 text-slate-400">
+                      No fuel purchases inwarded yet.
                     </td>
                   </tr>
                 ) : (
-                  stockSummary.purchases.map((m) => (
-                    <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">{m.date}</td>
-                      <td className="p-3.5 font-bold text-slate-900">{m.itemName}</td>
-                      <td className="p-3.5 text-slate-600">{m.source}</td>
-                      <td className="p-3.5 text-right font-mono font-bold text-amber-700 text-sm">
-                        {m.quantity} L
-                      </td>
-                      <td className="p-3.5 text-right font-mono text-slate-600">
-                        ₹{Number(m.ratePerUnit || 0).toFixed(2)}
-                      </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-[#15803d]">
-                        ₹{Number(m.totalCost || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="p-3.5 text-slate-600">{m.destinationMenu || "Fuel Yard Tank #1"}</td>
+                  stockSummary.purchases?.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 text-slate-900 font-medium">{p.date}</td>
+                      <td className="p-3 font-semibold text-slate-900">{p.itemName}</td>
+                      <td className="p-3 text-slate-600">{p.vendorName || "Petroleum Supplier"}</td>
+                      <td className="p-3 text-right font-bold text-slate-900">{p.quantity} L</td>
+                      <td className="p-3 text-right text-slate-600 font-mono">₹{p.ratePerUnit.toLocaleString("en-IN")}</td>
+                      <td className="p-3 text-right font-bold text-slate-900 font-mono">₹{p.totalCost.toLocaleString("en-IN")}</td>
+                      <td className="p-3 text-slate-600">{p.location}</td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </ContentCard>
       )}
 
-      {/* TAB 3: GODOWN FUEL TANK STATUS */}
+      {/* TAB 3: GODOWN STOCK BALANCE */}
       {activeTab === "stock" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Fuel className="w-4 h-4 text-amber-600" />
-                <span>On-Hand Diesel Storage Tanks ({stockSummary.items?.length || 0})</span>
-              </h3>
-            </div>
-
-            <div className="text-xs font-bold text-slate-700">
-              Valuation:{" "}
-              <span className="text-[#15803d] font-extrabold text-sm">
-                ₹{stockSummary.totalValuation.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-          </div>
-
+        <ContentCard
+          title="Current Fuel Storage Tank Level"
+          noPadding
+        >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <table className="w-full text-left text-xs erp-table">
+              <thead>
                 <tr>
-                  <th className="p-3.5">Fuel Tank Name</th>
-                  <th className="p-3.5">Storage Location</th>
-                  <th className="p-3.5 text-right">Available Volume</th>
-                  <th className="p-3.5 text-right">Total Refilled</th>
-                  <th className="p-3.5 text-right">Rate / L</th>
-                  <th className="p-3.5 text-right">Total Valuation</th>
-                  <th className="p-3.5 text-center">Tank Status</th>
-                  <th className="p-3.5 text-center">Quick Action</th>
+                  <th className="p-3">Storage Tank</th>
+                  <th className="p-3">Location</th>
+                  <th className="p-3 text-right">Total Refilled</th>
+                  <th className="p-3 text-right">Total Dispensed</th>
+                  <th className="p-3 text-right">Remaining Fuel</th>
+                  <th className="p-3 text-right">Valuation (₹)</th>
+                  <th className="p-3 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {(!stockSummary.items || stockSummary.items.length === 0) ? (
+              <tbody>
+                {stockSummary.items.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-slate-500">
-                      No diesel storage records in Godown. Click &quot;+ Refill Storage Tank&quot; to inward fuel.
+                    <td colSpan={7} className="text-center py-10 text-slate-400">
+                      No fuel tanks found in Godown inventory.
                     </td>
                   </tr>
                 ) : (
-                  stockSummary.items.map((item: GodownItem) => {
-                    const isLow = item.status === "LOW_STOCK";
-                    const isExhausted = item.status === "EXHAUSTED";
-
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5 font-bold text-slate-900">{item.name}</td>
-                        <td className="p-3.5 text-slate-600">{item.location}</td>
-                        <td className="p-3.5 text-right font-mono font-bold text-amber-700 text-base">
-                          {item.availableQuantity} L
-                        </td>
-                        <td className="p-3.5 text-right font-mono text-slate-500">
-                          {item.totalReceivedQuantity} L
-                        </td>
-                        <td className="p-3.5 text-right font-mono text-slate-600">
-                          ₹{Number(item.ratePerUnit).toFixed(2)}
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold text-[#15803d]">
-                          ₹{Number(item.totalValue || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3.5 text-center">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                              isExhausted
-                                ? "bg-red-100 text-red-800 border border-red-200"
-                                : isLow
-                                ? "bg-amber-100 text-amber-800 border border-amber-200"
-                                : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  stockSummary.items.map((item: GodownItem) => (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 font-semibold text-slate-900">{item.name}</td>
+                      <td className="p-3 text-slate-600">{item.location}</td>
+                      <td className="p-3 text-right font-medium text-slate-700">
+                        {(item.quantity ?? item.totalReceivedQuantity ?? 0)} L
+                      </td>
+                      <td className="p-3 text-right font-medium text-amber-700">
+                        {((item.quantity ?? item.totalReceivedQuantity ?? 0) - item.availableQuantity)} L
+                      </td>
+                      <td className="p-3 text-right font-bold text-estate-primary">
+                        {item.availableQuantity} L
+                      </td>
+                      <td className="p-3 text-right font-bold text-slate-900 font-mono">
+                        ₹{(item.availableQuantity * (item.ratePerUnit || 92.5)).toLocaleString("en-IN")}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${item.availableQuantity > 0
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            : "bg-red-50 text-red-800 border border-red-200"
                             }`}
-                          >
-                            {item.status.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-center">
-                          <button
-                            onClick={() => {
-                              setSelectedGodownItemId(item.id);
-                              setActiveTab("consumption");
-                            }}
-                            disabled={item.availableQuantity <= 0}
-                            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-lg text-xs font-bold transition-colors disabled:opacity-40"
-                          >
-                            Dispense Fuel
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
+                        >
+                          {item.availableQuantity > 0 ? "Fuel Ready" : "Depleted"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </ContentCard>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL: INWARD FUEL PURCHASES INTO GODOWN TANK                              */}
-      {/* ========================================================================= */}
+      {/* MODAL: INWARD DIESEL PURCHASE */}
       {showInwardModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-black">
-                  <Fuel className="w-4 h-4" />
-                </span>
-                <span>Refill Godown Fuel Storage Tank</span>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Fuel className="w-4 h-4 text-estate-primary" />
+                <span>Refill Bulk Diesel Storage Tank</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowInwardModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleInwardDiesel} className="space-y-4">
+            <form onSubmit={handleInwardDiesel} className="space-y-4 text-xs">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Fuel Tank / Storage Bay *</label>
+                <label className="font-semibold text-slate-700">Refill Quantity (Liters) *</label>
                 <input
-                  type="text"
+                  type="number"
                   required
-                  value={inwardName}
-                  onChange={(e) => setInwardName(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500"
+                  min="1"
+                  step="any"
+                  placeholder="e.g. 500"
+                  value={inwardQty}
+                  onChange={(e) => setInwardQty(e.target.value === "" ? "" : Number(e.target.value))}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-bold font-mono"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Refill Volume (Liters) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    step="any"
-                    placeholder="e.g. 500"
-                    value={inwardQty}
-                    onChange={(e) => setInwardQty(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Rate per Liter (₹)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="e.g. 92.50"
-                    value={inwardRate}
-                    onChange={(e) => setInwardRate(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Supplier / Petroleum Depot</label>
-                <input
-                  type="text"
-                  placeholder="e.g. HPCL Bulk Depot / Indian Oil"
-                  value={inwardVendor}
-                  onChange={(e) => setInwardVendor(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Storage Location</label>
-                <input
-                  type="text"
-                  value={inwardLocation}
-                  onChange={(e) => setInwardLocation(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowInwardModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingInward}
-                  className="px-4 py-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-2 text-xs font-semibold bg-estate-primary hover:bg-estate-primary-hover text-white rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {submittingInward ? "Saving..." : "Inward Fuel to Tank"}
+                  {submittingInward ? "Saving..." : "Record Tank Refill"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

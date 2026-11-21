@@ -1,16 +1,18 @@
 "use client";
-import { useCallback } from 'react';
-import { errorMessage as getErrorMessage } from "@/lib/errors";
-
-import { EmployeeItem,LeaveRecord,LeaveStatus,LeaveType } from "@/lib/hr-data";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-Calendar,
-CheckCircle2,
-Plus,
-ShieldAlert,
-Trash2
+  Calendar,
+  CheckCircle2,
+  Plus,
+  ShieldAlert,
+  Trash2,
 } from "lucide-react";
-import React,{ useEffect,useState } from "react";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { EmployeeItem, LeaveRecord, LeaveStatus, LeaveType } from "@/lib/hr-data";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
+import { StatCard } from "@/components/ui/stat-card";
 
 export default function LeaveManagementPage() {
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
@@ -54,10 +56,15 @@ export default function LeaveManagementPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchData();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchData();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, [fetchData]);
 
   const openAdd = () => {
@@ -131,60 +138,68 @@ export default function LeaveManagementPage() {
   const totalLeaveDays = filtered.reduce((acc, l) => acc + Number(l.totalDays || 0), 0);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-900 text-white rounded-xl shadow-xs">
-              <Calendar className="w-5 h-5 text-emerald-300" />
-            </div>
-            <h1 className="text-xl font-bold text-slate-900">HR: Leave Management & Authorizations</h1>
-          </div>
-        </div>
-
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
-        >
-          <Plus className="w-4 h-4" /> Apply / Record Leave
-        </button>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Leave Management & Authorizations"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Staff Roster", href: "/employees" },
+          { label: "Leave Management" },
+        ]}
+        actions={
+          <button
+            onClick={openAdd}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Apply / Record Leave
+          </button>
+        }
+      />
 
       {msg && (
-        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"}`}>
-          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <ShieldAlert className="w-4 h-4 text-rose-600" />}
-          {msg.text}
+        <div
+          className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+            msg.type === "success"
+              ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]"
+              : "bg-red-50 text-red-800 border-red-200"
+          }`}
+        >
+          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-[#174D3C]" /> : <ShieldAlert className="w-4 h-4 text-red-600" />}
+          <span>{msg.text}</span>
         </div>
       )}
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Total Leave Days</span>
-          <div className="text-lg font-bold text-slate-900 mt-0.5">{totalLeaveDays} Days Sanctioned</div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Approved Requests</span>
-          <div className="text-lg font-bold text-emerald-800 mt-0.5">
-            {leaves.filter((l) => l.status === "APPROVED").length} Approved
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Total Staff Registered</span>
-          <div className="text-lg font-bold text-slate-900 mt-0.5">{employees.length} Personnel</div>
-        </div>
+        <StatCard
+          title="Sanctioned Leave Days"
+          value={`${totalLeaveDays} Days`}
+          subtitle="Cumulative duration"
+          icon={Calendar}
+        />
+        <StatCard
+          title="Approved Requests"
+          value={leaves.filter((l) => l.status === "APPROVED").length}
+          subtitle="Sanctioned applications"
+          isPositive={true}
+        />
+        <StatCard
+          title="Registered Personnel"
+          value={employees.length}
+          subtitle="Total workforce strength"
+        />
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-slate-700">Leave Type:</span>
+      {/* Main Table Card */}
+      <ContentCard
+        title="Leave Records Register"
+        badge={`${filtered.length} entries`}
+        actions={
+          <div className="flex items-center gap-2 text-xs">
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="p-1.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-800"
+              className="px-2.5 py-1 bg-white border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#174D3C]"
             >
               <option value="ALL">All Types</option>
               <option value="CASUAL">Casual Leave</option>
@@ -192,14 +207,11 @@ export default function LeaveManagementPage() {
               <option value="EMERGENCY">Emergency</option>
               <option value="UNPAID">Unpaid Leave</option>
             </select>
-          </div>
 
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-slate-700">Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="p-1.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-800"
+              className="px-2.5 py-1 bg-white border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#174D3C]"
             >
               <option value="ALL">All Statuses</option>
               <option value="APPROVED">Approved</option>
@@ -207,58 +219,64 @@ export default function LeaveManagementPage() {
               <option value="REJECTED">Rejected</option>
             </select>
           </div>
-        </div>
-      </div>
-
-      {/* Leaves Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-              <tr>
-                <th className="p-3.5">Employee Name</th>
-                <th className="p-3.5">Leave Type</th>
-                <th className="p-3.5">Date Range</th>
-                <th className="p-3.5 text-center">Days</th>
-                <th className="p-3.5">Reason & Purpose</th>
-                <th className="p-3.5">Sanctioned By</th>
-                <th className="p-3.5">Status</th>
-                <th className="p-3.5 text-right">Actions</th>
+        }
+      >
+        <div className="overflow-x-auto -mx-6">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                <th className="py-2.5 px-4 font-medium">Employee</th>
+                <th className="py-2.5 px-4 font-medium">Type</th>
+                <th className="py-2.5 px-4 font-medium">Date Range</th>
+                <th className="py-2.5 px-4 font-medium text-center">Days</th>
+                <th className="py-2.5 px-4 font-medium">Reason</th>
+                <th className="py-2.5 px-4 font-medium">Sanctioned By</th>
+                <th className="py-2.5 px-4 font-medium text-center">Status</th>
+                <th className="py-2.5 px-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500 font-medium">Loading leave records...</td>
+                  <td colSpan={8} className="py-8 px-4 text-center text-[#64748B]">Loading leave records...</td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No leave entries recorded.</td>
+                  <td colSpan={8} className="py-8 px-4 text-center text-[#64748B]">No leave entries recorded.</td>
                 </tr>
               ) : (
                 filtered.map((l) => (
-                  <tr key={l.id} className="hover:bg-slate-50">
-                    <td className="p-3.5 font-bold text-slate-900">{l.employeeName}</td>
-                    <td className="p-3.5">
-                      <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${l.leaveType === "SICK" ? "bg-red-50 text-red-800 border-red-200" : l.leaveType === "CASUAL" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}>
+                  <tr key={l.id} className="hover:bg-[#F8FAFC] transition-colors">
+                    <td className="py-3 px-4 font-semibold text-[#111827] text-xs">{l.employeeName}</td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                          l.leaveType === "SICK"
+                            ? "bg-red-50 text-red-800 border-red-200"
+                            : l.leaveType === "CASUAL"
+                            ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]"
+                            : "bg-amber-50 text-amber-800 border-amber-200"
+                        }`}
+                      >
                         {l.leaveType}
                       </span>
                     </td>
-                    <td className="p-3.5 font-medium text-slate-700">
+                    <td className="py-3 px-4 font-medium text-[#475569] text-xs">
                       {l.fromDate} → {l.toDate}
                     </td>
-                    <td className="p-3.5 text-center font-bold text-slate-900 font-mono">{l.totalDays} d</td>
-                    <td className="p-3.5 text-slate-600 max-w-xs truncate">{l.reason || "-"}</td>
-                    <td className="p-3.5 text-slate-600 font-medium">{l.approvedBy || "Admin"}</td>
-                    <td className="p-3.5">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <td className="py-3 px-4 text-center font-mono font-medium text-[#111827] text-xs">{l.totalDays} d</td>
+                    <td className="py-3 px-4 text-[#64748B] max-w-xs truncate text-xs">{l.reason || "—"}</td>
+                    <td className="py-3 px-4 text-[#475569] text-xs">{l.approvedBy || "Admin"}</td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#EAF3EE] text-[#174D3C] border border-[#C5DEC8]">
                         {l.status}
                       </span>
                     </td>
-                    <td className="p-3.5 text-right">
+                    <td className="py-3 px-4 text-right">
                       <button
                         onClick={() => handleDelete(l.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1 text-[#94A3B8] hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Delete Leave Record"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -269,24 +287,24 @@ export default function LeaveManagementPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </ContentCard>
 
       {/* Modal Dialog */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm">Sanction & Record Employee Leave</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-700 font-bold text-sm">✕</button>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+              <h3 className="font-semibold text-[#111827] text-sm">Sanction Employee Leave</h3>
+              <button onClick={() => setShowModal(false)} className="text-[#64748B] hover:text-[#111827] font-bold text-sm">✕</button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Employee *</label>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Employee *</label>
                 <select
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value)}
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                 >
                   {employees.map((e) => (
                     <option key={e.id} value={e.id}>{e.name} ({e.roleName})</option>
@@ -295,11 +313,11 @@ export default function LeaveManagementPage() {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Leave Classification *</label>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Leave Classification *</label>
                 <select
                   value={leaveType}
                   onChange={(e) => setLeaveType(e.target.value as typeof leaveType)}
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                 >
                   <option value="CASUAL">Casual Leave (CL)</option>
                   <option value="SICK">Sick / Medical Leave (SL)</option>
@@ -310,50 +328,50 @@ export default function LeaveManagementPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">From Date *</label>
+                  <label className="block text-[#111827] font-medium text-xs mb-1">From Date *</label>
                   <input
                     type="date"
                     required
                     value={fromDate}
                     onChange={(e) => setFromDate(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">To Date *</label>
+                  <label className="block text-[#111827] font-medium text-xs mb-1">To Date *</label>
                   <input
                     type="date"
                     required
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                   />
                 </div>
               </div>
 
-              <div className="p-2.5 bg-emerald-50 text-emerald-800 rounded-xl font-semibold flex items-center justify-between">
+              <div className="p-2.5 bg-[#EAF3EE] text-[#174D3C] rounded-lg font-medium flex items-center justify-between">
                 <span>Calculated Duration:</span>
                 <span className="font-bold font-mono">{calculateDays()} Days</span>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Reason / Purpose</label>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Reason / Purpose</label>
                 <textarea
                   rows={2}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="Reason for absence..."
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Status</label>
+                  <label className="block text-[#111827] font-medium text-xs mb-1">Status</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as typeof status)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                   >
                     <option value="APPROVED">Approved (Syncs Grid)</option>
                     <option value="PENDING">Pending Approval</option>
@@ -361,27 +379,27 @@ export default function LeaveManagementPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Sanctioned By</label>
+                  <label className="block text-[#111827] font-medium text-xs mb-1">Sanctioned By</label>
                   <input
                     type="text"
                     value={approvedBy}
                     onChange={(e) => setApprovedBy(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg"
+                  className="px-3.5 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F1F5F9] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg shadow-sm"
+                  className="px-4 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white font-semibold text-xs rounded-lg shadow-2xs transition-colors"
                 >
                   Confirm & Sync Attendance
                 </button>
@@ -390,6 +408,6 @@ export default function LeaveManagementPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

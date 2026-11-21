@@ -13,6 +13,7 @@ import { calculateVoucherTotals, money } from '../src/lib/money';
 import { createSession, readSession } from '../src/lib/auth';
 import { generatePnLStatement } from '../src/lib/pnl-data';
 import { formatInvoiceReference } from '../src/lib/references';
+const date = '2026-11-21';
 
 afterEach(() => vi.unstubAllEnvs());
 describe('monetary calculations and tamper resistance', () => {
@@ -33,12 +34,12 @@ describe('monetary calculations and tamper resistance', () => {
     expect(first.voucherNo).toBe('PUR-VCH-2026-001'); expect(second.voucherNo).toBe('PUR-VCH-2026-002');
   });
   it('rejects duplicate custom voucher references without adding a second record', () => {
-    logs.addGeneralPurchaseLog({ cost: 1, voucherNo: 'CUSTOM-1' } as never);
-    expect(() => logs.addGeneralPurchaseLog({ cost: 1, voucherNo: 'CUSTOM-1' } as never)).toThrow(/already exists/);
+    logs.addGeneralPurchaseLog({ date, cost: 1, voucherNo: 'CUSTOM-1' } as never);
+    expect(() => logs.addGeneralPurchaseLog({ date, cost: 1, voucherNo: 'CUSTOM-1' } as never)).toThrow(/already exists/);
     expect(getDatabase().generalPurchaseLogs).toHaveLength(1);
   });
   it('rejects non-text custom voucher references before persistence', () => {
-    expect(() => logs.addGeneralPurchaseLog({ cost: 1, voucherNo: 42 } as never)).toThrow();
+    expect(() => logs.addGeneralPurchaseLog({ date, cost: 1, voucherNo: 42 } as never)).toThrow();
     expect(getDatabase().generalPurchaseLogs).toEqual([]);
   });
   it('rejects a custom sales reference already used by a different invoice', () => {
@@ -65,7 +66,7 @@ describe('monetary calculations and tamper resistance', () => {
     expect(money(1.005)).toBe(1.01);
   });
   it('ignores forged purchase totals and line amounts', () => {
-    const item = logs.addGeneralPurchaseLog({ items: [{ id: 'line', description: 'Urea', quantity: 2, unit: 'kg', rate: 10, amount: 1 }], cost: 1, subtotal: 1, taxPercent: 10, taxAmount: 999, discount: 0 } as never);
+    const item = logs.addGeneralPurchaseLog({ date, items: [{ id: 'line', description: 'Urea', quantity: 2, unit: 'kg', rate: 10, amount: 1 }], cost: 1, subtotal: 1, taxPercent: 10, taxAmount: 999, discount: 0 } as never);
     expect(item).toMatchObject({ cost: 22, subtotal: 20, taxAmount: 2 });
   });
   it('rejects a sale whose quantity times price exceeds supported currency', () => {
@@ -77,7 +78,7 @@ describe('monetary calculations and tamper resistance', () => {
 describe('rollback at every master-data write boundary', () => {
   const mutations = [
     ['plot create', () => master.createPlot({ name: 'New', areaAcres: 3, location: 'Test', status: 'ACTIVE' })],
-    ['plot delete', (r: ReturnType<typeof seedRecords>) => master.deletePlot(r.plot.id)],
+    ['plot delete', () => master.deletePlot(getDatabase().plots[0].id)],
     ['crop update', (r: ReturnType<typeof seedRecords>) => master.updateCrop(r.crop.id, { name: 'Changed' })],
     ['party update', (r: ReturnType<typeof seedRecords>) => parties.updateParty(r.party.id, { name: 'Changed' })],
     ['role update', (r: ReturnType<typeof seedRecords>) => hr.updateEmployeeRole(r.role.id, { roleName: 'Changed' })],
@@ -88,7 +89,7 @@ describe('rollback at every master-data write boundary', () => {
     ['salary update', () => hr.updateWageRecord(getDatabase().wages[0].id, { bonus: 200 })],
   ] as const;
   it.each(mutations)('%s restores the entire store after failed persistence', (_name, change) => {
-    const records = seedRecords(); const original = structuredClone(getDatabase());
+    const records = seedRecords(); master.createPlot({ name: 'Unreferenced', areaAcres: 1, status: 'ACTIVE', location: 'Test' }); const original = structuredClone(getDatabase());
     vi.mocked(saveDatabase).mockImplementationOnce(() => { throw new Error('Disk full'); });
     expect(() => change(records)).toThrow('Disk full');
     expect(getDatabase()).toEqual(original);

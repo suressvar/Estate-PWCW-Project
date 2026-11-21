@@ -9,10 +9,9 @@ saveDatabase
 import {
 addDieselLog,
 addFertilizerLog,
-addGeneralPurchaseLog,
 addMachineryLog,
 } from "./transaction-logs";
-import { dateKey,finiteNumber,positiveNumber,requiredText,ValidationError } from "./validation";
+import { dateKey,finiteNumber,positiveNumber,oneOf,referenceExists,requiredText,ValidationError } from "./validation";
 
 export type { GodownItem,GodownStockMovement };
 
@@ -25,6 +24,7 @@ export interface IssueItemPayload {
   plotName?: string;
   cropActivityId?: string;
   cropActivityName?: string;
+  machineName?: string;
   issuedTo?: string;
   notes?: string;
 }
@@ -256,7 +256,7 @@ function issueGodownItemToMenuImpl(payload: IssueItemPayload): {
   message: string;
   updatedItem: GodownItem;
   movement: GodownStockMovement;
-  destinationLog?: ReturnType<typeof addFertilizerLog> | ReturnType<typeof addDieselLog> | ReturnType<typeof addMachineryLog> | ReturnType<typeof addGeneralPurchaseLog> | null;
+  destinationLog?: ReturnType<typeof addFertilizerLog> | ReturnType<typeof addDieselLog> | ReturnType<typeof addMachineryLog> | null;
 } {
   const db = getDatabase();
   if (!db.godownItems) db.godownItems = [];
@@ -268,7 +268,11 @@ function issueGodownItemToMenuImpl(payload: IssueItemPayload): {
   }
 
   const item = db.godownItems[itemIndex];
-  const reqQty = Number(payload.quantity);
+  const reqQty = positiveNumber(payload.quantity, "Issue quantity");
+  if (reqQty < 0.000001 || Math.abs(reqQty * 1e6 - Math.round(reqQty * 1e6)) > 0.00001) throw new ValidationError("Stock quantities support up to six decimal places.");
+  dateKey(payload.date, "Issue date");
+  oneOf(payload.destinationMenu, ["Fertilizer", "Diesel", "Machinery", "General Purchases / Plot Ops"], "Destination menu");
+  if (payload.plotId) referenceExists(payload.plotId, db.plots, "Plot");
 
   if (isNaN(reqQty) || reqQty <= 0) {
     throw new Error("Issue quantity must be greater than zero.");
@@ -282,7 +286,7 @@ function issueGodownItemToMenuImpl(payload: IssueItemPayload): {
 
   const now = new Date().toISOString();
   const issueDate = payload.date || now.split("T")[0];
-  const newAvailable = Math.round((item.availableQuantity - reqQty) * 100) / 100;
+  const newAvailable = Math.round((item.availableQuantity - reqQty) * 1e6) / 1e6;
   const status = calculateGodownItemStatus(newAvailable, item.minStockAlert);
   const totalCost = Math.round(reqQty * item.ratePerUnit * 100) / 100;
 
@@ -295,7 +299,7 @@ function issueGodownItemToMenuImpl(payload: IssueItemPayload): {
 
   // Determine Destination Route and create destination log
   let destinationRoute = "/godown";
-  let destinationLog: ReturnType<typeof addFertilizerLog> | ReturnType<typeof addDieselLog> | ReturnType<typeof addMachineryLog> | ReturnType<typeof addGeneralPurchaseLog> | null = null;
+  let destinationLog: ReturnType<typeof addFertilizerLog> | ReturnType<typeof addDieselLog> | ReturnType<typeof addMachineryLog> | null = null;
   const dest = (payload.destinationMenu || "").toLowerCase();
 
   if (dest.includes("fertilizer")) {
@@ -315,6 +319,10 @@ function issueGodownItemToMenuImpl(payload: IssueItemPayload): {
   } else if (dest.includes("diesel") || dest.includes("fuel")) {
     destinationRoute = "/diesel";
     destinationLog = addDieselLog({
+      plotCropId: payload.cropActivityId,
+      plotName: payload.plotName,
+      cropActivityName: payload.cropActivityName,
+      machineName: payload.machineName || payload.cropActivityName,
       transactionType: "CONSUMPTION",
       quantityLiters: reqQty,
       cost: totalCost,
@@ -338,34 +346,8 @@ function issueGodownItemToMenuImpl(payload: IssueItemPayload): {
       notes: `Spares / Parts issued from Godown. ${payload.notes || ""}`.trim(),
     });
   } else {
-    // General Purchases / Plot Operations / Crops
-    destinationRoute = "/general-purchases";
-    destinationLog = addGeneralPurchaseLog({
-      voucherNo: `GDN-ISS-${Date.now().toString().slice(-4)}`,
-      category: item.category || "General Estate Supplies",
-      plotCropId: payload.cropActivityId,
-      plotName: payload.plotName || "General Estate",
-      cropActivityName: payload.cropActivityName || "Plot Operations",
-      vendorName: `Godown Store (${item.location})`,
-      description: `${item.name} (${reqQty} ${item.unit}) issued to ${payload.plotName || "estate operations"}`,
-      items: [
-        {
-          id: `item_${randomUUID()}`,
-          description: item.name,
-          quantity: reqQty,
-          unit: item.unit,
-          rate: item.ratePerUnit,
-          amount: totalCost,
-        },
-      ],
-      subtotal: totalCost,
-      cost: totalCost,
-      paymentMode: "Bank Transfer",
-      paymentStatus: "PAID",
-      date: issueDate,
-      loggedBy: payload.issuedTo || "Godown Dispatch",
-      notes: `Stock issue from Godown. ${payload.notes || ""}`.trim(),
-    });
+    // Internal transfers retain a movement audit, without inventing another supplier purchase.
+    destinationRoute = "/godown/movements";
   }
 
   // Create Movement Log

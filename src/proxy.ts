@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
     }
   }
   const response = NextResponse.next();
-  if (pathname.startsWith('/api/')) response.headers.set('Cache-Control', 'no-store');
+  response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
   return response;
 }
 export const config = { matcher: ['/api/:path*', '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'] };

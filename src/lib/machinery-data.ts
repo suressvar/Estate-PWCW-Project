@@ -27,6 +27,7 @@ export interface MachineReportSummary {
   totalFuelCost: number;
   totalMaintenanceCost: number;
   totalOperatingCost: number;
+  totalCost?: number;
 }
 
 export interface PlotMachineReportSummary {
@@ -37,6 +38,7 @@ export interface PlotMachineReportSummary {
   totalFuelCost: number;
   totalMaintenanceCost: number;
   totalOperatingCost: number;
+  totalCost?: number;
   machineBreakdown: {
     machineId: string;
     machineName: string;
@@ -226,7 +228,7 @@ function addMachineUsageLogImpl(data: {
   }
 
   const plots = getPlots();
-  validateAllocation(data, getDatabase());
+  validateAllocation(getDatabase(), data.plotId, data.cropCycleId);
   const plot = data.plotId ? plots.find((p) => p.id === data.plotId) : undefined;
 
   const cycles = getCropCycles();
@@ -298,7 +300,7 @@ function updateMachineUsageLogImpl(
   const merged = { ...current, ...data };
   dateKey(merged.date); requiredText(merged.workDescription, 'Work description');
   referenceExists(merged.machineId, db.machines || [], 'Machine');
-  validateAllocation(merged, db);
+  validateAllocation(db, merged.plotId, merged.cropCycleId);
   if (merged.workerId) referenceExists(merged.workerId, db.workers || [], 'Worker');
   const updated: MachineUsageLogItem = {
     ...current,

@@ -48,41 +48,61 @@ function ensureDataDirectory() {
 }
 
 let lastStorageMtime = 0;
+let lastStorageStamp = "";
+let transactionAborted = false;
+const storageStamp = (stat: { mtimeMs: number; ctimeMs?: number; size?: number }) => `${stat.mtimeMs}:${stat.ctimeMs}:${stat.size}`;
 let transactionDepth = 0;
 let pendingDatabase: EstateDatabase | null = null;
 let writeLockHeld = false;
 const LOCK_FILE = path.join(DATA_DIR, 'estate-storage.lock');
 
 function acquireWriteLock(): () => void {
-  if (writeLockHeld) return () => { };
+  if (writeLockHeld) return () => {};
   ensureDataDirectory();
   let handle: number;
-  for (let attempt = 0;;attempt++) {
+  for (let attempt = 0; ; attempt++) {
     try { handle = fs.openSync(LOCK_FILE, 'wx'); break; }
     catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      if (!['EEXIST', 'EPERM', 'EACCES', 'EBUSY'].includes((error as NodeJS.ErrnoException).code || '')) throw error;
       if (attempt >= 200) throw new Error('Estate storage is busy. Try again. If a previous process stopped unexpectedly, stop all app processes before removing the storage lock.');
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
     }
   }
   writeLockHeld = true;
   return () => {
-    try { fs.closeSync(handle); fs.unlinkSync(LOCK_FILE); }
+    try {
+      fs.closeSync(handle);
+      for (let attempt = 0; ; attempt++) {
+        try { fs.unlinkSync(LOCK_FILE); break; }
+        catch (error) {
+          const code = (error as NodeJS.ErrnoException).code;
+          if (code === 'ENOENT') break;
+          if (attempt >= 5 || !['EPERM', 'EACCES', 'EBUSY'].includes(code || '')) throw new Error('Records were committed, but the writer lock could not be released. Stop all application processes and review the storage lock before retrying.');
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10 * 2 ** attempt);
+        }
+      }
+    }
     finally { writeLockHeld = false; }
   };
 }
 
 /** A synchronous business operation commits once; errors restore its snapshot. */
 export function withTransaction<T>(work: () => T): T {
-  if (transactionDepth > 0) return work();
+  if (work.constructor.name === 'AsyncFunction') throw new Error('Storage transactions must be synchronous.');
+  if (transactionDepth > 0) {
+    try { return work(); } catch (error) { transactionAborted = true; throw error; }
+  }
   const release = acquireWriteLock();
   let before: EstateDatabase | null = null;
   try {
     // Read the latest commit after acquiring the cross-process writer lock.
     cachedDb = null;
     before = structuredClone(getDatabase());
+    transactionAborted = false;
     transactionDepth = 1;
     const result = work();
+    if (result && typeof (result as { then?: unknown }).then === "function") throw new Error("Storage transactions must be synchronous.");
+    if (transactionAborted) throw new Error("Transaction aborted after a nested operation failed.");
     transactionDepth = 0;
     const pending = pendingDatabase;
     pendingDatabase = null;
@@ -93,7 +113,7 @@ export function withTransaction<T>(work: () => T): T {
     pendingDatabase = null;
     cachedDb = before;
     throw error;
-  } finally { release(); }
+  } finally { transactionAborted = false; release(); }
 }
 
 export function getDatabase(): EstateDatabase {
@@ -103,7 +123,7 @@ export function getDatabase(): EstateDatabase {
   if (fs.existsSync(STORAGE_FILE)) {
     try {
       const stat = fs.statSync(STORAGE_FILE);
-      if (cachedDb && stat.mtimeMs === lastStorageMtime) {
+      if (cachedDb && storageStamp(stat) === lastStorageStamp) {
         return cachedDb;
       }
       const raw = fs.readFileSync(STORAGE_FILE, "utf8");
@@ -157,65 +177,6 @@ export function getDatabase(): EstateDatabase {
         if (!dbObj.wageEntries || !Array.isArray(dbObj.wageEntries)) {
           dbObj.wageEntries = [];
         }
-        if (!dbObj.machines || !Array.isArray(dbObj.machines) || dbObj.machines.length === 0) {
-          dbObj.machines = [
-            {
-              id: "m_jd_5050",
-              name: "John Deere 5050 D",
-              type: "TRACTOR",
-              registrationNumber: "TN-38-BZ-4412",
-              fuelType: "Diesel",
-              active: true,
-              notes: "Main farm tractor with rotavator and trolley attachments",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            {
-              id: "m_vst_shakti",
-              name: "VST Shakti 130DI Tiller",
-              type: "TILLER",
-              registrationNumber: "TN-38-TR-1029",
-              fuelType: "Diesel",
-              active: true,
-              notes: "Power tiller for inter-cultivation and weeding",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            {
-              id: "m_aspee_sprayer",
-              name: "Aspee HTP Tractor Sprayer",
-              type: "SPRAYER",
-              registrationNumber: "ASPEE-HTP-50",
-              fuelType: "Diesel / PTO",
-              active: true,
-              notes: "High pressure orchard and field sprayer",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            {
-              id: "m_kirloskar_pump",
-              name: "Kirloskar 7.5HP Borewell Pump",
-              type: "PUMP",
-              registrationNumber: "KIRL-75-SUB",
-              fuelType: "Electric",
-              active: true,
-              notes: "Submersible pump connected to drip irrigation network",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            {
-              id: "m_bolero_pickup",
-              name: "Mahindra Bolero Maxi Truck Plus",
-              type: "VEHICLE",
-              registrationNumber: "TN-38-CB-8891",
-              fuelType: "Diesel",
-              active: true,
-              notes: "Estate produce transport and market dispatch vehicle",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-          ];
-        }
         if (!dbObj.machineUsageLogs || !Array.isArray(dbObj.machineUsageLogs)) {
           dbObj.machineUsageLogs = [];
         }
@@ -236,6 +197,7 @@ export function getDatabase(): EstateDatabase {
         }
         cachedDb = dbObj;
         lastStorageMtime = stat.mtimeMs;
+        lastStorageStamp = storageStamp(stat);
         return cachedDb as EstateDatabase;
       }
     } catch (e) {
@@ -244,6 +206,7 @@ export function getDatabase(): EstateDatabase {
     }
   }
 
+  if (lastStorageMtime > 0 || fs.existsSync(`${STORAGE_FILE}.bak`)) throw new Error("Estate storage is missing. Restore the backup before continuing; no sample records were written.");
   if (cachedDb) {
     return cachedDb;
   }
@@ -273,7 +236,9 @@ export function saveDatabase(data: EstateDatabase) {
       }
     }
     cachedDb = data;
-    lastStorageMtime = fs.statSync(STORAGE_FILE).mtimeMs;
+    const committedStat = fs.statSync(STORAGE_FILE);
+    lastStorageMtime = committedStat.mtimeMs;
+    lastStorageStamp = storageStamp(committedStat);
   } catch (error) {
     cachedDb = null;
     console.error("Estate storage save failed; last saved records were preserved.", error);

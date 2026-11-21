@@ -138,6 +138,7 @@ export interface WageRecord {
 }
 
 export interface LeaveRecord {
+  attendanceSnapshots?: Array<{ date: string; attendance?: AttendanceRecord; workerAttendance?: WorkerAttendanceItem; wage?: WageEntryItem }>;
   id: string;
   employeeId: string;
   employeeName?: string;
@@ -313,6 +314,7 @@ export interface GodownItem {
   receivedDate: string;
   totalReceivedQuantity: number;
   availableQuantity: number;
+  quantity?: number;
   unit: string;
   ratePerUnit: number;
   totalValue: number;
@@ -363,6 +365,8 @@ export interface GodownStockMovement {
   cropActivityId?: string;
   cropActivityName?: string;
   issuedTo?: string;
+  vendorName?: string;
+  location?: string;
   date: string;
   notes?: string;
   createdAt: string;

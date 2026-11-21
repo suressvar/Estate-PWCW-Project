@@ -1,5 +1,7 @@
 "use client";
 
+import { csvDocument, csvDataUri } from "@/lib/csv";
+
 import type { VoucherSlipData } from "@/components/voucher-slip-modal";
 import type { ExpenseUnit } from "@/types/storage";
 import type { PartyItem, PlotCropAssociation, PlotItem, PurchaseVoucherItem, VoucherLineItem } from "@/types/estate";
@@ -208,10 +210,7 @@ export function usePurchasesPage() {
       l.paymentStatus || "PAID",
     ]);
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const encodedUri = csvDataUri(csvDocument(headers, rows));
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `ranga_estate_purchase_register.csv`);

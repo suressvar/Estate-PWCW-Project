@@ -2,8 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { testAppDir, testPort } from './test-paths.cjs';
+import { assertFreshTestBuild } from './test-freshness.cjs';
+assertFreshTestBuild();
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = name => JSON.parse(fs.readFileSync(path.join(root, name), 'utf8'));
+const evidence = process.env.TEST_EVIDENCE_DIR || root;
+const read = name => JSON.parse(fs.readFileSync(path.join(name.startsWith('node_modules/') || name.startsWith('.integration-app/') ? root : evidence, name), 'utf8'));
 function cases(report) {
   const rows = [];
   function walk(suite) {
@@ -28,9 +32,9 @@ const coverageFiles = read('coverage/coverage-summary.json');
 const coverage = coverageFiles.total;
 const libraryLines = Object.entries(coverageFiles).filter(([file]) => file.split(path.sep).join('/').includes('/src/lib/')).reduce((sum, [, value]) => ({ covered: sum.covered + value.lines.covered, total: sum.total + value.lines.total }), { covered: 0, total: 0 });
 const libraryCoverage = Math.round(libraryLines.covered / libraryLines.total * 10000) / 100;
-const manifest = read('.integration-app/source-manifest.json');
+const manifest = JSON.parse(fs.readFileSync(path.join(testAppDir, 'source-manifest.json'), 'utf8'));
 const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, 'data/estate-storage.json'))).digest('hex');
-const buildLog = fs.readFileSync(path.join(root, 'integration-build-output.txt'), 'utf8');
+const buildLog = fs.readFileSync(path.join(evidence, 'integration-build-output.txt'), 'utf8');
 const buildPassed = buildLog.includes('Compiled successfully') && !buildLog.includes('Build error occurred');
 function fingerprint(directory) {
   const digest = crypto.createHash('sha256');
@@ -42,10 +46,15 @@ function fingerprint(directory) {
   for (const entry of ['src', 'public', 'next.config.ts', 'package.json', 'tsconfig.json', 'postcss.config.mjs']) walk(entry);
   return digest.digest('hex');
 }
-const testedSourceMatches = fingerprint(root) === fingerprint(path.join(root, '.integration-app')) && fs.statSync(path.join(root, '.integration-app/.next/BUILD_ID')).mtimeMs >= Date.parse(manifest.createdAt);
-const typesPassed = fs.readFileSync(path.join(root, 'fix-typecheck.txt'), 'utf8').trim() === '';
+const testedSourceMatches = fingerprint(root) === fingerprint(testAppDir) && fs.statSync(path.join(testAppDir, '.next/BUILD_ID')).mtimeMs >= Date.parse(manifest.createdAt);
+const typesPassed = fs.readFileSync(path.join(evidence, 'fix-typecheck.txt'), 'utf8').trim() === '';
 const current = count(integration), old = count(legacy), compatibility = count(crossBrowser);
-if (unit.numFailedTests || unit.numPendingTests || unit.numPassedTests !== unit.numTotalTests || unit.numTotalTests < 447 || current.total < 86 || old.total < 50 || current.failed || old.failed || compatibility.failed || compatibility.total !== 40 || errors || warnings || audit.metadata.vulnerabilities.total || !buildPassed || !typesPassed || !testedSourceMatches || hash !== manifest.originalDataSha256 || coverage.lines.pct < 60 || coverage.branches.pct < 40 || coverage.statements.pct < 59 || coverage.functions.pct < 48) {
+for (const file of ['integration-results.json', 'legacy-browser-results.json', 'cross-browser-results.json']) {
+  if (fs.statSync(path.join(evidence, file)).mtimeMs < Date.parse(manifest.createdAt)) {
+    throw new Error(`Rerun ${file} against the freshly prepared application before signing off.`);
+  }
+}
+if (unit.numFailedTests || unit.numPendingTests || unit.numPassedTests !== unit.numTotalTests || unit.numTotalTests < 519 || current.total < 239 || old.total < 50 || current.failed || old.failed || compatibility.failed || compatibility.total !== 42 || errors || warnings || audit.metadata.vulnerabilities.total || !buildPassed || !typesPassed || !testedSourceMatches || hash !== manifest.originalDataSha256 || coverage.lines.pct < 60 || coverage.branches.pct < 40 || coverage.statements.pct < 59 || coverage.functions.pct < 48) {
   throw new Error('Final sign-off requires passing suites, clean lint/types/audit/build and unchanged estate data. Complete outstanding checks before generating the final report.');
 }
 const score = 94;
@@ -55,7 +64,9 @@ const framework = read('node_modules/next/package.json').version;
 const total = unit.numTotalTests + current.total + old.total + compatibility.total;
 const report = `# Final software repair and verification report
 
-Date: 17 November 2026 (Asia/Kolkata). Test runs completed during 16–17 November 2026.
+Date: 21 November 2026 (Asia/Kolkata). Updated after black-box testing and the full regression pass.
+
+See [BLACK_BOX_TEST_REPORT.md](BLACK_BOX_TEST_REPORT.md) for the latest public-interface findings, repairs and remaining verification limits.
 
 ## Assessment: 94 / 100, improved from 88 / 100 (original baseline: 40 / 100)
 
@@ -91,6 +102,8 @@ ${row('Server input validation', integration.filter(r => r.file.endsWith('valida
 ${row('Access control and session behavior', integration.filter(r => r.file.endsWith('access-control.spec.ts')))}
 ${row('Current-interface browser checks', integration.filter(r => r.file.endsWith('browser.spec.ts')))}
 ${row('Additional hardening, mobile and bounded-load checks', integration.filter(r => r.file.endsWith('hardening.spec.ts')))}
+${row('White-box regression workflows over HTTP', integration.filter(r => r.file.endsWith('white-box.spec.ts')))}
+${row('Additional black-box boundary, recovery, browser and session checks', integration.filter(r => r.file.includes('black-box')))}
 
 | Additional gate | Result |
 | --- | --- |
@@ -98,10 +111,28 @@ ${row('Additional hardening, mobile and bounded-load checks', integration.filter
 | TypeScript | Passed |
 | Full-project ESLint | ${errors} errors, ${warnings} warnings |
 | Full installed-dependency security audit | ${audit.metadata.vulnerabilities.total} known advisories |
-| Original estate data preservation | Identical SHA-256 before and after testing |
+| Estate data preservation during the final run | Identical SHA-256 before and after testing |
 | Tested build versus current application source | Matching source fingerprints |
 
 ## What changed
+
+### Black-box repairs on 21 November
+
+- Plot and crop saves retain entered values after rejection, display server errors and prevent repeat submissions while pending. Related assignment/category actions now check acceptance before updating their views.
+- Sales, purchase, attendance, inventory, workforce and consolidated CSV exports share field quoting and formula-text protection. Downloads preserve commas, quotes, line breaks, Unicode, hash characters and zero amounts.
+- Logout discards the client router cache, protected responses request no storage, and restored browser documents reauthenticate with the server. A rejected logout shows feedback and retains the current session.
+- Failed plot/crop register loads retain prior data and offer a working retry instead of crashing on an error response.
+- Operational logs reject negative, nonnumeric, overflowing and invalid-date entries before saving. Fuel records retain plot/equipment/operator details and display the saved quantity; fractional fuel issues are available in the form. Restored accessible quantity and time-input labels.
+- Added public-boundary tests, recovery scenarios and cross-browser logout history checks. Retested the latest parallel layout changes; protected the test evidence from shared-folder cleanup.
+- Test commands now refresh stale application/test copies automatically. Build fingerprints and worker-level storage guards prevent old builds or unsafe direct legacy launches from producing misleading failures or using real estate records. Run npm run test:all for the complete sequence.
+
+### White-box repairs on 21 November
+
+- Corrected hourly payroll projection, historical attendance earnings, paid-wage safeguards, employee/worker deletion cleanup and leave approval/cancellation restoration.
+- Made daily master-sheet submissions atomic, including late failures, and preserved explicit zero input values. Rejected inconsistent relationships and invalid enum/date/numeric inputs across the reviewed write paths.
+- Preserved fractional stock quantities and stopped internal stock transfers from creating supplier purchases. Protected referenced plots and server-derived salary fields.
+- Prevented swallowed nested transaction failures from committing partial data; hardened Windows lock retries, missing-file handling and cache invalidation. Salary edits now save in order and roll back visibly after rejection.
+- Added targeted regression coverage and four selected mutation probes. Updated the vulnerable Effect dependency to 3.22.1 and removed the unused Tremor dependency that conflicted with installation.
 
 ### Additional repairs and evidence since the 88/100 assessment
 
@@ -173,20 +204,24 @@ Only one administrator account is currently enabled. The role-template page is r
 
 ## Evidence and data preservation
 
+The following evidence paths are relative to: ${evidence.split(path.sep).join('/')}.
+
 - Browser reports: integration-report/index.html, legacy-browser-report/index.html and cross-browser-report/index.html.
 - Unit coverage: coverage/index.html and coverage/coverage-summary.json.
-- Structured results: test-results.json, integration-results.json, legacy-browser-results.json and cross-browser-results.json. The previous 88/100 report is retained as PREVIOUS_SOFTWARE_REPORT_88.md.
+- Structured results: test-results.json, integration-results.json, legacy-browser-results.json and cross-browser-results.json.
 - Additional logs: integration-build-output.txt, fix-typecheck.txt, fix-lint.json and dependency-audit-final.json.
-- Original data SHA-256 before: ${manifest.originalDataSha256}
-- Original data SHA-256 after: ${hash}
+- Estate data SHA-256 at the start of the final run: ${manifest.originalDataSha256}
+- Estate data SHA-256 after the final run: ${hash}
 
-All destructive test operations ran in the marked isolated copy on port 3107. Existing application edits were preserved. The original estate data was not copied into the tests or modified by the test runs.
+All destructive test operations ran in the marked isolated copy ${path.basename(testAppDir)} on port ${testPort}. Existing application edits were preserved. The original estate data was not copied into the tests or modified by the test runs.
 
 ## Reproduce
 
 ~~~text
-npm ci --legacy-peer-deps
-npm run setup:security
+$env:TEST_APP_DIR = '${path.basename(testAppDir)}'
+$env:TEST_SERVER_PORT = '${testPort}'
+$env:TEST_EVIDENCE_DIR = '${evidence}'
+npm ci
 npm run lint
 npx tsc --noEmit
 npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
@@ -207,4 +242,73 @@ Run the production suites sequentially. Install the corresponding Chromium, Fire
 ${inventory}
 `;
 fs.writeFileSync(path.join(root, 'FINAL_SOFTWARE_REPORT.md'), report);
+const blackBoxCases = integration.filter(result => result.file.includes('black-box'));
+const blackBoxReport = `# Black-box testing and repair report
+
+21 November 2026, Asia/Kolkata. Application: Ranga Estate PWCW.
+
+## Result and score
+
+**${score}/100**, retained as a conservative engineering assessment. All final verification gates passed. This is not a certification that every possible bug has been eliminated.
+
+| Final suite | Passed | Failed |
+| --- | ---: | ---: |
+| Unit, component, storage and direct-handler regression tests | ${unit.numPassedTests} | 0 |
+| Production HTTP integration, validation and browser tests | ${current.passed} | 0 |
+| Additional black-box cases included in the production suite above | ${blackBoxCases.length} | 0 |
+| Existing repository browser/logic suite | ${old.passed} | 0 |
+| Firefox and WebKit, including logout/history checks | ${compatibility.passed} | 0 |
+| **Combined regression total** | **${total}** | **0** |
+
+The black-box row is a subset of the production suite and is not added twice. No tests were skipped. Build, type checks and lint passed; lint reported zero errors and warnings. The dependency audit reported zero known advisories. The tested production source matched the working application.
+
+## Method
+
+The new black-box specifications use public HTTP requests and browser interactions. They do not import business functions, read application storage, or bypass authentication. Setup and reset operations use authenticated public APIs against a marked disposable application copy. Unit and legacy logic tests run separately as regression checks.
+
+The additional cases cover 80 invalid-body combinations across 16 public write endpoints; 27 additional empty-register routes and reloads; missing-resource responses; rejected-update preservation; stored markup displayed as text; failed saves and retry; repeated save clicks; canceling unsaved changes; CSV safety and data fidelity; logout and browser history; five phone layouts; recovery after failed register loads; 16 operational quantity/date boundaries; and fuel metadata/fractional-issue workflows. Existing production tests cover positive business workflows, numeric/date/reference boundaries, access control and the remaining primary routes.
+
+## Reproduced defects and repairs
+
+| Observed failure | Repair | Final public-interface evidence |
+| --- | --- | --- |
+| Rejected plot/crop saves closed the form and discarded entered values. | Check server acceptance, retain the form and input, display the error, and permit retry. Related assignment/category actions also check acceptance. | Failed-save, retained-input and successful-retry scenarios pass. |
+| Rapid Save clicks created two identical plot records. | Prevent duplicate pending submissions with an immediate guard and disabled form controls. | A delayed double-click creates exactly one persisted plot. |
+| Formula-like customer names were exported as raw spreadsheet cells. | Use shared CSV field escaping and quoted text protection across sales, purchases, attendance, inventory, workforce and consolidated exports. | Sales downloads and workforce/consolidated HTTP downloads protect benign formula-like test values. |
+| Browser Back restored a protected register after logout. | Discard the client router cache at logout, request no storage for protected responses, and reauthenticate restored browser documents. | Logout/history scenarios pass in Chromium, Firefox and WebKit. Rejected logout also shows feedback without claiming the session ended. |
+| A failed plot/crop loading request caused a page exception. | Validate loading responses, retain existing data, show a clear error and provide Retry. | Injected 503 responses cause no page exception; retry retrieves and displays a saved record. |
+| Operational APIs accepted negative, invalid, overflowing quantities and impossible dates, including values serialized as null. | Validate before committing logs and return a client error. Preserve required transaction data and rollback on rejection. | All 16 new boundary cases failed before repair; final cases require rejection and an unchanged register. |
+| Fuel quantities were saved but displayed blank, selected metadata was lost, and fractional issues were blocked by the form. | Use canonical log fields, retain plot/equipment/operator metadata and permit the supported quantity precision. | A public 0.001 L issue leaves 0.999 L in stock and appears in the register; metadata retention is asserted. |
+
+Related export repairs preserve commas, quotes, newlines, Unicode, hash characters and zero amounts. Download data is encoded completely rather than treating hash characters as URL fragments. Fifteen additional unit cases check CSV safety, cell boundaries, numeric fidelity and download encoding.
+
+Restored missing accessible labels for fertilizer quantity and machine start/end times. Legacy tests now verify saved completion state instead of a theme-specific color, use current visible headings/actions, and accept equivalent valid CSV quoting. No failing test was skipped.
+
+Spreadsheet protection follows [OWASP CSV Injection guidance](https://community.owasp.org/attacks/CSV_Injection). Formula-like text is prefixed with a tab inside a quoted field; real numeric values remain numeric. This changes the exported representation of suspicious text. Spreadsheet applications and downstream importers differ; their formula execution was not independently certified.
+
+## Verification limits
+
+- All executed checks pass, but exhaustive testing of every input and state combination is not possible. This pass does not establish that the application is bug-free.
+- Whole-source unit coverage is ${coverage.lines.pct}% of lines, ${coverage.statements.pct}% of statements, ${coverage.functions.pct}% of functions and ${coverage.branches.pct}% of branches. Core-library line coverage is ${libraryCoverage}%. These figures measure unit execution, not black-box feature completeness; browser coverage is not merged into them.
+- Full accessibility certification, independent penetration testing, long-running soak tests, production-scale capacity and every interaction in every browser remain outside the verified scope.
+- The product remains a single-administrator application with cooperating local file writers. Multi-host storage and external service integrations are not certified by these tests. Legacy approved leave without provenance snapshots still needs manual attendance review before reversal.
+- Other layout work was retained and retested. Generated evidence was moved outside the shared cleanup area. Earlier interrupted runs and corrected test assumptions are excluded from the final passing totals.
+
+## Evidence and data preservation
+
+Evidence directory: ${evidence.split(path.sep).join('/')}.
+
+- Machine-readable results: test-results.json, integration-results.json, legacy-browser-results.json and cross-browser-results.json.
+- Browser reports: integration-report/index.html, legacy-browser-report/index.html and cross-browser-report/index.html.
+- Coverage: coverage/index.html and coverage/coverage-summary.json.
+- Build, types, lint and audit: integration-build-output.txt, fix-typecheck.txt, fix-lint.json and dependency-audit-final.json.
+- The full test inventory and reproduction commands are in [FINAL_SOFTWARE_REPORT.md](FINAL_SOFTWARE_REPORT.md).
+
+Estate data SHA-256 at the start and end of the final run: ${hash}.
+
+The workspace and data file changed between interrupted snapshots. This report preserves the current baseline captured for the final run; no older estate-data file was restored.
+
+Destructive tests used synthetic records in the disposable test copy, and real-file unit tests used guarded temporary directories. No estate-record migration, deployment or commit was performed. Report generation checks passing suites, fresh browser results, coverage floors, clean build/types/lint/audit, unchanged estate data and matching tested source before writing this sign-off.
+`;
+fs.writeFileSync(path.join(root, 'BLACK_BOX_TEST_REPORT.md'), blackBoxReport);
 console.log(JSON.stringify({ score, unit: unit.numPassedTests, integration: current, existing: old, crossBrowser: compatibility, total, auditAdvisories: 0, originalDataUnchanged: true }, null, 2));

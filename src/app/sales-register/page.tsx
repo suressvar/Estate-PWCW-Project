@@ -1,28 +1,31 @@
 "use client";
-import type { SaleRow } from "@/types/api";
-
-import { StatCard } from "@/components/ui/stat-card";
-import { VoucherSlipData,VoucherSlipModal } from "@/components/voucher-slip-modal";
-import {
-Calendar,
-CheckCircle2,
-DollarSign,
-ExternalLink,
-FileSpreadsheet,
-Layers,
-LayoutGrid,
-List,
-Maximize2,
-Plus,
-Printer,
-Receipt,
-Search,
-Tag,
-Trash2,
-X
-} from "lucide-react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import React,{ useEffect,useState } from "react";
+import {
+  Calendar,
+  CheckCircle2,
+  DollarSign,
+  ExternalLink,
+  FileSpreadsheet,
+  Layers,
+  LayoutGrid,
+  List,
+  Maximize2,
+  Plus,
+  Printer,
+  Receipt,
+  Search,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react";
+import { csvDocument, csvDataUri } from "@/lib/csv";
+import type { SaleRow } from "@/types/api";
+import { StatCard } from "@/components/ui/stat-card";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
+import { VoucherSlipData, VoucherSlipModal } from "@/components/voucher-slip-modal";
 
 export default function MainSalesRegisterPage() {
   const [records, setRecords] = useState<SaleRow[]>([]);
@@ -62,10 +65,15 @@ export default function MainSalesRegisterPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchSalesAndCats();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchSalesAndCats();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, []);
 
   const handleAddCategory = async (e: React.FormEvent) => {
@@ -155,19 +163,16 @@ export default function MainSalesRegisterPage() {
       r.dateOfSale || "",
       r.category || "General Estate Sales",
       r.itemName || "",
-      String(r.quantity || ""),
+      r.quantity ?? "",
       r.unit || "",
-      String(r.pricePerUnit || ""),
-      String(r.totalAmount || ""),
+      r.pricePerUnit ?? "",
+      r.totalAmount ?? "",
       r.buyerName || "",
       r.buyerCity || "",
       r.buyerContact || "",
     ]);
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const encodedUri = csvDataUri(csvDocument(headers, rows));
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `ranga_estate_sales_register.csv`);
@@ -241,11 +246,9 @@ export default function MainSalesRegisterPage() {
   const totalRevenue = filtered.reduce((acc, r) => acc + Number(r.totalAmount || 0), 0);
   const totalTransactions = filtered.length;
 
-  // Category wise breakdown for summary & grouped view
+  // Category wise breakdown
   const categoryGroups = (() => {
     const map = new Map<string, SaleRow[]>();
-
-    // Initialize all existing categories so empty ones can also be seen if desired
     categories.forEach((cat) => map.set(cat, []));
 
     filtered.forEach((r) => {
@@ -271,62 +274,52 @@ export default function MainSalesRegisterPage() {
   })();
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-16">
-      {/* Top Header Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4 border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#15803d] text-white flex items-center justify-center font-black shadow-xs">
-            <Layers className="w-5 h-5" />
+    <PageContainer>
+      <PageHeader
+        title="Produce Sales Register"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Sales Register" },
+        ]}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setCatModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] text-xs font-medium rounded-lg transition-colors shadow-2xs"
+            >
+              <Tag className="w-3.5 h-3.5 text-[#174D3C]" />
+              <span>Categories</span>
+            </button>
+
+            <button
+              onClick={exportCSV}
+              disabled={filtered.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] text-xs font-medium rounded-lg transition-colors shadow-2xs disabled:opacity-50"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[#64748B]" />
+              <span>Export CSV</span>
+            </button>
+
+            <Link
+              href="/sales"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Sales Entry</span>
+            </Link>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Sales Register</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                Official Ledger
-              </span>
-            </h1>
-          </div>
-        </div>
+        }
+      />
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Manage Categories Button */}
-          <button
-            onClick={() => setCatModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-all"
-          >
-            <Tag className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Manage Categories</span>
-          </button>
-
-          <button
-            onClick={exportCSV}
-            disabled={filtered.length === 0}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-all disabled:opacity-50"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Export CSV</span>
-          </button>
-
-          <Link
-            href="/sales"
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold rounded-xl shadow-xs transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Sales Entry</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Notification */}
       {msg && (
         <div
-          className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+          className={`p-3 rounded-xl text-xs font-medium flex items-center gap-2 ${
             msg.type === "success"
-              ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+              ? "bg-[#EAF3EE] text-[#174D3C] border border-[#C5DEC8]"
               : "bg-red-50 text-red-900 border border-red-200"
           }`}
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+          <CheckCircle2 className="w-4 h-4 text-[#174D3C]" />
           <span>{msg.text}</span>
         </div>
       )}
@@ -336,551 +329,441 @@ export default function MainSalesRegisterPage() {
         <StatCard
           title="Total Sales Revenue"
           value={`₹${totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
-          subtitle="Net realized revenue"
+          subtitle="Realized harvest income"
           icon={DollarSign}
         />
         <StatCard
-          title="Total Recorded Entries"
+          title="Recorded Transactions"
           value={totalTransactions}
-          subtitle="Registered sales transactions"
+          subtitle="Sales dispatches logged"
           icon={Layers}
         />
         <StatCard
-          title="Active Categories"
+          title="Produce Categories"
           value={categories.length}
-          subtitle="Configured produce categories"
+          subtitle="Configured sales lines"
           icon={Tag}
         />
       </div>
 
-      {/* Category Wise Filter Pills */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Filter by Category</span>
-          </span>
-          <button
-            onClick={() => setCatModalOpen(true)}
-            className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800"
-          >
-            + Create New Category
-          </button>
-        </div>
+      {/* Main Filter & View ContentCard */}
+      <ContentCard
+        title="Sales Vouchers"
+        badge={`${filtered.length} entries`}
+        actions={
+          <div className="flex items-center gap-1 bg-[#F1F5F9] p-0.5 rounded-lg border border-[#E2E8F0]">
+            <button
+              onClick={() => setViewMode("cards")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                viewMode === "cards" ? "bg-white text-[#111827] shadow-2xs font-semibold" : "text-[#64748B] hover:text-[#111827]"
+              }`}
+            >
+              <LayoutGrid className="w-3 h-3" />
+              <span>Cards</span>
+            </button>
+            <button
+              onClick={() => setViewMode("grouped")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                viewMode === "grouped" ? "bg-white text-[#111827] shadow-2xs font-semibold" : "text-[#64748B] hover:text-[#111827]"
+              }`}
+            >
+              <Layers className="w-3 h-3" />
+              <span>Categories</span>
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                viewMode === "table" ? "bg-white text-[#111827] shadow-2xs font-semibold" : "text-[#64748B] hover:text-[#111827]"
+              }`}
+            >
+              <List className="w-3 h-3" />
+              <span>Table</span>
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <button
+              onClick={() => setSelectedCategory("ALL")}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
+                selectedCategory === "ALL"
+                  ? "bg-[#174D3C] text-white"
+                  : "bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] hover:text-[#111827]"
+              }`}
+            >
+              All Categories ({records.length})
+            </button>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          <button
-            onClick={() => setSelectedCategory("ALL")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all ${
-              selectedCategory === "ALL"
-                ? "bg-[#15803d] text-white shadow-xs"
-                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            All Categories ({records.length})
-          </button>
+            {categories.map((cat) => {
+              const count = records.filter(
+                (r) => (r.category || "General Estate Sales") === cat
+              ).length;
+              const isSelected = selectedCategory === cat;
 
-          {categories.map((cat) => {
-            const count = records.filter(
-              (r) => (r.category || "General Estate Sales") === cat
-            ).length;
-            const isSelected = selectedCategory === cat;
-
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
-                  isSelected
-                    ? "bg-[#15803d] text-white shadow-xs"
-                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                <span>{cat}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                    isSelected ? "bg-emerald-900/40 text-white" : "bg-slate-100 text-slate-600"
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    isSelected
+                      ? "bg-[#174D3C] text-white"
+                      : "bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] hover:text-[#111827]"
                   }`}
                 >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Filter Toolbar & View Mode Switcher */}
-      <div className="glass-panel p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search by buyer, produce item, invoice ref, category, or city..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#15803d] focus:bg-white"
-          />
-        </div>
-
-        {/* Date Filter */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <Calendar className="w-4 h-4 text-slate-500" />
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800"
-          />
-          <span className="text-slate-400">to</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800"
-          />
-          {(startDate || endDate || search || selectedCategory !== "ALL") && (
-            <button
-              onClick={() => {
-                setStartDate("");
-                setEndDate("");
-                setSearch("");
-                setSelectedCategory("ALL");
-              }}
-              className="text-xs text-slate-500 hover:text-slate-700 underline ml-1"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-
-        {/* View Mode Toggle: Cards, Category Grouped, Table */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
-          <button
-            onClick={() => setViewMode("cards")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === "cards"
-                ? "bg-white text-[#15803d] shadow-2xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-            title="Display sales vouchers as interactive cards"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>Cards View</span>
-          </button>
-          <button
-            onClick={() => setViewMode("grouped")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === "grouped"
-                ? "bg-white text-[#15803d] shadow-2xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-            title="Display bills grouped Category-wise"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Category View</span>
-          </button>
-          <button
-            onClick={() => setViewMode("table")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === "table"
-                ? "bg-white text-[#15803d] shadow-2xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-            title="Display as flat ledger table"
-          >
-            <List className="w-3.5 h-3.5" />
-            <span>Table View</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content Area: Category Grouped View OR Table View */}
-      {loading ? (
-        <div className="p-12 text-center text-xs text-slate-500 bg-white rounded-2xl border border-slate-200">
-          Loading sales records...
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="p-12 text-center space-y-3 bg-white rounded-2xl border border-slate-200 shadow-xs">
-          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-            <Layers className="w-6 h-6" />
+                  <span>{cat}</span>
+                  <span
+                    className={`text-[10px] px-1 rounded ${
+                      isSelected ? "bg-[#103C30] text-white" : "bg-[#E2E8F0] text-[#64748B]"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <p className="text-sm font-semibold text-slate-700">No sales transactions found</p>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Use the Sales Entry form to record your first transaction and generate an official Ranga Estate invoice.
-          </p>
-          <Link
-            href="/sales"
-            className="inline-block px-4 py-2 bg-[#15803d] text-white rounded-lg text-xs font-bold hover:bg-[#166534]"
-          >
-            Go to Sales Entry
-          </Link>
-        </div>
-      ) : viewMode === "cards" ? (
-        /* ========================================================================= */
-        /* VOUCHER CARDS GRID VIEW - EXPANDABLE TO FULL PAGE                         */
-        /* ========================================================================= */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((r) => {
-            const invoiceId = r.invoiceGroupId || r.id;
-            return (
-              <div
-                key={r.id}
-                className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md transition-all p-5 flex flex-col justify-between group hover:border-emerald-300"
-              >
-                <div>
-                  {/* Top Bar: Voucher No & Category Badge */}
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="p-2 rounded-xl bg-emerald-50 text-[#15803d]">
-                        <Receipt className="w-4 h-4" />
-                      </span>
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                          SALES VOUCHER
-                        </span>
-                        <span className="font-mono font-bold text-xs text-slate-900">
-                          {r.srNo || `SAL-${String(r.id).slice(-6).toUpperCase()}`}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        {r.category || "Produce"}
-                      </span>
-                      <div className="text-[11px] text-slate-500 font-medium mt-0.5">{r.dateOfSale}</div>
-                    </div>
-                  </div>
 
-                  {/* Produce Item & Amount */}
-                  <div className="space-y-1 mb-3">
-                    <h3 className="font-bold text-slate-900 text-sm">{r.itemName}</h3>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs text-slate-500 font-medium">
-                        {r.quantity} {r.unit} @ ₹{Number(r.pricePerUnit).toFixed(2)}/{r.unit}
-                      </span>
-                      <span className="font-mono font-black text-emerald-800 text-base">
-                        ₹{Number(r.totalAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Buyer & Ledger Details Box */}
-                  <div className="bg-slate-50/80 rounded-xl p-3 space-y-1 text-xs text-slate-600 mb-4 border border-slate-100">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Buyer:</span>
-                      <span className="font-bold text-slate-900">{r.buyerName || "Walk-in Retail Buyer"}</span>
-                    </div>
-                    {(r.buyerCity || r.buyerContact) && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Location/Phone:</span>
-                        <span className="font-medium text-slate-700">
-                          {[r.buyerCity, r.buyerContact].filter(Boolean).join(" • ")}
-                        </span>
-                      </div>
-                    )}
-                    {r.particularName && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Ledger:</span>
-                        <span className="font-medium text-slate-700">{r.particularName}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Card Actions: Expand to Full Page & Print */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => openSalesVoucher(r)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#15803d] hover:bg-[#166534] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-                    title="Expand to Full Page Voucher View"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5 text-emerald-200" />
-                    <span>Expand Voucher</span>
-                  </button>
-
-                  <Link
-                    href={`/sales-invoice/${invoiceId}?print=true`}
-                    target="_blank"
-                    className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-                    title="Print Bill"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print</span>
-                  </Link>
-
-                  <Link
-                    href={`/sales-invoice/${invoiceId}`}
-                    className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl transition-colors cursor-pointer"
-                    title="View Invoice Page"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : viewMode === "grouped" ? (
-        /* ========================================================================= */
-        /* CATEGORY-WISE DISPLAYED BILLS                                             */
-        /* ========================================================================= */
-        <div className="space-y-6">
-          {categoryGroups.map((group) => {
-            if (group.records.length === 0) return null;
-
-            return (
-              <div
-                key={group.name}
-                className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden"
-              >
-                {/* Category Header Banner */}
-                <div className="px-5 py-4 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#15803d] text-white flex items-center justify-center">
-                      <Tag className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>{group.name}</span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
-                          {group.records.length} {group.records.length === 1 ? "Bill" : "Bills"}
-                        </span>
-                      </h2>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="text-xs text-slate-600">
-                      Category Total:{" "}
-                      <span className="font-extrabold text-sm text-[#15803d]">
-                        ₹{group.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Table for this Category */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50/60 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
-                      <tr>
-                        <th className="p-3.5">Ref / SrNo</th>
-                        <th className="p-3.5">Date of Sale</th>
-                        <th className="p-3.5">Produce Item</th>
-                        <th className="p-3.5 text-right">Quantity</th>
-                        <th className="p-3.5 text-right">Rate</th>
-                        <th className="p-3.5 text-right">Total Amount</th>
-                        <th className="p-3.5">Buyer Details</th>
-                        <th className="p-3.5 text-center">Print / Invoice</th>
-                        <th className="p-3.5 text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {group.records.map((r) => {
-                        const invoiceId = r.invoiceGroupId || r.id;
-
-                        return (
-                          <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
-                            <td className="p-3.5 font-mono font-bold text-slate-900">
-                              {r.srNo || "—"}
-                            </td>
-                            <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">
-                              {r.dateOfSale}
-                            </td>
-                            <td className="p-3.5 font-bold text-slate-900">
-                              <div>{r.itemName}</div>
-                              {r.particularName && (
-                                <span className="block text-[10px] text-slate-400 font-normal">
-                                  Ledger: {r.particularName}
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-3.5 text-right font-medium text-slate-800">
-                              {r.quantity} {r.unit}
-                            </td>
-                            <td className="p-3.5 text-right font-medium text-slate-800">
-                              ₹{Number(r.pricePerUnit).toFixed(2)}
-                            </td>
-                            <td className="p-3.5 text-right font-bold text-[#15803d] text-sm">
-                              ₹{Number(r.totalAmount).toFixed(2)}
-                            </td>
-                            <td className="p-3.5">
-                              <div className="font-bold text-slate-900">{r.buyerName || "Walk-in"}</div>
-                              <div className="text-[11px] text-slate-500">
-                                {[r.buyerCity, r.buyerContact].filter(Boolean).join(" • ")}
-                              </div>
-                            </td>
-                            <td className="p-3.5 text-center">
-                              <div className="inline-flex items-center gap-1.5">
-                                {/* Print Invoice Bill Button */}
-                                <Link
-                                  href={`/sales-invoice/${invoiceId}?print=true`}
-                                  target="_blank"
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#15803d] hover:bg-[#166534] text-white rounded-lg text-xs font-bold shadow-2xs transition-all"
-                                  title="Print Official Invoice Bill"
-                                >
-                                  <Printer className="w-3.5 h-3.5" />
-                                  <span>Print Bill</span>
-                                </Link>
-
-                                {/* View Invoice */}
-                                <Link
-                                  href={`/sales-invoice/${invoiceId}`}
-                                  className="inline-flex items-center gap-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
-                                  title="View and customize layout"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </Link>
-                              </div>
-                            </td>
-                            <td className="p-3.5 text-center">
-                              <button
-                                onClick={() => handleDelete(r.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 rounded transition-colors"
-                                title="Delete Record"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* ========================================================================= */
-        /* FLAT TABLE VIEW                                                           */
-        /* ========================================================================= */
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
-            <div className="flex items-center gap-2 font-bold text-xs text-slate-900 uppercase tracking-wider">
-              <Layers className="w-4 h-4 text-emerald-700" />
-              <span>All Sales Entries ({filtered.length})</span>
+          {/* Search & Dates Bar */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
+            <div className="relative flex-1">
+              <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search buyer, item, invoice ref, category, or city..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-8 pr-4 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
+              />
             </div>
-            <div className="flex items-center gap-3">
-              {records.length > 0 && (
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-2 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#111827]"
+              />
+              <span className="text-[#64748B]">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-2 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#111827]"
+              />
+              {(startDate || endDate || search || selectedCategory !== "ALL") && (
                 <button
-                  onClick={handleClearAll}
-                  className="text-xs text-red-600 hover:text-red-800 font-semibold transition-colors flex items-center gap-1"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                    setSearch("");
+                    setSelectedCategory("ALL");
+                  }}
+                  className="text-xs text-[#64748B] hover:text-[#111827] underline ml-1"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Clear All Sales</span>
+                  Reset
                 </button>
               )}
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="p-3.5">Ref / SrNo</th>
-                  <th className="p-3.5">Date of Sale</th>
-                  <th className="p-3.5">Category</th>
-                  <th className="p-3.5">Item Description</th>
-                  <th className="p-3.5 text-right">Quantity</th>
-                  <th className="p-3.5 text-right">Rate</th>
-                  <th className="p-3.5 text-right">Total Amount</th>
-                  <th className="p-3.5">Buyer Details</th>
-                  <th className="p-3.5 text-center">Print / Invoice</th>
-                  <th className="p-3.5 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filtered.map((r) => {
-                  const invoiceId = r.invoiceGroupId || r.id;
-
-                  return (
-                    <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="p-3.5 font-mono font-bold text-slate-900">
-                        {r.srNo || "—"}
-                      </td>
-                      <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">
-                        {r.dateOfSale}
-                      </td>
-                      <td className="p-3.5">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          {r.category || "General Estate Sales"}
-                        </span>
-                      </td>
-                      <td className="p-3.5 font-bold text-slate-900">
-                        <div>{r.itemName}</div>
-                        {r.particularName && (
-                          <span className="block text-[10px] text-slate-400 font-normal">
-                            Ledger: {r.particularName}
+          {/* Content Views */}
+          {loading ? (
+            <div className="p-12 text-center text-xs text-[#64748B]">
+              Loading sales records...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="p-12 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-[#F1F5F9] text-[#64748B] flex items-center justify-center mx-auto">
+                <Layers className="w-5 h-5" />
+              </div>
+              <p className="text-sm font-semibold text-[#111827]">No sales transactions found</p>
+              <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+                Use the Sales Entry form to record your first transaction and generate an official invoice.
+              </p>
+              <Link
+                href="/sales"
+                className="inline-block px-3.5 py-1.5 bg-[#174D3C] text-white rounded-lg text-xs font-medium hover:bg-[#103C30]"
+              >
+                Go to Sales Entry
+              </Link>
+            </div>
+          ) : viewMode === "cards" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {filtered.map((r) => {
+                const invoiceId = r.invoiceGroupId || r.id;
+                return (
+                  <div
+                    key={r.id}
+                    className="bg-white rounded-xl border border-[#E2E8F0] shadow-2xs hover:shadow-xs transition-all p-4 flex flex-col justify-between group hover:border-[#174D3C]"
+                  >
+                    <div>
+                      {/* Top Bar */}
+                      <div className="flex items-center justify-between gap-2 border-b border-[#E2E8F0] pb-2.5 mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1.5 rounded-lg bg-[#EAF3EE] text-[#174D3C]">
+                            <Receipt className="w-3.5 h-3.5" />
                           </span>
-                        )}
-                      </td>
-                      <td className="p-3.5 text-right font-medium text-slate-800">
-                        {r.quantity} {r.unit}
-                      </td>
-                      <td className="p-3.5 text-right font-medium text-slate-800">
-                        ₹{Number(r.pricePerUnit).toFixed(2)}
-                      </td>
-                      <td className="p-3.5 text-right font-bold text-[#15803d] text-sm">
-                        ₹{Number(r.totalAmount).toFixed(2)}
-                      </td>
-                      <td className="p-3.5">
-                        <div className="font-bold text-slate-900">{r.buyerName || "Walk-in"}</div>
-                        <div className="text-[11px] text-slate-500">
-                          {[r.buyerCity, r.buyerContact].filter(Boolean).join(" • ")}
+                          <div>
+                            <span className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wider block">
+                              Voucher
+                            </span>
+                            <span className="font-mono font-semibold text-xs text-[#111827]">
+                              {r.srNo || `SAL-${String(r.id).slice(-6).toUpperCase()}`}
+                            </span>
+                          </div>
                         </div>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <div className="inline-flex items-center gap-1.5">
-                          <Link
-                            href={`/sales-invoice/${invoiceId}?print=true`}
-                            target="_blank"
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#15803d] hover:bg-[#166534] text-white rounded-lg text-xs font-bold shadow-2xs transition-all"
-                            title="Print Official Invoice Bill"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Print Bill</span>
-                          </Link>
-                          <Link
-                            href={`/sales-invoice/${invoiceId}`}
-                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </Link>
+                        <div className="text-right">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#EAF3EE] text-[#174D3C] border border-[#C5DEC8]">
+                            {r.category || "Produce"}
+                          </span>
+                          <div className="text-[10px] text-[#64748B] mt-0.5">{r.dateOfSale}</div>
                         </div>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <button
-                          onClick={() => handleDelete(r.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 rounded transition-colors"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+                      </div>
 
-      {/* ========================================================================= */}
-      {/* MODAL: MANAGE SALES CATEGORIES                                            */}
-      {/* ========================================================================= */}
+                      {/* Produce Item & Amount */}
+                      <div className="space-y-0.5 mb-2.5">
+                        <h4 className="font-semibold text-[#111827] text-xs">{r.itemName}</h4>
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-[11px] text-[#64748B]">
+                            {r.quantity} {r.unit} @ ₹{Number(r.pricePerUnit).toFixed(2)}/{r.unit}
+                          </span>
+                          <span className="font-mono font-bold text-[#174D3C] text-sm">
+                            ₹{Number(r.totalAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Buyer Details */}
+                      <div className="bg-[#F8FAFC] rounded-lg p-2.5 space-y-1 text-[11px] text-[#475569] mb-3 border border-[#E2E8F0]">
+                        <div className="flex justify-between">
+                          <span className="text-[#64748B]">Buyer:</span>
+                          <span className="font-semibold text-[#111827]">{r.buyerName || "Walk-in Buyer"}</span>
+                        </div>
+                        {(r.buyerCity || r.buyerContact) && (
+                          <div className="flex justify-between">
+                            <span className="text-[#64748B]">Location/Phone:</span>
+                            <span>{[r.buyerCity, r.buyerContact].filter(Boolean).join(" • ")}</span>
+                          </div>
+                        )}
+                        {r.particularName && (
+                          <div className="flex justify-between">
+                            <span className="text-[#64748B]">Ledger:</span>
+                            <span>{r.particularName}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Card Actions */}
+                    <div className="pt-2.5 border-t border-[#E2E8F0] flex items-center justify-between gap-1.5">
+                      <button
+                        onClick={() => openSalesVoucher(r)}
+                        className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white rounded-lg text-xs font-medium transition-colors shadow-2xs"
+                      >
+                        <Maximize2 className="w-3 h-3 text-emerald-200" />
+                        <span>Voucher</span>
+                      </button>
+
+                      <Link
+                        href={`/sales-invoice/${invoiceId}?print=true`}
+                        target="_blank"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] rounded-lg text-xs font-medium transition-colors shadow-2xs"
+                        title="Print Bill"
+                      >
+                        <Printer className="w-3 h-3 text-[#64748B]" />
+                        <span>Print</span>
+                      </Link>
+
+                      <Link
+                        href={`/sales-invoice/${invoiceId}`}
+                        className="p-1.5 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B] hover:text-[#111827] rounded-lg transition-colors shadow-2xs"
+                        title="View Invoice Page"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : viewMode === "grouped" ? (
+            <div className="space-y-4">
+              {categoryGroups.map((group) => {
+                if (group.records.length === 0) return null;
+
+                return (
+                  <div
+                    key={group.name}
+                    className="border border-[#E2E8F0] rounded-xl overflow-hidden"
+                  >
+                    <div className="px-4 py-2.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-3.5 h-3.5 text-[#174D3C]" />
+                        <span className="font-semibold text-xs text-[#111827]">{group.name}</span>
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-[#EAF3EE] text-[#174D3C] border border-[#C5DEC8]">
+                          {group.records.length} {group.records.length === 1 ? "Bill" : "Bills"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-semibold text-[#174D3C] font-mono">
+                        ₹{group.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-[#E2E8F0] bg-white text-[11px] font-medium text-[#64748B]">
+                            <th className="py-2 px-3">Ref</th>
+                            <th className="py-2 px-3">Date</th>
+                            <th className="py-2 px-3">Item</th>
+                            <th className="py-2 px-3 text-right">Qty</th>
+                            <th className="py-2 px-3 text-right">Rate</th>
+                            <th className="py-2 px-3 text-right">Amount</th>
+                            <th className="py-2 px-3">Buyer</th>
+                            <th className="py-2 px-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
+                          {group.records.map((r) => {
+                            const invoiceId = r.invoiceGroupId || r.id;
+                            return (
+                              <tr key={r.id} className="hover:bg-[#F8FAFC]">
+                                <td className="py-2 px-3 font-mono font-semibold text-xs">{r.srNo || "—"}</td>
+                                <td className="py-2 px-3 text-[#475569]">{r.dateOfSale}</td>
+                                <td className="py-2 px-3 font-medium text-[#111827]">{r.itemName}</td>
+                                <td className="py-2 px-3 text-right font-mono">{r.quantity} {r.unit}</td>
+                                <td className="py-2 px-3 text-right font-mono">₹{Number(r.pricePerUnit).toFixed(2)}</td>
+                                <td className="py-2 px-3 text-right font-mono font-semibold text-[#174D3C]">
+                                  ₹{Number(r.totalAmount).toFixed(2)}
+                                </td>
+                                <td className="py-2 px-3 text-[#475569]">{r.buyerName || "Walk-in"}</td>
+                                <td className="py-2 px-3 text-right">
+                                  <div className="inline-flex items-center gap-1 justify-end">
+                                    <Link
+                                      href={`/sales-invoice/${invoiceId}?print=true`}
+                                      target="_blank"
+                                      className="p-1 text-[#64748B] hover:text-[#111827] rounded"
+                                      title="Print Bill"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                    </Link>
+                                    <button
+                                      onClick={() => handleDelete(r.id)}
+                                      className="p-1 text-[#94A3B8] hover:text-red-700 rounded"
+                                      title="Delete Record"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-6">
+              <div className="px-6 pb-2 flex justify-end">
+                {records.length > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    className="text-[11px] text-red-600 hover:text-red-800 font-medium transition-colors flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear All Sales</span>
+                  </button>
+                )}
+              </div>
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                    <th className="py-2.5 px-4 font-medium">Ref</th>
+                    <th className="py-2.5 px-4 font-medium">Date</th>
+                    <th className="py-2.5 px-4 font-medium">Category</th>
+                    <th className="py-2.5 px-4 font-medium">Produce Item</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Quantity</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Rate</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Amount</th>
+                    <th className="py-2.5 px-4 font-medium">Buyer</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Print / View</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
+                  {filtered.map((r) => {
+                    const invoiceId = r.invoiceGroupId || r.id;
+                    return (
+                      <tr key={r.id} className="hover:bg-[#F8FAFC] transition-colors">
+                        <td className="py-3 px-4 font-mono font-semibold text-xs">{r.srNo || "—"}</td>
+                        <td className="py-3 px-4 text-[#475569]">{r.dateOfSale}</td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#EAF3EE] text-[#174D3C] border border-[#C5DEC8]">
+                            {r.category || "General"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-[#111827] text-xs">{r.itemName}</td>
+                        <td className="py-3 px-4 text-right font-mono">{r.quantity} {r.unit}</td>
+                        <td className="py-3 px-4 text-right font-mono">₹{Number(r.pricePerUnit).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-[#174D3C] text-xs">
+                          ₹{Number(r.totalAmount).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-[#475569]">
+                          <div>{r.buyerName || "Walk-in"}</div>
+                          {r.buyerCity && <span className="text-[10px] text-[#94A3B8]">{r.buyerCity}</span>}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="inline-flex items-center gap-1 justify-center">
+                            <Link
+                              href={`/sales-invoice/${invoiceId}?print=true`}
+                              target="_blank"
+                              className="p-1 text-[#64748B] hover:text-[#111827] rounded"
+                              title="Print Bill"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </Link>
+                            <Link
+                              href={`/sales-invoice/${invoiceId}`}
+                              className="p-1 text-[#64748B] hover:text-[#111827] rounded"
+                              title="View Invoice"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            className="p-1 text-[#94A3B8] hover:text-red-700 rounded transition-colors"
+                            title="Delete Record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </ContentCard>
+
+      {/* MODAL: MANAGE SALES CATEGORIES */}
       {catModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-slate-200 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-black">
-                  <Tag className="w-4 h-4" />
-                </span>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-xl max-w-lg w-full p-5 shadow-xl space-y-4 border border-[#E2E8F0] animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+              <h3 className="text-sm font-semibold text-[#111827] flex items-center gap-2">
+                <Tag className="w-4 h-4 text-[#174D3C]" />
                 <span>Manage Sales Categories</span>
               </h3>
               <button
@@ -889,67 +772,60 @@ export default function MainSalesRegisterPage() {
                   setCatModalOpen(false);
                   setNewCatName("");
                 }}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="p-1 rounded-md text-[#64748B] hover:text-[#111827]"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Add Category Form */}
-            <form onSubmit={handleAddCategory} className="flex items-center gap-2">
+            <form onSubmit={handleAddCategory} className="flex items-center gap-2 text-xs">
               <input
                 type="text"
                 required
                 placeholder="New Category (e.g. Organic Honey, Timber, Seeds)"
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
-                className="flex-1 p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d] focus:border-[#15803d]"
+                className="flex-1 p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
               />
               <button
                 type="submit"
                 disabled={savingCat || !newCatName.trim()}
-                className="px-4 py-2.5 bg-[#15803d] hover:bg-[#166534] text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50 shrink-0 flex items-center gap-1"
+                className="px-3.5 py-2 bg-[#174D3C] hover:bg-[#103C30] text-white rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 shrink-0 flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>{savingCat ? "Adding..." : "Add"}</span>
               </button>
             </form>
 
-            {/* Existing Categories List */}
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <div className="space-y-1.5 max-h-56 overflow-y-auto text-xs">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
                 Configured Categories ({categories.length})
               </div>
-              <div className="space-y-1.5">
-                {categories.map((cat) => (
-                  <div
-                    key={cat}
-                    className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/60 flex items-center justify-between gap-2"
+              {categories.map((cat) => (
+                <div
+                  key={cat}
+                  className="p-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between gap-2"
+                >
+                  <span className="font-medium text-[#111827]">{cat}</span>
+                  <button
+                    onClick={() => handleDeleteCategory(cat)}
+                    className="p-1 text-[#94A3B8] hover:text-red-700 rounded transition-colors"
+                    title="Delete category"
                   >
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                      <Tag className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>{cat}</span>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteCategory(cat)}
-                      className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors"
-                      title="Delete category"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
+            <div className="pt-2 border-t border-[#E2E8F0] flex justify-end">
               <button
                 type="button"
                 onClick={() => {
                   setCatModalOpen(false);
                   setNewCatName("");
                 }}
-                className="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                className="px-3.5 py-1.5 text-xs font-medium bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#111827] rounded-lg transition-colors"
               >
                 Close
               </button>
@@ -958,13 +834,13 @@ export default function MainSalesRegisterPage() {
         </div>
       )}
 
-      {/* Official Sales Voucher Slip Modal - Expand to Full Page */}
+      {/* Official Sales Voucher Slip Modal */}
       <VoucherSlipModal
         isOpen={!!activeModalVoucher}
         onClose={() => setActiveModalVoucher(null)}
         voucher={activeModalVoucher}
         initialFullPage={true}
       />
-    </div>
+    </PageContainer>
   );
 }

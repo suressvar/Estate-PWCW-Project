@@ -1,9 +1,20 @@
 "use client";
+import React, { useEffect, useState } from "react";
+import {
+  CheckCircle2,
+  Edit2,
+  Filter,
+    Plus,
+  Search,
+  ShieldAlert,
+  Tags,
+  Trash2,
+} from "lucide-react";
 import { errorMessage as getErrorMessage } from "@/lib/errors";
-
-import { LedgerGroupItem,PnLSide } from "@/lib/accounting-data";
-import { CheckCircle2,Edit2,Filter,FolderTree,Plus,Search,ShieldAlert,Tags,Trash2 } from "lucide-react";
-import React,{ useEffect,useState } from "react";
+import { LedgerGroupItem, PnLSide } from "@/lib/accounting-data";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
 
 export default function LedgerGroupsPage() {
   const [groups, setGroups] = useState<LedgerGroupItem[]>([]);
@@ -51,10 +62,15 @@ export default function LedgerGroupsPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchGroupsAndTypes();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchGroupsAndTypes();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, []);
 
   const openAdd = () => {
@@ -146,7 +162,6 @@ export default function LedgerGroupsPage() {
     }
   };
 
-  // Group Type Manager Handlers
   const handleCreateManagerType = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newManagerType.trim().toUpperCase();
@@ -167,7 +182,7 @@ export default function LedgerGroupsPage() {
         setTypeManagerMsg({ type: "success", text: `Group type "${trimmed}" created successfully!` });
         setTimeout(() => setTypeManagerMsg(null), 3000);
       }
-    } catch  {
+    } catch {
       setTypeManagerMsg({ type: "error", text: "Failed to create group type." });
     }
   };
@@ -199,7 +214,7 @@ export default function LedgerGroupsPage() {
       case "EXPENSE":
         return "bg-rose-50 text-rose-700 border-rose-200";
       case "INCOME":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        return "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]";
       case "ASSET":
         return "bg-sky-50 text-sky-800 border-sky-200";
       case "LIABILITY":
@@ -210,274 +225,260 @@ export default function LedgerGroupsPage() {
   };
 
   const filtered = groups.filter((g) => {
-    const matchSearch = g.groupName.toLowerCase().includes(search.toLowerCase()) || g.description?.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      g.groupName.toLowerCase().includes(search.toLowerCase()) ||
+      g.description?.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "ALL" || g.groupType.toUpperCase() === typeFilter.toUpperCase();
     return matchSearch && matchType;
   });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4">
-        <div>
+    <PageContainer>
+      <PageHeader
+        title="Chart of Accounts: Ledger Groups"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Chart of Accounts" },
+          { label: "Ledger Groups" },
+        ]}
+        actions={
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-900 text-white rounded-xl shadow-xs">
-              <FolderTree className="w-5 h-5 text-emerald-300" />
-            </div>
-            <h1 className="text-xl font-bold text-slate-900">Chart of Accounts: Ledger Groups</h1>
+            <button
+              onClick={() => setShowTypeManager(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F8FAFC] text-[#111827] text-xs font-medium rounded-lg border border-[#E2E8F0] shadow-2xs transition-colors"
+              title="Manage Group Types"
+            >
+              <Tags className="w-3.5 h-3.5 text-[#174D3C]" /> Manage Types
+            </button>
+            <button
+              onClick={openAdd}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add New Group
+            </button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowTypeManager(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-300 shadow-xs transition-all"
-            title="Manage Group Types"
-          >
-            <Tags className="w-4 h-4 text-emerald-700" /> Manage Types
-          </button>
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
-          >
-            <Plus className="w-4 h-4" /> Add New Group
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {msg && (
-        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"}`}>
-          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <ShieldAlert className="w-4 h-4 text-rose-600" />}
-          {msg.text}
+        <div
+          className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+            msg.type === "success"
+              ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]"
+              : "bg-red-50 text-red-800 border-red-200"
+          }`}
+        >
+          {msg.type === "success" ? (
+            <CheckCircle2 className="w-4 h-4 text-[#174D3C]" />
+          ) : (
+            <ShieldAlert className="w-4 h-4 text-red-600" />
+          )}
+          <span>{msg.text}</span>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search group name or description..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:outline-emerald-600"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-3.5 h-3.5 text-slate-500" />
-          <span className="text-xs font-semibold text-slate-700">Type:</span>
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800"
-          >
-            <option value="ALL">All Types ({groups.length})</option>
-            {groupTypes.map((t) => {
-              const count = groups.filter((g) => g.groupType.toUpperCase() === t.toUpperCase()).length;
-              return (
+      {/* Main Table Card */}
+      <ContentCard
+        title="Ledger Groups Register"
+        badge={`${filtered.length} groups`}
+        actions={
+          <div className="flex items-center gap-2 text-xs">
+            <Filter className="w-3.5 h-3.5 text-[#64748B]" />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-2.5 py-1 bg-white border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:ring-1 focus:ring-[#174D3C]"
+            >
+              <option value="ALL">All Types ({groups.length})</option>
+              {groupTypes.map((t) => (
                 <option key={t} value={t}>
-                  {t} ({count})
+                  {t}
                 </option>
-              );
-            })}
-          </select>
-        </div>
-      </div>
+              ))}
+            </select>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
+            <input
+              type="text"
+              placeholder="Search ledger group name or description..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
+            />
+          </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-              <tr>
-                <th className="p-3.5">Group Name</th>
-                <th className="p-3.5">Classification</th>
-                <th className="p-3.5">P&L Side</th>
-                <th className="p-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="p-6 text-center text-slate-500 font-medium">Loading ledger groups...</td>
+          <div className="overflow-x-auto -mx-6">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                  <th className="py-2.5 px-4 font-medium">Group Name</th>
+                  <th className="py-2.5 px-4 font-medium">Type</th>
+                  <th className="py-2.5 px-4 font-medium">P&amp;L Treatment</th>
+                  <th className="py-2.5 px-4 font-medium">Description</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Actions</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-6 text-center text-slate-400 font-medium">No ledger groups found matching filter.</td>
-                </tr>
-              ) : (
-                filtered.map((g) => (
-                  <tr key={g.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3.5 font-bold text-slate-900">{g.groupName}</td>
-                    <td className="p-3.5">
-                      <span className={`px-2.5 py-0.5 rounded-full font-bold border text-[11px] ${getBadgeStyle(g.groupType)}`}>
-                        {g.groupType}
-                      </span>
-                    </td>
-                    <td className="p-3.5 font-semibold text-slate-700">
-                      <span className={`font-mono px-2 py-0.5 rounded ${g.pnlSide === "DEBIT" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>
-                        {g.pnlSide}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => openEdit(g)}
-                          className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
-                          title="Edit Group"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(g.id, g.groupName)}
-                          className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
-                          title="Delete Group"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
+              </thead>
+              <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 px-4 text-center text-[#64748B]">Loading groups...</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 px-4 text-center text-[#64748B]">No ledger groups found.</td>
+                  </tr>
+                ) : (
+                  filtered.map((g) => (
+                    <tr key={g.id} className="hover:bg-[#F8FAFC] transition-colors">
+                      <td className="py-3 px-4 font-semibold text-[#111827] text-xs">{g.groupName}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getBadgeStyle(g.groupType)}`}>
+                          {g.groupType}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-[#475569] text-xs font-mono">{g.pnlSide}</span>
+                      </td>
+                      <td className="py-3 px-4 text-[#64748B] text-xs">{g.description || "—"}</td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEdit(g)}
+                            className="p-1 text-[#64748B] hover:text-[#111827] rounded transition-colors"
+                            title="Edit Group"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(g.id, g.groupName)}
+                            className="p-1 text-[#94A3B8] hover:text-red-700 rounded transition-colors"
+                            title="Delete Group"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </ContentCard>
 
-      {/* Modal Dialog (Create / Edit Group) */}
+      {/* Modal Dialog */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+              <h3 className="font-semibold text-[#111827] text-sm">
                 {editingId ? "Edit Ledger Group" : "Create New Ledger Group"}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-700 text-sm font-bold">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-[#64748B] hover:text-[#111827] text-sm font-bold">✕</button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Group Name *</label>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Group Name *</label>
                 <input
                   type="text"
                   required
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   placeholder="e.g. Direct Expenses, Selling Overheads"
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 focus:outline-emerald-600"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px]">Group Type *</label>
-                  {!isCreatingInlineType && (
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Account Classification *</label>
+                {!isCreatingInlineType ? (
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={groupType}
+                      onChange={(e) => setGroupType(e.target.value)}
+                      className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
+                    >
+                      {groupTypes.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
                     <button
                       type="button"
                       onClick={() => setIsCreatingInlineType(true)}
-                      className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
+                      className="px-2.5 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#111827] rounded-lg font-medium shrink-0"
                     >
-                      <Plus className="w-3 h-3" />
-                      + New Type
+                      + Custom
                     </button>
-                  )}
-                </div>
-
-                {isCreatingInlineType ? (
-                  <div className="p-2.5 bg-emerald-50/70 rounded-lg border border-emerald-200 space-y-1.5">
-                    <span className="text-[10px] font-bold text-emerald-900 block uppercase tracking-wider">
-                      Create New Group Type
-                    </span>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        autoFocus
-                        value={inlineTypeName}
-                        onChange={(e) => setInlineTypeName(e.target.value)}
-                        placeholder="e.g. DIRECT COST, CAPITAL, STATUTORY"
-                        className="flex-1 p-1.5 bg-white border border-emerald-300 rounded-md text-xs text-slate-900 focus:outline-emerald-600 uppercase"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddInlineType();
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddInlineType}
-                        disabled={!inlineTypeName.trim()}
-                        className="px-2.5 py-1.5 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white font-semibold text-xs rounded-md transition-colors"
-                      >
-                        Add
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCreatingInlineType(false);
-                          setInlineTypeName("");
-                        }}
-                        className="px-2 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-md transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <select
-                        value={groupType}
-                        onChange={(e) => {
-                          if (e.target.value === "__NEW_CUSTOM__") {
-                            setIsCreatingInlineType(true);
-                          } else {
-                            const val = e.target.value;
-                            setGroupType(val);
-                            setPnlSide(val === "EXPENSE" || val === "ASSET" ? "DEBIT" : "CREDIT");
-                          }
-                        }}
-                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900"
-                      >
-                        {groupTypes.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
-                          </option>
-                        ))}
-                        <option value="__NEW_CUSTOM__" className="text-emerald-700 font-bold">
-                          + Add New Type...
-                        </option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <select
-                        value={pnlSide}
-                        onChange={(e) => setPnlSide(e.target.value as PnLSide)}
-                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900"
-                      >
-                        <option value="DEBIT">Debit (DR)</option>
-                        <option value="CREDIT">Credit (CR)</option>
-                      </select>
-                    </div>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="NEW TYPE"
+                      value={inlineTypeName}
+                      onChange={(e) => setInlineTypeName(e.target.value.toUpperCase())}
+                      className="w-full p-2 bg-white border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#111827]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddInlineType}
+                      className="px-2.5 py-2 bg-[#174D3C] text-white rounded-lg font-medium shrink-0"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingInlineType(false)}
+                      className="px-2 py-2 text-[#64748B] hover:text-[#111827]"
+                    >
+                      ✕
+                    </button>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">P&amp;L Accounting Treatment</label>
+                <select
+                  value={pnlSide}
+                  onChange={(e) => setPnlSide(e.target.value as PnLSide)}
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
+                >
+                  <option value="DEBIT">Debit (Expense / Asset Increase)</option>
+                  <option value="CREDIT">Credit (Income / Liability Increase)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Description (Optional)</label>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Classification details..."
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg"
+                  className="px-3.5 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F1F5F9] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg shadow-sm"
+                  className="px-4 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white font-semibold text-xs rounded-lg shadow-2xs transition-colors"
                 >
                   Save Group
                 </button>
@@ -489,117 +490,64 @@ export default function LedgerGroupsPage() {
 
       {/* Group Type Manager Modal */}
       {showTypeManager && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Tags className="w-5 h-5 text-emerald-700" />
-                <h3 className="font-bold text-slate-900 text-sm">
-                  Manage Group Types
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowTypeManager(false)}
-                className="text-slate-400 hover:text-slate-700 text-sm font-bold"
-              >
-                ✕
-              </button>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+              <h3 className="font-semibold text-[#111827] text-sm">Manage Group Classifications</h3>
+              <button onClick={() => setShowTypeManager(false)} className="text-[#64748B] hover:text-[#111827] text-sm font-bold">✕</button>
             </div>
 
             {typeManagerMsg && (
-              <div
-                className={`p-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${
-                  typeManagerMsg.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                    : "bg-rose-50 text-rose-800 border border-rose-200"
-                }`}
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
+              <div className={`p-2.5 rounded-lg border text-xs font-medium ${typeManagerMsg.type === "success" ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]" : "bg-red-50 text-red-800 border-red-200"}`}>
                 {typeManagerMsg.text}
               </div>
             )}
 
-            {/* Add Type Form */}
-            <form onSubmit={handleCreateManagerType} className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">
-                Add New Group Type
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newManagerType}
-                  onChange={(e) => setNewManagerType(e.target.value)}
-                  placeholder="e.g. DIRECT COST, CAPITAL, STATUTORY"
-                  className="flex-1 p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:outline-emerald-600 uppercase"
-                />
-                <button
-                  type="submit"
-                  disabled={!newManagerType.trim()}
-                  className="px-3 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white font-bold text-xs rounded-lg shadow-xs transition-colors shrink-0 flex items-center gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Type
-                </button>
-              </div>
+            <form onSubmit={handleCreateManagerType} className="flex gap-2">
+              <input
+                type="text"
+                required
+                value={newManagerType}
+                onChange={(e) => setNewManagerType(e.target.value.toUpperCase())}
+                placeholder="e.g. STATUTORY_RESERVES"
+                className="flex-1 p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#111827]"
+              />
+              <button
+                type="submit"
+                className="px-3.5 py-2 bg-[#174D3C] hover:bg-[#103C30] text-white rounded-lg text-xs font-semibold shrink-0"
+              >
+                Add Type
+              </button>
             </form>
 
-            {/* List */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-700 block">
-                Registered Group Types ({groupTypes.length})
-              </label>
-              <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl">
-                {groupTypes.map((t) => {
-                  const usageCount = groups.filter(
-                    (g) => g.groupType.toUpperCase() === t.toUpperCase()
-                  ).length;
-
-                  return (
-                    <div
-                      key={t}
-                      className="p-2.5 flex items-center justify-between hover:bg-slate-50 text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2.5 py-0.5 rounded-full font-bold border text-[11px] ${getBadgeStyle(t)}`}>
-                          {t}
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          ({usageCount} {usageCount === 1 ? "group" : "groups"})
-                        </span>
-                      </div>
-
-                      {usageCount === 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteManagerType(t)}
-                          className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-                          title="Delete unused group type"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                          In Use
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="space-y-1.5 max-h-56 overflow-y-auto">
+              {groupTypes.map((t) => (
+                <div key={t} className="p-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
+                  <span className="font-semibold text-xs text-[#111827]">{t}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteManagerType(t)}
+                    className="p-1 text-[#94A3B8] hover:text-red-700 rounded"
+                    title="Delete Type"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-100">
+            <div className="flex justify-end pt-2 border-t border-[#E2E8F0]">
               <button
                 type="button"
                 onClick={() => setShowTypeManager(false)}
-                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors"
+                className="px-3.5 py-1.5 text-xs font-medium bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#111827] rounded-lg"
               >
-                Close
+                Done
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

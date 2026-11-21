@@ -1,4 +1,4 @@
-import { expect,test } from "@playwright/test";
+import { expect,test } from "./fixtures";
 import { authenticate } from "./auth";
 
 test.describe("Epic: Machinery Register, Petty Cash Tracker & Final Consolidated Master Report", () => {
@@ -46,7 +46,7 @@ test.describe("Epic: Machinery Register, Petty Cash Tracker & Final Consolidated
     page,
   }) => {
     await page.goto("http://localhost:3000/expenses");
-    await expect(page.locator("h1")).toContainText("General & Petty Cash Expense Tracker");
+    await expect(page.locator("main h1")).toContainText("Expenses & Petty Cash Tracker");
     await expect(page.locator("text=Live Petty Cash Balance")).toBeVisible();
 
     // Top up petty cash

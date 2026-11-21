@@ -48,8 +48,8 @@ export interface VoucherSlipData {
   notes?: string;
 }
 
-interface VoucherSlipModalProps {
-  isOpen: boolean;
+export interface VoucherSlipModalProps {
+  isOpen?: boolean;
   onClose: () => void;
   voucher: VoucherSlipData | null;
   initialFullPage?: boolean;
@@ -126,7 +126,7 @@ function numberToWords(num: number): string {
   return `Rupees ${inWords(integerPart)} Only`;
 }
 
-export function VoucherSlipModal({ isOpen, onClose, voucher, initialFullPage = true }: VoucherSlipModalProps) {
+export function VoucherSlipModal({ isOpen = true, onClose, voucher, initialFullPage = true }: VoucherSlipModalProps) {
   const [isFullPage, setIsFullPage] = useState(initialFullPage);
 
   useEffect(() => {

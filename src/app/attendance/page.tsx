@@ -1,17 +1,20 @@
+
 "use client";
-import { useCallback } from 'react';
+
+import React, { useCallback, useEffect, useState } from "react";
 import type { AttendanceRecord } from "@/lib/db-storage";
 import { errorMessage as getErrorMessage } from "@/lib/errors";
-
-import { AttendanceStatus,EmployeeItem } from "@/lib/hr-data";
+import { AttendanceStatus, EmployeeItem } from "@/lib/hr-data";
+import { PageContainer } from "@/components/layout/page-container";
+import { PageHeader } from "@/components/layout/page-header";
+import { ContentCard } from "@/components/ui/content-card";
 import {
-Calendar,
-CheckCircle2,
-FileSpreadsheet,
-ShieldAlert
+  CheckCircle2,
+  FileSpreadsheet,
+  ShieldAlert,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import React,{ useEffect,useState } from "react";
 
 export default function AttendanceGridPage() {
   const now = new Date();
@@ -33,8 +36,13 @@ export default function AttendanceGridPage() {
     checkOutTime?: string;
   } | null>(null);
 
-  const [bulkDate, setBulkDate] = useState(new Date().toISOString().split("T")[0]);
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [bulkDate, setBulkDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [msg, setMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Days in month calculation
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -56,19 +64,31 @@ export default function AttendanceGridPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchGrid();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchGrid();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, [year, month, fetchGrid]);
 
   const isSunday = (day: number) => {
     return new Date(year, month - 1, day).getDay() === 0;
   };
 
-  const getRecordForCell = (empId: string, day: number): Partial<AttendanceRecord> | undefined => {
-    const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const found = records.find((r) => r.employeeId === empId && r.attendanceDate === dayStr);
+  const getRecordForCell = (
+    empId: string,
+    day: number
+  ): Partial<AttendanceRecord> | undefined => {
+    const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
+    const found = records.find(
+      (r) => r.employeeId === empId && r.attendanceDate === dayStr
+    );
     if (!found && isSunday(day)) {
       return {
         id: `sunday_${empId}_${dayStr}`,
@@ -82,7 +102,9 @@ export default function AttendanceGridPage() {
   };
 
   const handleCellClick = (emp: EmployeeItem, day: number) => {
-    const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
     const rec = getRecordForCell(emp.id, day);
     setModalData({
       employeeId: emp.id,
@@ -98,6 +120,7 @@ export default function AttendanceGridPage() {
   const handleSaveAttendance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modalData) return;
+
     try {
       const res = await fetch("/api/attendance/mark", {
         method: "POST",
@@ -117,7 +140,9 @@ export default function AttendanceGridPage() {
         // Live state update without reload
         setRecords((prev) => {
           const idx = prev.findIndex(
-            (r) => r.employeeId === saved.employeeId && r.attendanceDate === saved.attendanceDate
+            (r) =>
+              r.employeeId === saved.employeeId &&
+              r.attendanceDate === saved.attendanceDate
           );
           if (idx >= 0) {
             const next = [...prev];
@@ -134,7 +159,8 @@ export default function AttendanceGridPage() {
   };
 
   const handleBulkMark = async () => {
-    if (!confirm(`Mark ALL active PWCW employees as PRESENT for ${bulkDate}?`)) return;
+    if (!confirm(`Mark ALL active PWCW employees as PRESENT for ${bulkDate}?`))
+      return;
     try {
       const res = await fetch("/api/attendance/bulk", {
         method: "POST",
@@ -145,7 +171,10 @@ export default function AttendanceGridPage() {
         }),
       });
       if (res.ok) {
-        setMsg({ type: "success", text: `Marked all active employees as Present for ${bulkDate}` });
+        setMsg({
+          type: "success",
+          text: `Marked all active employees as Present for ${bulkDate}`,
+        });
         fetchGrid();
         setTimeout(() => setMsg(null), 4000);
       }
@@ -155,127 +184,192 @@ export default function AttendanceGridPage() {
   };
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   return (
-    <div className="max-w-[95rem] mx-auto space-y-6">
+    <PageContainer>
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between glass-panel p-5 rounded-2xl gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-900 text-white rounded-xl shadow-xs">
-              <Calendar className="w-5 h-5 text-emerald-300" />
+      <PageHeader
+        title="Monthly Attendance Matrix Grid"
+        breadcrumbs={[
+          { label: "HR & Workforce", href: "/employees" },
+          { label: "Attendance Matrix" },
+        ]}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Month / Year picker */}
+            <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs text-xs font-semibold">
+              <select
+                value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}
+                className="bg-transparent text-slate-800 focus:outline-none cursor-pointer"
+              >
+                {monthNames.map((m, idx) => (
+                  <option key={idx} value={idx + 1}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="bg-transparent text-slate-800 focus:outline-none cursor-pointer"
+              >
+                <option value={2025}>2025</option>
+                <option value={2026}>2026</option>
+                <option value={2027}>2027</option>
+              </select>
             </div>
-            <h1 className="text-xl font-bold text-slate-900">HR: Monthly Attendance Matrix Grid</h1>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Month / Year picker */}
-          <div className="flex items-center gap-1 bg-white p-1.5 rounded-xl border border-slate-300 shadow-xs text-xs font-bold">
-            <select
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-              className="p-1 bg-transparent text-slate-800 focus:outline-none"
-            >
-              {monthNames.map((m, idx) => (
-                <option key={idx} value={idx + 1}>{m}</option>
-              ))}
-            </select>
-            <select
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-              className="p-1 bg-transparent text-slate-800 focus:outline-none"
-            >
-              <option value={2025}>2025</option>
-              <option value={2026}>2026</option>
-              <option value={2027}>2027</option>
-            </select>
-          </div>
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200 shadow-xs">
+              <input
+                type="date"
+                value={bulkDate}
+                onChange={(e) => setBulkDate(e.target.value)}
+                className="px-2 py-0.5 text-xs border border-slate-200 rounded text-slate-800 font-medium"
+              />
+              <button
+                onClick={handleBulkMark}
+                className="px-3 py-1 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-md shadow-xs transition-colors"
+              >
+                Mark All Present
+              </button>
+            </div>
 
-          <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-300 shadow-xs">
-            <input
-              type="date"
-              value={bulkDate}
-              onChange={(e) => setBulkDate(e.target.value)}
-              className="p-1 text-xs border border-slate-200 rounded text-slate-800 font-medium"
-            />
-            <button
-              onClick={handleBulkMark}
-              className="px-3 py-1 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-lg shadow-xs transition-all"
+            <Link
+              href="/attendance/summary"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg shadow-xs transition-colors"
             >
-              Mark All Present
-            </button>
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[#174D3C]" />
+              Summary View
+            </Link>
           </div>
-
-          <Link
-            href="/attendance/summary"
-            className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" /> Summary View
-          </Link>
-        </div>
-      </div>
+        }
+      />
 
       {msg && (
-        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"}`}>
-          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <ShieldAlert className="w-4 h-4 text-rose-600" />}
+        <div
+          className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${msg.type === "success"
+            ? "bg-[#EAF3EE] text-[#174D3C] border-[#174D3C]/20"
+            : "bg-rose-50 text-rose-800 border-rose-200"
+            }`}
+        >
+          {msg.type === "success" ? (
+            <CheckCircle2 className="w-4 h-4 text-[#174D3C]" />
+          ) : (
+            <ShieldAlert className="w-4 h-4 text-rose-600" />
+          )}
           {msg.text}
         </div>
       )}
 
       {/* Legend */}
-      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-4">
-          <span className="font-bold text-slate-700">Status Badges:</span>
-          <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-emerald-600 text-white font-bold flex items-center justify-center text-[10px]">P</span> Present (1.0)</span>
-          <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-amber-500 text-white font-bold flex items-center justify-center text-[10px]">H</span> Half Day (0.5)</span>
-          <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-rose-600 text-white font-bold flex items-center justify-center text-[10px]">A</span> Absent (0.0)</span>
-          <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-emerald-800 text-white font-bold flex items-center justify-center text-[10px]">L</span> Leave</span>
-          <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded bg-slate-300 text-slate-600 font-bold flex items-center justify-center text-[10px]">-</span> Not Logged</span>
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="font-semibold text-slate-700">Status Badges:</span>
+          <span className="inline-flex items-center gap-1.5 text-slate-600">
+            <span className="w-5 h-5 rounded bg-[#174D3C] text-white font-bold flex items-center justify-center text-[10px]">
+              P
+            </span>{" "}
+            Present (1.0)
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-slate-600">
+            <span className="w-5 h-5 rounded bg-amber-500 text-white font-bold flex items-center justify-center text-[10px]">
+              H
+            </span>{" "}
+            Half Day (0.5)
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-slate-600">
+            <span className="w-5 h-5 rounded bg-rose-600 text-white font-bold flex items-center justify-center text-[10px]">
+              A
+            </span>{" "}
+            Absent (0.0)
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-slate-600">
+            <span className="w-5 h-5 rounded bg-emerald-800 text-white font-bold flex items-center justify-center text-[10px]">
+              L
+            </span>{" "}
+            Leave
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-slate-600">
+            <span className="w-5 h-5 rounded bg-slate-200 text-slate-600 font-bold flex items-center justify-center text-[10px]">
+              -
+            </span>{" "}
+            Not Logged
+          </span>
         </div>
-        <span className="text-slate-500 text-[11px] italic">Showing {monthNames[month - 1]} {year}</span>
+        <span className="text-slate-400 text-xs">
+          Showing {monthNames[month - 1]} {year}
+        </span>
       </div>
 
       {/* Attendance Matrix Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+      <ContentCard
+        title={`${monthNames[month - 1]} ${year} Daily Timesheet`}
+      >
+        <div className="overflow-x-auto -mx-6 -mb-6">
           <table className="w-full text-center text-xs border-collapse">
-            <thead className="bg-slate-100/90 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+            <thead className="bg-[#F8FAFC] text-slate-600 font-semibold uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="p-3 text-left sticky left-0 bg-slate-100 z-10 min-w-[200px] border-r border-slate-200 shadow-xs">
+                <th className="p-3 text-left sticky left-0 bg-[#F8FAFC] z-10 min-w-[200px] border-r border-slate-200">
                   Staff Member & Role
                 </th>
                 {dayNumbers.map((d) => (
-                  <th key={d} className="p-2 min-w-[32px] border-r border-slate-200/60 font-mono text-[11px]">
+                  <th
+                    key={d}
+                    className="p-2 min-w-[32px] border-r border-slate-200/60 font-mono text-[11px]"
+                  >
                     {d}
                   </th>
                 ))}
-                <th className="p-3 min-w-[90px] bg-slate-100 font-bold">Present</th>
-                <th className="p-3 min-w-[80px] bg-slate-100 font-bold">%</th>
+                <th className="p-3 min-w-[80px] bg-[#F8FAFC] font-semibold">Present</th>
+                <th className="p-3 min-w-[70px] bg-[#F8FAFC] font-semibold">%</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={daysInMonth + 3} className="p-8 text-center text-slate-400 font-medium">
+                  <td
+                    colSpan={daysInMonth + 3}
+                    className="p-12 text-center text-slate-400 font-medium"
+                  >
                     Loading attendance matrix...
+                  </td>
+                </tr>
+              ) : employees.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={daysInMonth + 3}
+                    className="p-12 text-center text-slate-400 font-medium"
+                  >
+                    No active employees registered.
                   </td>
                 </tr>
               ) : (
                 employees.map((emp) => {
                   let pCount = 0;
                   let hCount = 0;
-                  
 
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/50">
                       {/* Sticky Employee Name */}
-                      <td className="p-3 text-left sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-200 shadow-xs">
-                        <div className="font-bold text-slate-900">{emp.name}</div>
-                        <div className="text-[10px] text-slate-500">{emp.roleName} • ₹{emp.wageRate}</div>
+                      <td className="p-3 text-left sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-200">
+                        <div className="font-semibold text-slate-900">{emp.name}</div>
+                        <div className="text-[11px] text-slate-500">
+                          {emp.roleName} • ₹{emp.wageRate}
+                        </div>
                       </td>
 
                       {/* Day Cells */}
@@ -286,19 +380,18 @@ export default function AttendanceGridPage() {
 
                         if (rec) {
                           if (rec.status === "PRESENT") {
-                            badgeBg = "bg-emerald-600 text-white font-bold shadow-xs";
+                            badgeBg = "bg-[#174D3C] text-white font-bold";
                             letter = "P";
                             pCount++;
                           } else if (rec.status === "HALF_DAY") {
-                            badgeBg = "bg-amber-500 text-white font-bold shadow-xs";
+                            badgeBg = "bg-amber-500 text-white font-bold";
                             letter = "H";
                             hCount++;
                           } else if (rec.status === "ABSENT") {
-                            badgeBg = "bg-rose-600 text-white font-bold shadow-xs";
+                            badgeBg = "bg-rose-600 text-white font-bold";
                             letter = "A";
-                            
                           } else if (rec.status === "LEAVE") {
-                            badgeBg = "bg-emerald-800 text-white font-bold shadow-xs";
+                            badgeBg = "bg-emerald-800 text-white font-bold";
                             letter = "L";
                           }
                         }
@@ -307,9 +400,11 @@ export default function AttendanceGridPage() {
                           <td
                             key={d}
                             onClick={() => handleCellClick(emp, d)}
-                            className="p-1 border-r border-slate-100 cursor-pointer hover:bg-emerald-50 transition-colors"
+                            className="p-1 border-r border-slate-100 cursor-pointer hover:bg-[#EAF3EE]/50 transition-colors"
                           >
-                            <span className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] mx-auto ${badgeBg}`}>
+                            <span
+                              className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] mx-auto ${badgeBg}`}
+                            >
                               {letter}
                             </span>
                           </td>
@@ -317,11 +412,16 @@ export default function AttendanceGridPage() {
                       })}
 
                       {/* Summary calculations */}
-                      <td className="p-2 font-bold text-slate-800 bg-slate-50/50 font-mono">
+                      <td className="p-2 font-semibold text-slate-800 bg-[#F8FAFC] font-mono">
                         {(pCount + hCount * 0.5).toFixed(1)} d
                       </td>
-                      <td className="p-2 font-bold bg-slate-50/50 font-mono">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] ${(pCount + hCount * 0.5) >= 20 ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>
+                      <td className="p-2 font-semibold bg-[#F8FAFC] font-mono">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${pCount + hCount * 0.5 >= 20
+                            ? "bg-[#EAF3EE] text-[#174D3C]"
+                            : "bg-amber-50 text-amber-800"
+                            }`}
+                        >
                           {Math.round(((pCount + hCount * 0.5) / 26) * 100)}%
                         </span>
                       </td>
@@ -332,33 +432,57 @@ export default function AttendanceGridPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </ContentCard>
 
       {/* Cell Status Popover Modal */}
       {modalData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-sm w-full p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div>
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Mark Attendance</span>
-                <h3 className="font-bold text-slate-900 text-sm">{modalData.employeeName}</h3>
-                <div className="text-xs text-slate-500 font-mono">{modalData.dateStr}</div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                  Mark Attendance
+                </span>
+                <h3 className="font-bold text-slate-900 text-sm">
+                  {modalData.employeeName}
+                </h3>
+                <div className="text-xs text-slate-500 font-mono">
+                  {modalData.dateStr}
+                </div>
               </div>
-              <button onClick={() => setModalData(null)} className="text-slate-400 hover:text-slate-700 font-bold text-sm">✕</button>
+              <button
+                onClick={() => setModalData(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <form onSubmit={handleSaveAttendance} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveAttendance} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Status *</label>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Status *
+                </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {(["PRESENT", "HALF_DAY", "ABSENT", "LEAVE"] as AttendanceStatus[]).map((st) => (
+                  {(
+                    ["PRESENT", "HALF_DAY", "ABSENT", "LEAVE"] as AttendanceStatus[]
+                  ).map((st) => (
                     <button
                       key={st}
                       type="button"
                       onClick={() => setModalData({ ...modalData, status: st })}
-                      className={`p-2 rounded-xl font-bold border transition-all text-center ${modalData.status === st ? "bg-emerald-900 text-white border-emerald-900 shadow-xs" : "bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100"}`}
+                      className={`p-2 rounded-lg font-semibold border transition-all text-center ${modalData.status === st
+                        ? "bg-[#174D3C] text-white border-[#174D3C] shadow-xs"
+                        : "bg-[#F8FAFC] border-slate-200 text-slate-700 hover:bg-slate-100"
+                        }`}
                     >
-                      {st === "PRESENT" ? "Present (P)" : st === "HALF_DAY" ? "Half Day (H)" : st === "ABSENT" ? "Absent (A)" : "Leave (L)"}
+                      {st === "PRESENT"
+                        ? "Present (P)"
+                        : st === "HALF_DAY"
+                          ? "Half Day (H)"
+                          : st === "ABSENT"
+                            ? "Absent (A)"
+                            : "Leave (L)"}
                     </button>
                   ))}
                 </div>
@@ -366,40 +490,49 @@ export default function AttendanceGridPage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Check In</label>
+                  <label className="block text-slate-700 font-semibold mb-1">
+                    Check In
+                  </label>
                   <input
                     type="text"
                     value={modalData.checkInTime}
-                    onChange={(e) => setModalData({ ...modalData, checkInTime: e.target.value })}
+                    onChange={(e) =>
+                      setModalData({ ...modalData, checkInTime: e.target.value })
+                    }
                     placeholder="08:00"
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono"
+                    className="w-full px-2.5 py-1.5 bg-[#F8FAFC] border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:border-[#174D3C]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Check Out</label>
+                  <label className="block text-slate-700 font-semibold mb-1">
+                    Check Out
+                  </label>
                   <input
                     type="text"
                     value={modalData.checkOutTime}
-                    onChange={(e) => setModalData({ ...modalData, checkOutTime: e.target.value })}
+                    onChange={(e) =>
+                      setModalData({
+                        ...modalData,
+                        checkOutTime: e.target.value,
+                      })
+                    }
                     placeholder="17:00"
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono"
+                    className="w-full px-2.5 py-1.5 bg-[#F8FAFC] border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:border-[#174D3C]"
                   />
                 </div>
               </div>
-
-
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setModalData(null)}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg"
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg shadow-xs"
+                  className="px-4 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white font-semibold rounded-lg shadow-xs transition-colors"
                 >
                   Save Status
                 </button>
@@ -408,6 +541,6 @@ export default function AttendanceGridPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

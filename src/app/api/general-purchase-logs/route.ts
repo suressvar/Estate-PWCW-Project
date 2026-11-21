@@ -1,3 +1,4 @@
+import { finiteNumber } from "@/lib/validation";
 import { addGeneralPurchaseLog,deleteGeneralPurchaseLog,getGeneralPurchaseLogs } from "@/lib/transaction-logs";
 import { NextResponse } from "next/server";
 
@@ -6,7 +7,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  try {
   const body = await request.json();
+  for (const field of ['quantityKg', 'value', 'totalAmount', 'subtotal', 'taxPercent', 'taxAmount', 'discount', 'cost']) {
+    if (body[field] !== undefined) finiteNumber(body[field], field);
+  }
   const cost = Number(body.cost) || Number(body.totalAmount) || Number(body.subtotal) || 0;
 
   const newLog = addGeneralPurchaseLog({
@@ -42,6 +47,8 @@ export async function POST(request: Request) {
     notes: body.notes || "",
   });
   return NextResponse.json(newLog, { status: 201 });
+
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid operational log." }, { status: 400 }); }
 }
 
 export async function DELETE(request: Request) {

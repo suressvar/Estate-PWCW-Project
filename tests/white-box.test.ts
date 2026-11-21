@@ -8,6 +8,7 @@ import * as machines from '../src/lib/machinery-data';
 import * as accounting from '../src/lib/accounting-data';
 import * as godown from '../src/lib/godown-data';
 import * as daily from '../src/lib/daily-log-data';
+import { finiteNumber } from '../src/lib/validation';
 
 const date = '2026-11-16';
 const employee = (wageType: 'DAILY' | 'HOURLY' | 'MONTHLY' = 'DAILY', wageRate = 600) => hr.createEmployee({ name: 'White box worker', wageType, wageRate, status: 'ACTIVE' });
@@ -16,6 +17,24 @@ const cycle = (plotId = plot().id) => cycles.createCropCycle({ plotId, cropName:
 const machine = () => machines.createMachine({ name: 'White box tractor', type: 'TRACTOR', active: true });
 
 describe('WB payroll control flow and cross-module invariants', () => {
+  it.each([{ status: 'PAID' }, { employeeId: 'other' }, { grossSalary: 1 }, { month: 1 }])('rejects salary identity or derived-field tampering %j', data => {
+    const person = employee(); hr.markAttendance({ employeeId: person.id, attendanceDate: date, status: 'PRESENT' });
+    const wage = hr.calculateSalariesForMonth(2026, 11)[0]; const original = structuredClone(getDatabase());
+    expect(() => hr.updateWageRecord(wage.id, data as never)).toThrow();
+    expect(getDatabase()).toEqual(original);
+  });
+  it('does not spread extra settlement fields into salary records', () => {
+    const person = employee(); hr.markAttendance({ employeeId: person.id, attendanceDate: date, status: 'PRESENT' });
+    const wage = hr.calculateSalariesForMonth(2026, 11)[0];
+    const paid = hr.markWagePaid(wage.id, { paymentDate: date, paymentMode: 'Cash', employeeId: 'other', netSalary: 0 } as never);
+    expect(paid).toMatchObject({ employeeId: person.id, netSalary: 600, status: 'PAID' });
+  });
+  it('preserves zero-hour attendance in hourly summaries and salary calculations', () => {
+    const person = employee('HOURLY', 100);
+    workers.upsertWorkerAttendanceAndWage({ workerId: person.id, date, status: 'PRESENT', hoursWorked: 0 });
+    expect(hr.getAttendanceSummary(2026, 11)[0].totalHoursWorked).toBe(0);
+    expect(hr.calculateSalariesForMonth(2026, 11)[0].grossSalary).toBe(0);
+  });
   it('keeps hourly payroll and daily worker projections consistent', () => {
     const person = employee('HOURLY', 100);
     expect(workers.getWorkers().find(row => row.id === person.id)?.dailyWageRate).toBe(800);
@@ -47,15 +66,20 @@ describe('WB payroll control flow and cross-module invariants', () => {
     expect(getDatabase().wageEntries?.[0]).toMatchObject({ computedAmount: 600, paidStatus: 'PARTIAL' });
     expect(getDatabase().cropExpenses?.[0].amount).toBe(600);
   });
-  it('removes mirrored crop expenses when deleting an unpaid worker', () => {
+  it.each(['worker', 'hr'] as const)('%s deletion removes mirrored crop expenses for an unpaid worker', source => {
     const person = employee(); const crop = cycle();
     workers.upsertWorkerAttendanceAndWage({ workerId: person.id, date, status: 'PRESENT', cropCycleId: crop.id });
-    expect(workers.deleteWorker(person.id)).toBe(true);
+    expect(source === "worker" ? workers.deleteWorker(person.id) : hr.deleteEmployee(person.id, true)).toBe(true);
     expect(getDatabase().cropExpenses).toEqual([]);
   });
 });
 
 describe('WB referential integrity and mutation branches', () => {
+  it('validates computed numeric defaults instead of allowing overflow through the fallback path', () => expect(() => finiteNumber(undefined, 'Computed amount', 0, Infinity)).toThrow());
+  it('preserves low calendar years and rejects invalid next-day inputs', () => {
+    expect(daily.getNextDayKey('0099-12-31')).toBe('0100-01-01');
+    expect(() => daily.getNextDayKey('2026-02-30')).toThrow();
+  });
   it('retains a plot referenced by an existing crop cycle', () => {
     const land = plot(); cycle(land.id);
     expect(() => master.deletePlot(land.id)).toThrow();
@@ -109,5 +133,33 @@ describe('WB stock arithmetic boundaries', () => {
     godown.issueGodownItemToMenu({ godownItemId: stock.id, destinationMenu: 'General Purchases / Plot Ops', quantity: 0.1, date });
     expect(getDatabase().generalPurchaseLogs).toEqual([]);
     expect(getDatabase().godownMovements?.filter(row => row.movementType === 'ISSUE_TO_MENU')).toHaveLength(1);
+  });
+});
+
+describe('WB leave state transitions and provenance', () => {
+  it('applies attendance when a pending leave is approved', () => {
+    const person = employee();
+    const leave = hr.createLeave({ employeeId: person.id, fromDate: date, toDate: date, leaveType: 'CASUAL', totalDays: 1, status: 'PENDING' });
+    hr.updateLeave(leave.id, { status: 'APPROVED' });
+    expect(getDatabase().attendance[0]?.status).toBe('LEAVE');
+  });
+  it('restores pre-leave attendance and wages when approved leave is canceled', () => {
+    const person = employee(); hr.markAttendance({ employeeId: person.id, attendanceDate: date, status: 'PRESENT' });
+    const leave = hr.createLeave({ employeeId: person.id, fromDate: date, toDate: date, leaveType: 'CASUAL', totalDays: 1, status: 'APPROVED' });
+    hr.updateLeave(leave.id, { status: 'REJECTED' });
+    expect(getDatabase().attendance[0].status).toBe('PRESENT');
+    expect(getDatabase().wageEntries?.[0].computedAmount).toBe(600);
+  });
+  it('does not overwrite a later manual attendance correction when leave is removed', () => {
+    const person = employee();
+    const leave = hr.createLeave({ employeeId: person.id, fromDate: date, toDate: date, leaveType: 'CASUAL', totalDays: 1, status: 'APPROVED' });
+    hr.markAttendance({ employeeId: person.id, attendanceDate: date, status: 'HALF_DAY', notes: 'Manual correction' });
+    hr.deleteLeave(leave.id);
+    expect(getDatabase().attendance[0].status).toBe('HALF_DAY');
+  });
+  it.each([{ employeeId: 'missing' }, { leaveType: 'INVALID' }, { status: 'INVALID' }, { toDate: '2030-11-16' }])('rejects invalid leave branch %j before writing', changes => {
+    const person = employee();
+    expect(() => hr.createLeave({ employeeId: person.id, fromDate: date, toDate: date, leaveType: 'CASUAL', totalDays: 1, status: 'PENDING', ...changes } as never)).toThrow();
+    expect(getDatabase().leaves).toEqual([]);
   });
 });

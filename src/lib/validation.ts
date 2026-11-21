@@ -8,7 +8,7 @@ export function requiredText(value: unknown, label: string): string {
   return value.trim();
 }
 export function finiteNumber(value: unknown, label: string, minimum = 0, fallback?: number): number {
-  if (value === undefined && fallback !== undefined) return fallback;
+  if (value === undefined && fallback !== undefined) value = fallback;
   if ((typeof value !== 'number' && typeof value !== 'string') || value === '' || (typeof value === 'string' && !value.trim())) throw new ValidationError(`${label} must be a valid number.`);
   const result = Number(value);
   if (!Number.isFinite(result) || result < minimum || result > Number.MAX_SAFE_INTEGER) throw new ValidationError(`${label} must be at least ${minimum} and within the supported numeric range.`);

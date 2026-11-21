@@ -1,6 +1,7 @@
+import { testBaseURL } from './helpers';
 import { resetTestData, browserSignIn, testCredentials } from "./helpers";
 import { test, expect } from '@playwright/test';
-test.beforeEach(async ({ playwright }) => { const setup = await playwright.request.newContext({ baseURL: 'http://localhost:3107' }); try { await resetTestData(setup); } finally { await setup.dispose(); } });
+test.beforeEach(async ({ playwright }) => { const setup = await playwright.request.newContext({ baseURL: testBaseURL }); try { await resetTestData(setup); } finally { await setup.dispose(); } });
 
 test.describe('current-interface browser checks', () => {
   test('B01 rejects incorrect login credentials', async ({ page }) => {
@@ -15,7 +16,7 @@ test.describe('current-interface browser checks', () => {
   });
   test('B03 accepts configured login and loads dashboard', async ({ page }) => {
     await page.goto('/login'); await page.locator('#login-username').fill('Admin'); await page.locator('#login-password').fill(testCredentials.password);
-    await page.locator('#login-submit-btn').click(); await expect(page).toHaveURL('http://localhost:3107/');
+    await page.locator('#login-submit-btn').click(); await expect(page).toHaveURL(`${testBaseURL}/`);
     await expect(page.locator('main h1')).toContainText('Executive Dashboard');
   });
   test('B04 persisted plot is visible after a full page reload', async ({ page, context, request }) => {

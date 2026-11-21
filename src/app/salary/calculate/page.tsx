@@ -1,16 +1,19 @@
 "use client";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
-
-import { WageRecord } from "@/lib/hr-data";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
-Calculator,
-Check,
-CheckCircle2,
-Printer,
-ShieldAlert,
-X
+  Calculator,
+  Check,
+  CheckCircle2,
+  DollarSign,
+  Printer,
+  ShieldAlert,
 } from "lucide-react";
-import React,{ useCallback,useEffect,useState } from "react";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { WageRecord } from "@/lib/hr-data";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
+import { StatCard } from "@/components/ui/stat-card";
 
 export default function SalaryCalculatePage() {
   const now = new Date();
@@ -35,12 +38,17 @@ export default function SalaryCalculatePage() {
     "July", "August", "September", "October", "November", "December"
   ];
 
+  const adjustmentQueues = useRef(new Map<string, Promise<void>>());
+  const adjustmentRevisions = useRef(new Map<string, number>());
+  const confirmedWages = useRef(new Map<string, WageRecord>());
+
   // 1. Fetch Existing Calculated Wages for Year & Month
   const fetchWagesForPeriod = useCallback(async (yr: number, m: number) => {
     try {
       const res = await fetch(`/api/salary/calculate?year=${yr}&month=${m}`);
       if (res.ok) {
         const data = await res.json();
+        for (const record of data || []) confirmedWages.current.set(record.id, record);
         setWages(data || []);
       }
     } catch (e) {
@@ -50,10 +58,15 @@ export default function SalaryCalculatePage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchWagesForPeriod(year, month);
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchWagesForPeriod(year, month);
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, [year, month, fetchWagesForPeriod]);
 
   // 2. Trigger Calculation Engine
@@ -67,6 +80,7 @@ export default function SalaryCalculatePage() {
       });
       if (res.ok) {
         const data = await res.json();
+        for (const record of data) confirmedWages.current.set(record.id, record);
         setWages(data);
         setMsg({
           type: "success",
@@ -84,36 +98,40 @@ export default function SalaryCalculatePage() {
     }
   };
 
-  // 3. Inline Bonus / Deduction Adjustment with Live Net Salary Update
+  // Per-row queues preserve typing order even when earlier requests respond slowly.
   const handleRowAdjustment = async (wage: WageRecord, field: "bonus" | "deductions", val: number) => {
-    try {
-      const numericVal = Math.max(0, Number(val) || 0);
-      const updatedBonus = field === "bonus" ? numericVal : Number(wage.bonus || 0);
-      const updatedDeductions = field === "deductions" ? numericVal : Number(wage.deductions || 0);
-      const recalculatedNet = Math.max(0, Number(wage.grossSalary || 0) + updatedBonus - updatedDeductions);
-
-      const updatedWage = {
-        ...wage,
-        [field]: numericVal,
-        netSalary: recalculatedNet,
-      };
-
-      // Optimistically update local state immediately
-      setWages((prev) => prev.map((w) => (w.id === wage.id ? updatedWage : w)));
-
-      const res = await fetch(`/api/salary/pay/${wage.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedWage),
+    if (!confirmedWages.current.has(wage.id)) confirmedWages.current.set(wage.id, wage);
+    const revision = (adjustmentRevisions.current.get(wage.id) || 0) + 1;
+    adjustmentRevisions.current.set(wage.id, revision);
+    const numericVal = Math.max(0, Number(val) || 0);
+    const updated = { ...wage, [field]: numericVal };
+    updated.netSalary = Math.max(0, updated.grossSalary + updated.bonus - updated.deductions);
+    setWages((previous) => previous.map((row) => (row.id === wage.id ? updated : row)));
+    const previous = adjustmentQueues.current.get(wage.id) || Promise.resolve();
+    const pending = previous
+      .catch(() => {})
+      .then(async () => {
+        const response = await fetch(`/api/salary/pay/${wage.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [field]: numericVal }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to save salary adjustment.");
+        confirmedWages.current.set(wage.id, data);
+        if (adjustmentRevisions.current.get(wage.id) === revision) {
+          setWages((rows) => rows.map((row) => (row.id === wage.id ? data : row)));
+        }
+      })
+      .catch((error) => {
+        if (adjustmentRevisions.current.get(wage.id) !== revision) return;
+        const confirmed = confirmedWages.current.get(wage.id)!;
+        setWages((rows) => rows.map((row) => (row.id === wage.id ? confirmed : row)));
+        setMsg({ type: "error", text: getErrorMessage(error) || "Unable to save salary adjustment." });
       });
-
-      if (res.ok) {
-        const saved = await res.json();
-        setWages((prev) => prev.map((w) => (w.id === saved.id ? saved : w)));
-      }
-    } catch (e) {
-      console.error("Adjustment failed", e);
-    }
+    adjustmentQueues.current.set(wage.id, pending);
+    await pending;
+    if (adjustmentQueues.current.get(wage.id) === pending) adjustmentQueues.current.delete(wage.id);
   };
 
   // 4. Open Settlement Modal
@@ -165,176 +183,200 @@ export default function SalaryCalculatePage() {
   const totalNet = wages.reduce((acc, w) => acc + Number(w.netSalary || 0), 0);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-900 text-white rounded-xl shadow-xs">
-              <Calculator className="w-5 h-5 text-emerald-300" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">Salary & Wages Calculation Engine</h1>
-              <p className="text-xs text-slate-500">
-                Automated monthly salary computation based on verified attendance records & wage rates.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+    <PageContainer>
+      <PageHeader
+        title="Salary & Wages Engine"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Staff Roster", href: "/employees" },
+          { label: "Salary Calculation" },
+        ]}
+        actions={
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] text-xs font-medium rounded-lg transition-colors shadow-2xs"
           >
-            <Printer className="w-3.5 h-3.5" /> Print Payslips
+            <Printer className="w-3.5 h-3.5 text-[#64748B]" /> Print Payslips
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {msg && (
         <div
-          className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+          className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 ${
             msg.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-              : "bg-rose-50 text-rose-800 border-rose-200"
+              ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]"
+              : "bg-red-50 text-red-800 border-red-200"
           }`}
         >
           {msg.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#174D3C] shrink-0" />
           ) : (
-            <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
+            <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
           )}
           <span>{msg.text}</span>
         </div>
       )}
 
-      {/* Selector & Calculation Trigger */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-slate-700">Select Month:</span>
-            <select
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-              className="p-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800"
-            >
-              {monthNames.map((m, idx) => (
-                <option key={idx} value={idx + 1}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-slate-700">Year:</span>
-            <select
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-              className="p-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800"
-            >
-              <option value={2025}>2025</option>
-              <option value={2026}>2026</option>
-              <option value={2027}>2027</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-slate-700">Standard Working Days:</span>
-            <input
-              type="number"
-              min="1"
-              max="31"
-              value={workingDays}
-              onChange={(e) => setWorkingDays(Number(e.target.value))}
-              className="w-16 p-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 text-center"
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={handleCompute}
-          disabled={loading}
-          className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 hover:scale-[1.02]"
-        >
-          <Calculator className="w-4 h-4" />
-          {loading ? "Computing..." : `Calculate Salaries for ${monthNames[month - 1]}`}
-        </button>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatCard
+          title="Gross Payroll"
+          value={`₹${totalGross.toLocaleString()}`}
+          subtitle={`${wages.length} calculated payslips`}
+          icon={DollarSign}
+        />
+        <StatCard
+          title="Total Bonuses"
+          value={`₹${totalBonus.toLocaleString()}`}
+          subtitle="Incentives added"
+          isPositive={true}
+        />
+        <StatCard
+          title="Total Deductions"
+          value={`₹${totalDeductions.toLocaleString()}`}
+          subtitle="Advances & penalties"
+        />
+        <StatCard
+          title="Net Payable Sum"
+          value={`₹${totalNet.toLocaleString()}`}
+          subtitle="Total disbursement"
+        />
       </div>
 
-      {/* Salary Results Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-              <tr>
-                <th className="p-3.5">Employee</th>
-                <th className="p-3.5">Designation</th>
-                <th className="p-3.5">Wage Basis</th>
-                <th className="p-3.5 text-center">Days Present</th>
-                <th className="p-3.5 text-right">Gross (₹)</th>
-                <th className="p-3.5 text-center">Bonus (₹)</th>
-                <th className="p-3.5 text-center">Deductions (₹)</th>
-                <th className="p-3.5 text-right font-bold">Net Salary (₹)</th>
-                <th className="p-3.5 text-center">Status</th>
-                <th className="p-3.5 text-center">Action</th>
+      {/* Period Selector & Trigger Card */}
+      <ContentCard>
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-[#64748B]">Month:</span>
+              <select
+                value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}
+                className="p-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#111827] focus:ring-1 focus:ring-[#174D3C]"
+              >
+                {monthNames.map((m, idx) => (
+                  <option key={idx} value={idx + 1}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-[#64748B]">Year:</span>
+              <select
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="p-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#111827] focus:ring-1 focus:ring-[#174D3C]"
+              >
+                <option value={2025}>2025</option>
+                <option value={2026}>2026</option>
+                <option value={2027}>2027</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-[#64748B]">Standard Days:</span>
+              <input
+                type="number"
+                min="1"
+                max="31"
+                value={workingDays}
+                onChange={(e) => setWorkingDays(Number(e.target.value))}
+                className="w-14 p-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#111827] text-center"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={handleCompute}
+            disabled={loading}
+            className="px-4 py-2 bg-[#174D3C] hover:bg-[#103C30] text-white font-semibold text-xs rounded-lg shadow-2xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Calculator className="w-3.5 h-3.5" />
+            {loading ? "Computing..." : `Calculate Salaries for ${monthNames[month - 1]}`}
+          </button>
+        </div>
+      </ContentCard>
+
+      {/* Salary Results Table Card */}
+      <ContentCard
+        title="Payroll Calculation Register"
+        badge={`${wages.length} records`}
+      >
+        <div className="overflow-x-auto -mx-6">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                <th className="py-2.5 px-4 font-medium">Employee</th>
+                <th className="py-2.5 px-4 font-medium">Designation</th>
+                <th className="py-2.5 px-4 font-medium">Wage Rate</th>
+                <th className="py-2.5 px-4 font-medium text-center">Days Present</th>
+                <th className="py-2.5 px-4 font-medium text-right">Gross (₹)</th>
+                <th className="py-2.5 px-4 font-medium text-center">Bonus (₹)</th>
+                <th className="py-2.5 px-4 font-medium text-center">Deductions (₹)</th>
+                <th className="py-2.5 px-4 font-medium text-right">Net Salary (₹)</th>
+                <th className="py-2.5 px-4 font-medium text-center">Status</th>
+                <th className="py-2.5 px-4 font-medium text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
               {wages.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-400 font-medium">
+                  <td colSpan={10} className="py-8 px-4 text-center text-[#64748B]">
                     No salary records calculated for {monthNames[month - 1]} {year}. Click &quot;Calculate Salaries&quot; above to compute payroll from attendance logs.
                   </td>
                 </tr>
               ) : (
                 wages.map((w) => (
-                  <tr key={w.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-3.5 font-bold text-slate-900">{w.employeeName}</td>
-                    <td className="p-3.5 text-slate-600">{w.roleName}</td>
-                    <td className="p-3.5 text-slate-700">
+                  <tr key={w.id} className="hover:bg-[#F8FAFC] transition-colors">
+                    <td className="py-3 px-4 font-semibold text-[#111827] text-xs">{w.employeeName}</td>
+                    <td className="py-3 px-4 text-[#475569] text-xs">{w.roleName}</td>
+                    <td className="py-3 px-4 text-[#475569] font-mono text-xs">
                       ₹{Number(w.wageRate).toLocaleString()}{" "}
-                      <span className="text-[11px] text-slate-500 font-mono">({w.wageType})</span>
+                      <span className="text-[10px] text-[#94A3B8]">({w.wageType})</span>
                     </td>
-                    <td className="p-3.5 text-center font-bold text-slate-800 font-mono">
+                    <td className="py-3 px-4 text-center font-mono font-medium text-[#111827] text-xs">
                       {w.presentDays} / {w.workingDays} d
                     </td>
-                    <td className="p-3.5 text-right font-bold text-slate-900">
+                    <td className="py-3 px-4 text-right font-mono font-medium text-[#111827] text-xs">
                       ₹{Number(w.grossSalary).toLocaleString()}
                     </td>
 
-                    <td className="p-3.5 text-center">
+                    <td className="py-3 px-4 text-center">
                       <input
                         type="number"
                         min="0"
+                        aria-label={`Bonus for ${w.employeeName}`}
                         value={w.bonus || ""}
                         placeholder="0"
                         onChange={(e) => handleRowAdjustment(w, "bonus", Number(e.target.value))}
-                        className="w-20 p-1 bg-slate-50 border border-slate-300 rounded-lg text-center font-semibold text-emerald-800 text-xs"
+                        className="w-18 p-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-md text-center font-semibold text-[#174D3C] text-xs focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
                       />
                     </td>
 
-                    <td className="p-3.5 text-center">
+                    <td className="py-3 px-4 text-center">
                       <input
                         type="number"
                         min="0"
+                        aria-label={`Deductions for ${w.employeeName}`}
                         value={w.deductions || ""}
                         placeholder="0"
                         onChange={(e) => handleRowAdjustment(w, "deductions", Number(e.target.value))}
-                        className="w-20 p-1 bg-slate-50 border border-slate-300 rounded-lg text-center font-semibold text-rose-800 text-xs"
+                        className="w-18 p-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-md text-center font-semibold text-rose-700 text-xs focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
                       />
                     </td>
 
-                    <td className="p-3.5 text-right font-extrabold text-emerald-900 text-sm">
+                    <td className="py-3 px-4 text-right font-mono font-bold text-[#174D3C] text-xs">
                       ₹{Number(w.netSalary).toLocaleString()}
                     </td>
 
-                    <td className="p-3.5 text-center">
+                    <td className="py-3 px-4 text-center">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
                           w.status === "PAID"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]"
                             : "bg-amber-50 text-amber-800 border-amber-200"
                         }`}
                       >
@@ -342,17 +384,17 @@ export default function SalaryCalculatePage() {
                       </span>
                     </td>
 
-                    <td className="p-3.5 text-center">
+                    <td className="py-3 px-4 text-center">
                       {w.status !== "PAID" ? (
                         <button
                           id={`pay-btn-${w.id}`}
                           onClick={() => openPayModal(w)}
-                          className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-xs shadow-2xs transition-colors"
+                          className="px-2.5 py-1 bg-white hover:bg-[#F8FAFC] text-[#174D3C] border border-[#C5DEC8] hover:border-[#174D3C] font-medium rounded-md text-xs transition-colors shadow-2xs"
                         >
                           Settle Pay
                         </button>
                       ) : (
-                        <div className="text-[11px] text-emerald-700 font-semibold flex items-center justify-center gap-1">
+                        <div className="text-[11px] text-[#174D3C] font-medium flex items-center justify-center gap-1">
                           <Check className="w-3.5 h-3.5" />
                           <span>{w.paymentMode || "Settled"}</span>
                         </div>
@@ -365,15 +407,15 @@ export default function SalaryCalculatePage() {
 
             {/* Totals Summary */}
             {wages.length > 0 && (
-              <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300 text-slate-900">
+              <tfoot className="bg-[#F8FAFC] font-semibold border-t border-[#E2E8F0] text-[#111827]">
                 <tr>
-                  <td colSpan={4} className="p-3.5 uppercase tracking-wider text-right">
-                    Total Payroll Sum:
+                  <td colSpan={4} className="py-2.5 px-4 uppercase text-[11px] tracking-wider text-right text-[#64748B]">
+                    Payroll Totals:
                   </td>
-                  <td className="p-3.5 text-right text-slate-900">₹{totalGross.toLocaleString()}</td>
-                  <td className="p-3.5 text-center text-emerald-800">+₹{totalBonus.toLocaleString()}</td>
-                  <td className="p-3.5 text-center text-rose-800">-₹{totalDeductions.toLocaleString()}</td>
-                  <td className="p-3.5 text-right text-emerald-950 text-sm font-extrabold">
+                  <td className="py-2.5 px-4 text-right font-mono text-xs">₹{totalGross.toLocaleString()}</td>
+                  <td className="py-2.5 px-4 text-center font-mono text-xs text-[#174D3C]">+₹{totalBonus.toLocaleString()}</td>
+                  <td className="py-2.5 px-4 text-center font-mono text-xs text-rose-700">-₹{totalDeductions.toLocaleString()}</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-xs font-bold text-[#174D3C]">
                     ₹{totalNet.toLocaleString()}
                   </td>
                   <td colSpan={2}></td>
@@ -382,119 +424,95 @@ export default function SalaryCalculatePage() {
             )}
           </table>
         </div>
-      </div>
+      </ContentCard>
 
       {/* Settlement Payment Modal */}
       {isPayModalOpen && selectedWage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 shadow-xl border border-[#E2E8F0] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Settle Salary Payment</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="text-sm font-semibold text-[#111827]">Settle Salary Payment</h3>
+                <p className="text-xs text-[#64748B]">
                   {selectedWage.employeeName} &bull; {monthNames[selectedWage.month - 1]} {selectedWage.year}
                 </p>
               </div>
-              <button
-                onClick={() => setIsPayModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <button onClick={() => setIsPayModalOpen(false)} className="text-[#64748B] hover:text-[#111827] text-sm font-bold">✕</button>
             </div>
 
-            <div className="p-3.5 bg-slate-50 rounded-xl space-y-1.5 text-xs font-semibold">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Gross Salary:</span>
-                <span className="font-bold text-slate-900">₹{Number(selectedWage.grossSalary).toLocaleString()}</span>
-              </div>
-              {selectedWage.bonus > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-emerald-700">Bonus:</span>
-                  <span className="font-bold text-emerald-700">+₹{Number(selectedWage.bonus).toLocaleString()}</span>
-                </div>
-              )}
-              {selectedWage.deductions > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-rose-700">Deductions:</span>
-                  <span className="font-bold text-rose-700">-₹{Number(selectedWage.deductions).toLocaleString()}</span>
-                </div>
-              )}
-              <div className="flex justify-between pt-1.5 border-t border-slate-200">
-                <span className="text-slate-800 font-bold">Net Salary Payable:</span>
-                <span className="font-black text-emerald-800 text-sm">
+            <form onSubmit={handleConfirmPayment} className="space-y-3.5 text-xs">
+              <div className="p-3 bg-[#EAF3EE] rounded-lg border border-[#C5DEC8] flex items-center justify-between">
+                <span className="text-[#64748B] font-medium">Net Payout Amount:</span>
+                <span className="text-sm font-bold text-[#174D3C] font-mono">
                   ₹{Number(selectedWage.netSalary).toLocaleString()}
                 </span>
               </div>
-            </div>
 
-            <form onSubmit={handleConfirmPayment} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Payment Date *</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Disbursement Date</label>
                 <input
                   type="date"
                   required
                   value={paymentDate}
                   onChange={(e) => setPaymentDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Payment Mode *</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Payment Channel</label>
                 <select
                   value={paymentMode}
                   onChange={(e) => setPaymentMode(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium bg-white"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                 >
-                  <option value="Bank Transfer">Bank Transfer (NEFT/RTGS)</option>
-                  <option value="UPI">UPI (Google Pay / PhonePe)</option>
-                  <option value="Cash">Cash in Hand</option>
-                  <option value="Cheque">Cheque</option>
+                  <option value="Bank Transfer">Bank Transfer (NEFT/IMPS)</option>
+                  <option value="Cash">Cash Voucher</option>
+                  <option value="UPI">UPI Payment</option>
+                  <option value="Cheque">Bank Cheque</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Reference / Transaction ID</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Reference / UTR Number</label>
                 <input
                   type="text"
-                  placeholder="e.g. UTR12345678, IMPS Ref, or Cheque No"
+                  required
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] font-mono"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Notes / Remarks</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Notes & Settlement Remarks</label>
                 <input
                   type="text"
-                  placeholder="Optional payout notes"
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={() => setIsPayModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                  className="px-3.5 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F1F5F9] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
+                  className="px-4 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white font-semibold text-xs rounded-lg shadow-2xs transition-colors"
                 >
-                  Confirm Payout (₹{Number(selectedWage.netSalary).toLocaleString()})
+                  Confirm & Mark Paid
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

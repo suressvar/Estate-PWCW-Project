@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const disk = vi.hoisted(() => ({ raw: '', exists: true, mtime: 1, failWrite: false, failRename: false, lockFailures: 0, renameAttempts: 0, temporary: '', backup: '', writes: 0 }));
+const disk = vi.hoisted(() => ({ raw: '', exists: true, mtime: 1, failWrite: false, failRename: false, lockFailures: 0, lockOpenFailures: 0, lockReleaseFailures: 0, renameAttempts: 0, temporary: '', backup: '', writes: 0 }));
 vi.mock('node:fs', () => ({ default: {
-  existsSync: (file: string) => file.endsWith('.json') ? disk.exists : true,
+  existsSync: (file: string) => file.endsWith('.json') ? disk.exists : file.endsWith('.bak') ? Boolean(disk.backup) : true,
   readFileSync: () => disk.raw,
   statSync: () => ({ mtimeMs: disk.mtime }),
   mkdirSync: vi.fn(),
-  openSync: () => 1,
+  openSync: () => { if (disk.lockOpenFailures-- > 0) throw Object.assign(new Error('Temporary Windows lock'), { code: 'EPERM' }); return 1; },
   closeSync: vi.fn(),
-  unlinkSync: vi.fn(),
+  unlinkSync: () => { if (disk.lockReleaseFailures-- > 0) throw Object.assign(new Error('Temporary Windows lock'), { code: 'EPERM' }); },
   writeFileSync: (_file: string, value: string) => {
     if (disk.failWrite) throw new Error('Disk full');
     disk.temporary = value; disk.writes++;
@@ -23,10 +23,35 @@ vi.mock('node:fs', () => ({ default: {
 } }));
 const load = () => vi.importActual<typeof import('../src/lib/db-storage')>('../src/lib/db-storage');
 beforeEach(() => {
-  vi.resetModules(); disk.raw = '{}'; disk.exists = true; disk.mtime = 1; disk.failWrite = false; disk.failRename = false; disk.lockFailures = 0; disk.renameAttempts = 0; disk.temporary = ''; disk.backup = ''; disk.writes = 0;
+  vi.resetModules(); disk.raw = '{}'; disk.exists = true; disk.mtime = 1; disk.failWrite = false; disk.failRename = false; disk.lockFailures = 0; disk.lockOpenFailures = 0; disk.lockReleaseFailures = 0; disk.renameAttempts = 0; disk.temporary = ''; disk.backup = ''; disk.writes = 0;
 });
 
 describe('storage (virtual filesystem only)', () => {
+  it('retries transient Windows lock acquisition and release failures', async () => {
+    const storage = await load(); disk.lockOpenFailures = 2; disk.lockReleaseFailures = 2;
+    storage.withTransaction(() => { const db = storage.getDatabase(); db.plots.push({ id: 'retry' } as never); storage.saveDatabase(db); });
+    expect(JSON.parse(disk.raw).plots[0].id).toBe('retry');
+    expect(disk.writes).toBe(1);
+  });
+  it('does not resurrect deleted equipment when an empty machine collection is loaded', async () => {
+    disk.raw = '{"machines":[]}'; expect((await load()).getDatabase().machines).toEqual([]);
+  });
+  it('fails closed if an already loaded storage file disappears', async () => {
+    const storage = await load(); storage.getDatabase(); disk.exists = false;
+    expect(() => storage.getDatabase()).toThrow(/missing/); expect(disk.writes).toBe(0);
+  });
+  it('does not commit a nested operation that failed even if the outer callback catches it', async () => {
+    const storage = await load(); const original = disk.raw;
+    expect(() => storage.withTransaction(() => {
+      try { storage.withTransaction(() => { const db = storage.getDatabase(); db.plots.push({ id: 'partial' } as never); storage.saveDatabase(db); throw new Error('Rejected'); }); } catch { /* outer work cannot swallow an aborted transaction */ }
+    })).toThrow(/aborted/);
+    expect(disk.raw).toBe(original); expect(disk.writes).toBe(0);
+  });
+  it('rejects asynchronous callbacks before they can start changing records', async () => {
+    const storage = await load(); let started = false;
+    expect(() => storage.withTransaction(async () => { started = true; })).toThrow(/synchronous/);
+    expect(started).toBe(false);
+  });
   it('fills missing collections and default categories for older records', async () => {
     disk.raw = JSON.stringify({ crops: [{ type: 'CUSTOM' }], ledgerGroups: [{ groupType: 'CUSTOM' }] });
     const db = (await load()).getDatabase();

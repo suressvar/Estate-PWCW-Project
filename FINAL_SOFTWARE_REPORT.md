@@ -1,6 +1,8 @@
 # Final software repair and verification report
 
-Date: 17 November 2026 (Asia/Kolkata). Test runs completed during 16–17 November 2026.
+Date: 21 November 2026 (Asia/Kolkata). Updated after black-box testing and the full regression pass.
+
+See [BLACK_BOX_TEST_REPORT.md](BLACK_BOX_TEST_REPORT.md) for the latest public-interface findings, repairs and remaining verification limits.
 
 ## Assessment: 94 / 100, improved from 88 / 100 (original baseline: 40 / 100)
 
@@ -21,11 +23,11 @@ The score weights business risk and verification scope; it is not the percentage
 
 | Suite | Passed | Failed | Total |
 | --- | ---: | ---: | ---: |
-| Unit, component, storage, authentication and direct-handler tests | 447 | 0 | 447 |
-| Production HTTP integration, validation and browser suite | 86 | 0 | 86 |
+| Unit, component, storage, authentication and direct-handler tests | 517 | 0 | 517 |
+| Production HTTP integration, validation and browser suite | 239 | 0 | 239 |
 | Updated existing repository suite | 50 | 0 | 50 |
-| Firefox and WebKit browser compatibility | 40 | 0 | 40 |
-| **Combined** | **623** | **0** | **623** |
+| Firefox and WebKit browser compatibility | 42 | 0 | 42 |
+| **Combined** | **848** | **0** | **848** |
 
 No tests are skipped. Some suites exercise overlapping behavior; this is not a count of unique requirements.
 
@@ -36,6 +38,8 @@ No tests are skipped. Some suites exercise overlapping behavior; this is not a c
 | Access control and session behavior | 9 | 0 | 9 |
 | Current-interface browser checks | 20 | 0 | 20 |
 | Additional hardening, mobile and bounded-load checks | 7 | 0 | 7 |
+| White-box regression workflows over HTTP | 6 | 0 | 6 |
+| Additional black-box boundary, recovery, browser and session checks | 147 | 0 | 147 |
 
 | Additional gate | Result |
 | --- | --- |
@@ -43,15 +47,32 @@ No tests are skipped. Some suites exercise overlapping behavior; this is not a c
 | TypeScript | Passed |
 | Full-project ESLint | 0 errors, 0 warnings |
 | Full installed-dependency security audit | 0 known advisories |
-| Original estate data preservation | Identical SHA-256 before and after testing |
+| Estate data preservation during the final run | Identical SHA-256 before and after testing |
 | Tested build versus current application source | Matching source fingerprints |
 
 ## What changed
 
+### Black-box repairs on 21 November
+
+- Plot and crop saves retain entered values after rejection, display server errors and prevent repeat submissions while pending. Related assignment/category actions now check acceptance before updating their views.
+- Sales, purchase, attendance, inventory, workforce and consolidated CSV exports share field quoting and formula-text protection. Downloads preserve commas, quotes, line breaks, Unicode, hash characters and zero amounts.
+- Logout discards the client router cache, protected responses request no storage, and restored browser documents reauthenticate with the server. A rejected logout shows feedback and retains the current session.
+- Failed plot/crop register loads retain prior data and offer a working retry instead of crashing on an error response.
+- Operational logs reject negative, nonnumeric, overflowing and invalid-date entries before saving. Fuel records retain plot/equipment/operator details and display the saved quantity; fractional fuel issues are available in the form. Restored accessible quantity and time-input labels.
+- Added public-boundary tests, recovery scenarios and cross-browser logout history checks. Retested the latest parallel layout changes; protected the test evidence from shared-folder cleanup.
+
+### White-box repairs on 21 November
+
+- Corrected hourly payroll projection, historical attendance earnings, paid-wage safeguards, employee/worker deletion cleanup and leave approval/cancellation restoration.
+- Made daily master-sheet submissions atomic, including late failures, and preserved explicit zero input values. Rejected inconsistent relationships and invalid enum/date/numeric inputs across the reviewed write paths.
+- Preserved fractional stock quantities and stopped internal stock transfers from creating supplier purchases. Protected referenced plots and server-derived salary fields.
+- Prevented swallowed nested transaction failures from committing partial data; hardened Windows lock retries, missing-file handling and cache invalidation. Salary edits now save in order and roll back visibly after rejection.
+- Added targeted regression coverage and four selected mutation probes. Updated the vulnerable Effect dependency to 3.22.1 and removed the unused Tremor dependency that conflicted with installation.
+
 ### Additional repairs and evidence since the 88/100 assessment
 
-- Unit/component/direct-handler tests increased from 236 to 447. Whole-source unit line coverage increased from 27.84% to 61.6% without removing additional files from coverage. Branch coverage increased from 19.82% to 42.51%. Enforced coverage floors are 60% lines, 59% statements, 48% functions and 40% branches.
-- Core-library line coverage (including financial, authentication, storage and other src/lib modules) is 86.55% (2381/2751 lines). The whole-source figure also includes application pages, API handlers and shared controls.
+- Unit/component/direct-handler tests increased from 236 to 517. Whole-source unit line coverage increased from 27.84% to 64.02% without removing additional files from coverage. Branch coverage increased from 19.82% to 45.42%. Enforced coverage floors are 60% lines, 59% statements, 48% functions and 40% branches.
+- Core-library line coverage (including financial, authentication, storage and other src/lib modules) is 88.01% (2495/2835 lines). The whole-source figure also includes application pages, API handlers and shared controls.
 - Added empty and populated scenarios for all 49 application page files (some are aliases), real-handler resource CRUD checks, form saves/cancellations, navigation tests, rejected-save feedback and targeted financial regressions. Page loading checks do not assert every possible interaction.
 - Replaced millisecond-only record and invoice group IDs with UUID-based identities. Rapid creation no longer collides. Updates reject primary-key replacement.
 - Printed invoice references retain the full unique group identity. Persisted reference counters prevent row/voucher numbers being reused after deletion, and duplicate custom references are rejected. Bulk sales deletion requires an explicit, backed-up Settings reset.
@@ -104,34 +125,38 @@ Only one administrator account is currently enabled. The role-template page is r
 
 | Unit coverage metric | Covered | Total | Coverage |
 | --- | ---: | ---: | ---: |
-| Lines | 5563 | 9030 | 61.6% |
-| Statements | 6231 | 10326 | 60.34% |
-| Functions | 1411 | 2835 | 49.77% |
-| Branches | 3610 | 8491 | 42.51% |
+| Lines | 6053 | 9454 | 64.02% |
+| Statements | 6716 | 10744 | 62.5% |
+| Functions | 1505 | 2882 | 52.22% |
+| Branches | 4066 | 8952 | 45.42% |
 
 - Unit coverage includes untested application pages; a clean suite does not mean complete source coverage. Browser route checks also do not verify every control on every page.
 - Writer coordination is verified on local disk with cooperating application processes. Distributed hosts, network filesystems, sustained load and production-sized datasets were not benchmarked. A process terminated while holding a lock leaves it in place: stop all application processes, verify the backup and remove only data/estate-storage.lock before restarting. Do not remove a live writer's lock. Prefer a transactional database for distributed deployment.
 - Authentication intentionally supports one administrator. Multiple accounts, role enforcement for additional users, centralized per-session revocation and external identity providers remain outside the implemented scope. Password rotation invalidates existing sessions; browser logout alone does not centrally revoke a copied token before expiry.
 - HTTPS hosting configuration, independent penetration testing, full accessibility auditing, exhaustive mobile/cross-browser interactions and external database/service integrations remain unverified. No claim of regulatory or accounting certification is made.
 - Storage fault injection uses a virtual filesystem; separate real-file tests verify recovery and local process coordination. HTTP/browser workflows run against real isolated disk storage.
-- No deployment or migration of existing estate records was performed. Unit coverage remains 61.6% of lines and 42.51% of branches. These explicit gaps prevent an honest 100/100 claim.
+- No deployment or migration of existing estate records was performed. Unit coverage remains 64.02% of lines and 45.42% of branches. These explicit gaps prevent an honest 100/100 claim.
 
 ## Evidence and data preservation
 
+The following evidence paths are relative to: C:/Users/Suressvar/.codex/visualizations/2026/11/15/01a1de5c-0a4c-7b70-b3a8-f859a9796134/black-box-evidence.
+
 - Browser reports: integration-report/index.html, legacy-browser-report/index.html and cross-browser-report/index.html.
 - Unit coverage: coverage/index.html and coverage/coverage-summary.json.
-- Structured results: test-results.json, integration-results.json, legacy-browser-results.json and cross-browser-results.json. The previous 88/100 report is retained as PREVIOUS_SOFTWARE_REPORT_88.md.
+- Structured results: test-results.json, integration-results.json, legacy-browser-results.json and cross-browser-results.json.
 - Additional logs: integration-build-output.txt, fix-typecheck.txt, fix-lint.json and dependency-audit-final.json.
-- Original data SHA-256 before: 39e0824943bd7de89b9db485e5f4dd104adef415b71a2c1c67c27542d698b666
-- Original data SHA-256 after: 39e0824943bd7de89b9db485e5f4dd104adef415b71a2c1c67c27542d698b666
+- Estate data SHA-256 at the start of the final run: 5debbd1abd3aa420c34a1c7ec9ed5b520a9e74adf1961c85b7cbb0efa3ad4b64
+- Estate data SHA-256 after the final run: 5debbd1abd3aa420c34a1c7ec9ed5b520a9e74adf1961c85b7cbb0efa3ad4b64
 
-All destructive test operations ran in the marked isolated copy on port 3107. Existing application edits were preserved. The original estate data was not copied into the tests or modified by the test runs.
+All destructive test operations ran in the marked isolated copy .black-box-app on port 3117. Existing application edits were preserved. The original estate data was not copied into the tests or modified by the test runs.
 
 ## Reproduce
 
 ~~~text
-npm ci --legacy-peer-deps
-npm run setup:security
+$env:TEST_APP_DIR = '.black-box-app'
+$env:TEST_SERVER_PORT = '3117'
+$env:TEST_EVIDENCE_DIR = 'C:\Users\Suressvar\.codex\visualizations\2026\11\15\01a1de5c-0a4c-7b70-b3a8-f859a9796134\black-box-evidence'
+npm ci
 npm run lint
 npx tsc --noEmit
 npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
@@ -158,6 +183,153 @@ Run the production suites sequentially. Install the corresponding Chromium, Fire
 | integration-validation: S07 signed-in cross-site writes are rejected | passed |
 | integration-validation: S08 logout removes browser authentication | passed |
 | integration-validation: S09 session cookie is inaccessible to scripts and same-site restricted | passed |
+| integration-validation: BB operational boundary /api/diesel-logs: negative cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/diesel-logs: nonnumeric cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/diesel-logs: overflow cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/diesel-logs: date cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/fertilizer-logs: negative cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/fertilizer-logs: nonnumeric cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/fertilizer-logs: overflow cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/fertilizer-logs: date cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/machinery-logs: negative cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/machinery-logs: nonnumeric cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/machinery-logs: overflow cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/machinery-logs: date cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/production-logs: negative cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/production-logs: nonnumeric cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/production-logs: overflow cannot corrupt the register | passed |
+| integration-validation: BB operational boundary /api/production-logs: date cannot corrupt the register | passed |
+| integration-validation: BB fuel dispatch retains the selected plot, equipment, quantity and operator | passed |
+| integration-validation: BB fractional diesel issue is available through the public form | passed |
+| integration-validation: BB session history is reauthenticated after logout in each browser | passed |
+| integration-validation: BB input null at /api/plots returns a client error | passed |
+| integration-validation: BB input array at /api/plots returns a client error | passed |
+| integration-validation: BB input boolean at /api/plots returns a client error | passed |
+| integration-validation: BB input string at /api/plots returns a client error | passed |
+| integration-validation: BB input malformed at /api/plots returns a client error | passed |
+| integration-validation: BB input null at /api/crops returns a client error | passed |
+| integration-validation: BB input array at /api/crops returns a client error | passed |
+| integration-validation: BB input boolean at /api/crops returns a client error | passed |
+| integration-validation: BB input string at /api/crops returns a client error | passed |
+| integration-validation: BB input malformed at /api/crops returns a client error | passed |
+| integration-validation: BB input null at /api/employees returns a client error | passed |
+| integration-validation: BB input array at /api/employees returns a client error | passed |
+| integration-validation: BB input boolean at /api/employees returns a client error | passed |
+| integration-validation: BB input string at /api/employees returns a client error | passed |
+| integration-validation: BB input malformed at /api/employees returns a client error | passed |
+| integration-validation: BB input null at /api/workers returns a client error | passed |
+| integration-validation: BB input array at /api/workers returns a client error | passed |
+| integration-validation: BB input boolean at /api/workers returns a client error | passed |
+| integration-validation: BB input string at /api/workers returns a client error | passed |
+| integration-validation: BB input malformed at /api/workers returns a client error | passed |
+| integration-validation: BB input null at /api/expenses returns a client error | passed |
+| integration-validation: BB input array at /api/expenses returns a client error | passed |
+| integration-validation: BB input boolean at /api/expenses returns a client error | passed |
+| integration-validation: BB input string at /api/expenses returns a client error | passed |
+| integration-validation: BB input malformed at /api/expenses returns a client error | passed |
+| integration-validation: BB input null at /api/machines returns a client error | passed |
+| integration-validation: BB input array at /api/machines returns a client error | passed |
+| integration-validation: BB input boolean at /api/machines returns a client error | passed |
+| integration-validation: BB input string at /api/machines returns a client error | passed |
+| integration-validation: BB input malformed at /api/machines returns a client error | passed |
+| integration-validation: BB input null at /api/operation-items returns a client error | passed |
+| integration-validation: BB input array at /api/operation-items returns a client error | passed |
+| integration-validation: BB input boolean at /api/operation-items returns a client error | passed |
+| integration-validation: BB input string at /api/operation-items returns a client error | passed |
+| integration-validation: BB input malformed at /api/operation-items returns a client error | passed |
+| integration-validation: BB input null at /api/godown/items returns a client error | passed |
+| integration-validation: BB input array at /api/godown/items returns a client error | passed |
+| integration-validation: BB input boolean at /api/godown/items returns a client error | passed |
+| integration-validation: BB input string at /api/godown/items returns a client error | passed |
+| integration-validation: BB input malformed at /api/godown/items returns a client error | passed |
+| integration-validation: BB input null at /api/ledger-groups returns a client error | passed |
+| integration-validation: BB input array at /api/ledger-groups returns a client error | passed |
+| integration-validation: BB input boolean at /api/ledger-groups returns a client error | passed |
+| integration-validation: BB input string at /api/ledger-groups returns a client error | passed |
+| integration-validation: BB input malformed at /api/ledger-groups returns a client error | passed |
+| integration-validation: BB input null at /api/expense-ledgers returns a client error | passed |
+| integration-validation: BB input array at /api/expense-ledgers returns a client error | passed |
+| integration-validation: BB input boolean at /api/expense-ledgers returns a client error | passed |
+| integration-validation: BB input string at /api/expense-ledgers returns a client error | passed |
+| integration-validation: BB input malformed at /api/expense-ledgers returns a client error | passed |
+| integration-validation: BB input null at /api/employee-roles returns a client error | passed |
+| integration-validation: BB input array at /api/employee-roles returns a client error | passed |
+| integration-validation: BB input boolean at /api/employee-roles returns a client error | passed |
+| integration-validation: BB input string at /api/employee-roles returns a client error | passed |
+| integration-validation: BB input malformed at /api/employee-roles returns a client error | passed |
+| integration-validation: BB input null at /api/expense-units returns a client error | passed |
+| integration-validation: BB input array at /api/expense-units returns a client error | passed |
+| integration-validation: BB input boolean at /api/expense-units returns a client error | passed |
+| integration-validation: BB input string at /api/expense-units returns a client error | passed |
+| integration-validation: BB input malformed at /api/expense-units returns a client error | passed |
+| integration-validation: BB input null at /api/leaves returns a client error | passed |
+| integration-validation: BB input array at /api/leaves returns a client error | passed |
+| integration-validation: BB input boolean at /api/leaves returns a client error | passed |
+| integration-validation: BB input string at /api/leaves returns a client error | passed |
+| integration-validation: BB input malformed at /api/leaves returns a client error | passed |
+| integration-validation: BB input null at /api/daily-log/master-sheet returns a client error | passed |
+| integration-validation: BB input array at /api/daily-log/master-sheet returns a client error | passed |
+| integration-validation: BB input boolean at /api/daily-log/master-sheet returns a client error | passed |
+| integration-validation: BB input string at /api/daily-log/master-sheet returns a client error | passed |
+| integration-validation: BB input malformed at /api/daily-log/master-sheet returns a client error | passed |
+| integration-validation: BB input null at /api/purchase-vouchers returns a client error | passed |
+| integration-validation: BB input array at /api/purchase-vouchers returns a client error | passed |
+| integration-validation: BB input boolean at /api/purchase-vouchers returns a client error | passed |
+| integration-validation: BB input string at /api/purchase-vouchers returns a client error | passed |
+| integration-validation: BB input malformed at /api/purchase-vouchers returns a client error | passed |
+| integration-validation: BB input null at /api/sales/crop returns a client error | passed |
+| integration-validation: BB input array at /api/sales/crop returns a client error | passed |
+| integration-validation: BB input boolean at /api/sales/crop returns a client error | passed |
+| integration-validation: BB input string at /api/sales/crop returns a client error | passed |
+| integration-validation: BB input malformed at /api/sales/crop returns a client error | passed |
+| integration-validation: BB empty register /attendance remains usable after reload | passed |
+| integration-validation: BB empty register /attendance/summary remains usable after reload | passed |
+| integration-validation: BB empty register /leaves remains usable after reload | passed |
+| integration-validation: BB empty register /salary/calculate remains usable after reload | passed |
+| integration-validation: BB empty register /employee-roles remains usable after reload | passed |
+| integration-validation: BB empty register /ledger-groups remains usable after reload | passed |
+| integration-validation: BB empty register /expense-ledgers remains usable after reload | passed |
+| integration-validation: BB empty register /units remains usable after reload | passed |
+| integration-validation: BB empty register /plot-crops remains usable after reload | passed |
+| integration-validation: BB empty register /plot-operations/items remains usable after reload | passed |
+| integration-validation: BB empty register /godown/issue remains usable after reload | passed |
+| integration-validation: BB empty register /godown/movements remains usable after reload | passed |
+| integration-validation: BB empty register /stock-valuations remains usable after reload | passed |
+| integration-validation: BB empty register /reports remains usable after reload | passed |
+| integration-validation: BB empty register /reports/stock-inventory remains usable after reload | passed |
+| integration-validation: BB empty register /sales remains usable after reload | passed |
+| integration-validation: BB empty register /sales-dashboard remains usable after reload | passed |
+| integration-validation: BB empty register /sales-invoice remains usable after reload | passed |
+| integration-validation: BB empty register /purchases/register remains usable after reload | passed |
+| integration-validation: BB empty register /purchases/retailers remains usable after reload | passed |
+| integration-validation: BB empty register /purchases/other remains usable after reload | passed |
+| integration-validation: BB empty register /fertilizer remains usable after reload | passed |
+| integration-validation: BB empty register /diesel remains usable after reload | passed |
+| integration-validation: BB empty register /machinery remains usable after reload | passed |
+| integration-validation: BB empty register /users remains usable after reload | passed |
+| integration-validation: BB empty register /wages remains usable after reload | passed |
+| integration-validation: BB empty register /vouchers remains usable after reload | passed |
+| integration-validation: BB missing resource /api/employees/does-not-exist has a useful client response | passed |
+| integration-validation: BB missing resource /api/crop-cycles/does-not-exist has a useful client response | passed |
+| integration-validation: BB missing resource /api/sales-invoice/does-not-exist has a useful client response | passed |
+| integration-validation: BB rejected plot changes preserve the saved record | passed |
+| integration-validation: BB stored markup is shown as text without executing scripts | passed |
+| integration-validation: BB failed save retains plot input and supports a successful retry | passed |
+| integration-validation: BB repeated save clicks create only one plot | passed |
+| integration-validation: BB canceling an unsaved plot leaves the register unchanged | passed |
+| integration-validation: BB sales CSV exports neutralize formula-like customer names | passed |
+| integration-validation: BB sales download preserves commas, quotes, Unicode, hashes and zero amounts | passed |
+| integration-validation: BB downloaded workforce and consolidated reports neutralize formula-like text | passed |
+| integration-validation: BB logout and browser Back cannot reopen a protected register | passed |
+| integration-validation: BB phone layout /salary/calculate keeps navigation and content within the screen | passed |
+| integration-validation: BB phone layout /reports/consolidated keeps navigation and content within the screen | passed |
+| integration-validation: BB phone layout /daily-log keeps navigation and content within the screen | passed |
+| integration-validation: BB phone layout /sales-register keeps navigation and content within the screen | passed |
+| integration-validation: BB phone layout /employees keeps navigation and content within the screen | passed |
+| integration-validation: BB crop save rejection retains the form for retry | passed |
+| integration-validation: BB logout failure shows feedback and does not claim the session ended | passed |
+| integration-validation: BB failed register load /plots reports the problem and supports retry | passed |
+| integration-validation: BB failed register load /crops reports the problem and supports retry | passed |
 | integration-validation: browser route /plots renders without an uncaught page error | passed |
 | integration-validation: browser route /crops renders without an uncaught page error | passed |
 | integration-validation: browser route /employees renders without an uncaught page error | passed |
@@ -221,6 +393,12 @@ Run the production suites sequentially. Install the corresponding Chromium, Fire
 | integration-validation: V34 attendance rejects invalid status values | passed |
 | integration-validation: V35 wage payments reject negative amounts | passed |
 | integration-validation: V36 invalid employee submission cannot break the worker-list API | passed |
+| integration-validation: WBHTTP01 hourly wages agree across attendance, worker register and salary | passed |
+| integration-validation: WBHTTP02 a paid attendance correction is rejected without changing earnings | passed |
+| integration-validation: WBHTTP03 fractional stock issues really reduce available stock | passed |
+| integration-validation: WBHTTP04 leave approval and rejection restore prior attendance | passed |
+| integration-validation: WBHTTP05 invalid multi-section dispatch leaves no partial logs | passed |
+| integration-validation: WBHTTP06 internal stock transfers do not invent supplier purchases | passed |
 | integration-validation: I01 crop expense and income persist across routes and roll into plot finances | passed |
 | integration-validation: I02 employee attendance calculates wages and synchronizes one crop expense through payment | passed |
 | integration-validation: I03 voucher inward, godown dispatch and fertilizer consumption reconcile | passed |
@@ -285,6 +463,8 @@ Run the production suites sequentially. Install the corresponding Chromium, Fire
 | existing-browser: 4. Worker Activity Logging tied to DailyLog and Plot | passed |
 | existing-browser: 5. Wage payment settlement (UNPAID -> PARTIAL -> PAID) | passed |
 | existing-browser: 6. Monthly Worker Summary calculation & CSV generation | passed |
+| firefox-browser: BB session history is reauthenticated after logout in each browser | passed |
+| webkit-browser: BB session history is reauthenticated after logout in each browser | passed |
 | firefox-browser: browser route /plots renders without an uncaught page error | passed |
 | webkit-browser: browser route /plots renders without an uncaught page error | passed |
 | firefox-browser: browser route /crops renders without an uncaught page error | passed |

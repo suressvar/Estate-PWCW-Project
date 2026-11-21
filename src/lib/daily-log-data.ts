@@ -28,10 +28,9 @@ export function formatDateKey(date: Date = new Date()): string {
  * Get next calendar day string in YYYY-MM-DD format
  */
 export function getNextDayKey(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  date.setDate(date.getDate() + 1);
-  return formatDateKey(date);
+  const date = new Date(`${dateKey(dateStr)}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return dateKey(date.toISOString().slice(0, 10));
 }
 
 /**
@@ -223,6 +222,10 @@ export function addWorkActivity(
   }
 ): { activity: WorkActivityItem; dailyLog: DailyLogItem } {
   return withTransaction(() => {
+  oneOf(data.activityType, ['SOWING', 'WEEDING', 'IRRIGATION', 'SPRAYING', 'HARVESTING', 'FERTILIZER_APPLICATION', 'LAND_PREPARATION', 'PRUNING', 'MAINTENANCE', 'OTHER'], 'Activity type', 'OTHER');
+  if (data.assignedWorkerIds !== undefined && !Array.isArray(data.assignedWorkerIds)) throw new Error('Assigned workers must be a list.');
+  for (const workerId of data.assignedWorkerIds || []) referenceExists(workerId, [...getDatabase().employees, ...(getDatabase().workers || [])], 'Assigned worker');
+  for (const flag of [data.plannedFlag, data.completedFlag]) if (flag !== undefined && typeof flag !== 'boolean') throw new Error('Activity flags must be boolean.');
   const db = getDatabase();
   if (!db.dailyLogs) {
     db.dailyLogs = [];

@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       plotName: body.plotName,
       cropActivityId: body.cropActivityId,
       cropActivityName: body.cropActivityName,
+      machineName: body.machineName,
       issuedTo: body.issuedTo || "Field Staff",
       notes: body.notes || "",
     });

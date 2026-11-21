@@ -1,4 +1,4 @@
-import { expect,test } from "@playwright/test";
+import { expect,test } from "./fixtures";
 import { createCropCycle } from "../src/lib/crop-cycle-data";
 import { upsertDailyLog } from "../src/lib/daily-log-data";
 import { getDatabase } from "../src/lib/db-storage";
@@ -240,6 +240,6 @@ test.describe("Worker Management & Wage Computation - Unit & Integration Logic",
     // Verify CSV contains proper headers and rows
     expect(summary.csvString).toContain("Worker ID,Worker Name,Role / Skill");
     expect(summary.csvString).toContain("Chinnaswamy Test Worker");
-    expect(summary.csvString).toContain('"TOTAL"');
+    expect(summary.csvString).toMatch(/^"?TOTAL"?,/m);
   });
 });

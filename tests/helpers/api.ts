@@ -1,11 +1,11 @@
 /// <reference types="vite/client" />
 import { NextRequest } from 'next/server';
-const routes = import.meta.glob('../../src/app/api/**/route.ts');
+const routes = Object.entries(import.meta.glob('../../src/app/api/**/route.ts')).sort(([a], [b]) => (a.match(/\[/g)?.length || 0) - (b.match(/\[/g)?.length || 0));
 type Context = { params: Promise<Record<string, string>> };
 type Handler = (request: NextRequest, context: Context) => Promise<Response> | Response;
 export async function requestApi(url: string, method = 'GET', body?: unknown): Promise<Response> {
   const address = new URL(url, 'http://localhost');
-  for (const [file, load] of Object.entries(routes)) {
+  for (const [file, load] of routes) {
     const pattern = file.replace('../../src/app', '').replace('/route.ts', '');
     const names = [...pattern.matchAll(/\[([^\]]+)\]/g)].map(match => match[1]);
     const match = address.pathname.match(new RegExp(`^${pattern.replace(/\[[^\]]+\]/g, '([^/]+)')}$`));

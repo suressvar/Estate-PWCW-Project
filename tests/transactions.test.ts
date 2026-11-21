@@ -52,8 +52,8 @@ describe('worker attendance, wage register and summaries', () => {
     expect(getDatabase().cropExpenses).toHaveLength(1); expect(getDatabase().cropExpenses?.[0].amount).toBe(400);
     expect(workers.getWageRegister()).toBeDefined(); expect(workers.getMonthlyWorkerSummary(2026, 11)).toBeDefined();
     expect(workers.getDailyAttendanceSheet(date)).toBeDefined();
-    workers.upsertWorkerAttendanceAndWage({ workerId: w.id, date, status: 'ABSENT', cropCycleId: null });
-    expect(getDatabase().cropExpenses).toEqual([]);
+    expect(() => workers.upsertWorkerAttendanceAndWage({ workerId: w.id, date, status: 'ABSENT', cropCycleId: null })).toThrow(/already paid/);
+    expect(getDatabase().cropExpenses?.[0].amount).toBe(400);
   });
   it('rejects missing worker/date and payment of nonexistent wages', () => {
     expect(() => workers.upsertWorkerAttendanceAndWage({ workerId: 'missing', date, status: 'PRESENT' })).toThrow();
@@ -76,7 +76,8 @@ describe('leave and stock valuation lifecycles', () => {
     expect(hr.getLeaves()).toHaveLength(1); hr.deleteLeave(leave.id); expect(hr.getLeaves()).toEqual([]);
   });
   it('does not mark attendance for pending leave', () => {
-    hr.createLeave({ employeeId: 'A', fromDate: date, toDate: date, leaveType: 'CASUAL', status: 'PENDING' } as never);
+    const person = hr.createEmployee({ name: 'Pending leave', wageRate: 600, wageType: 'DAILY', status: 'ACTIVE' });
+    hr.createLeave({ employeeId: person.id, fromDate: date, toDate: date, leaveType: 'CASUAL', status: 'PENDING' } as never);
     expect(getDatabase().attendance).toEqual([]);
   });
   it('creates, edits and deletes manual valuations', () => {

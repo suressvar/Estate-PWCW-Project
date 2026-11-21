@@ -66,6 +66,9 @@ export interface DieselLogItem extends BaseLog {
   transactionType: "PURCHASE" | "CONSUMPTION";
   quantityLiters: number;
   cost: number;
+  machineName?: string;
+  litersUsed?: number;
+  operator?: string;
 }
 
 export interface MachineryLogItem extends BaseLog {
@@ -74,6 +77,7 @@ export interface MachineryLogItem extends BaseLog {
   endTime: string;
   runningHours: number;
   dieselConsumedLiters: number;
+  operatorName?: string;
 }
 
 export interface LaborLogItem extends BaseLog {

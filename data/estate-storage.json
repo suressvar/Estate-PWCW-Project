@@ -1,23 +1,143 @@
 {
-  "plots": [],
-  "crops": [],
-  "plotCrops": [],
-  "fertilizerLogs": [],
-  "dieselLogs": [],
-  "machineryLogs": [],
-  "laborLogs": [],
-  "productionLogs": [],
-  "salesLogs": [],
-  "generalPurchaseLogs": [],
-  "employeeRoles": [
+  "plots": [
     {
-      "id": "er_1791904701426",
-      "roleName": "Supervicer",
-      "description": ""
+      "name": "Plot A - North Field",
+      "location": "North",
+      "areaAcres": 12.5,
+      "status": "ACTIVE",
+      "id": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "createdAt": "2026-11-21"
     }
   ],
+  "crops": [],
+  "plotCrops": [],
+  "fertilizerLogs": [
+    {
+      "plotName": "Plot A - North Field",
+      "cropActivityName": "General Crop",
+      "transactionType": "CONSUMPTION",
+      "fertilizerName": "Urea (46% N)",
+      "quantityKg": 75,
+      "cost": 2625,
+      "date": "2026-07-15",
+      "loggedBy": "Supervisor Raman",
+      "notes": "Applied around roots",
+      "id": "fert_f8e5d055-6cd9-49e8-b2a4-0970e569068b",
+      "createdAt": "2026-11-21T18:15:18.884Z"
+    }
+  ],
+  "dieselLogs": [
+    {
+      "transactionType": "CONSUMPTION",
+      "quantityLiters": 18,
+      "cost": 1710,
+      "date": "2026-07-15",
+      "loggedBy": "Supervisor Raman",
+      "notes": "Ploughing north quadrant",
+      "id": "diesel_afe35bcf-c0da-4b4b-8b62-e40fc760725c",
+      "createdAt": "2026-11-21T18:15:18.884Z"
+    }
+  ],
+  "machineryLogs": [
+    {
+      "plotName": "Plot A - North Field",
+      "cropActivityName": "General Crop",
+      "machineName": "John Deere Tractor",
+      "startTime": "08:00",
+      "endTime": "12:00",
+      "runningHours": 4,
+      "dieselConsumedLiters": 18,
+      "date": "2026-07-15",
+      "loggedBy": "Supervisor Raman",
+      "notes": "Ploughing north quadrant",
+      "id": "mach_e59adea6-3bbd-4d11-96bf-211b164f04f5",
+      "createdAt": "2026-11-21T18:15:18.884Z"
+    }
+  ],
+  "laborLogs": [
+    {
+      "plotName": "Plot A - North Field",
+      "cropActivityName": "General Crop",
+      "menCount": 4,
+      "womenCount": 2,
+      "workingHours": 8,
+      "menWageRate": 600,
+      "womenWageRate": 500,
+      "totalCost": 3400,
+      "date": "2026-07-15",
+      "loggedBy": "Supervisor Raman",
+      "notes": "Weeding and irrigation supervision",
+      "id": "labor_ad4b8ef3-619c-449c-ab23-bc4cbd3e85c5",
+      "createdAt": "2026-11-21T18:15:18.884Z"
+    }
+  ],
+  "productionLogs": [],
+  "salesLogs": [
+    {
+      "voucherType": "Harvest Crop Sale",
+      "plotName": "Plot A - North Field",
+      "cropActivityName": "Coffee Arabica",
+      "quantityKg": 300,
+      "value": 24000,
+      "buyerName": "Coimbatore Coffee Traders",
+      "paymentMode": "Bank Transfer",
+      "paymentStatus": "PAID",
+      "date": "2026-07-15",
+      "loggedBy": "Supervisor Raman",
+      "notes": "Daily master sheet harvest sales from Plot A - North Field",
+      "subtotal": 24000,
+      "id": "sales_50db6f2e-db10-4a3e-b576-65f544da6ce9",
+      "voucherNo": "SLS-VCH-2026-001",
+      "createdAt": "2026-11-21T18:15:18.885Z"
+    }
+  ],
+  "generalPurchaseLogs": [
+    {
+      "category": "Tools & Hardware",
+      "plotName": "Plot A - North Field",
+      "cropActivityName": "General Crop",
+      "vendorName": "Agro Tools Mart",
+      "description": "Irrigation drip lateral pipes 16mm",
+      "subtotal": 1500,
+      "cost": 1500,
+      "paymentMode": "Cash",
+      "paymentStatus": "PAID",
+      "date": "2026-07-15",
+      "loggedBy": "Supervisor Raman",
+      "notes": "Daily master sheet purchase for Plot A - North Field",
+      "id": "gen_664a0f9b-01d6-4ba6-ba68-d21d6c80ad08",
+      "voucherNo": "PUR-VCH-2026-001",
+      "createdAt": "2026-11-21T18:15:18.885Z"
+    }
+  ],
+  "employeeRoles": [],
   "employees": [],
-  "attendance": [],
+  "attendance": [
+    {
+      "id": "att_0dfa73f8-a8a8-4d62-af3d-8976a4410571_lo0b",
+      "employeeId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "employeeName": "Chinnaswamy Test Worker",
+      "attendanceDate": "2026-06-16",
+      "status": "PRESENT",
+      "createdAt": "2026-11-21T18:19:01.488Z"
+    },
+    {
+      "id": "att_551e220e-b60b-425b-8924-59a3ed35c38b_vctf",
+      "employeeId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "employeeName": "Chinnaswamy Test Worker",
+      "attendanceDate": "2026-06-17",
+      "status": "PRESENT",
+      "createdAt": "2026-11-21T18:19:01.579Z"
+    },
+    {
+      "id": "att_89ac1dce-e8ba-46b1-9545-6206eae6de16_y1rs",
+      "employeeId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "employeeName": "Chinnaswamy Test Worker",
+      "attendanceDate": "2026-06-18",
+      "status": "PRESENT",
+      "createdAt": "2026-11-21T18:19:01.666Z"
+    }
+  ],
   "wages": [],
   "leaves": [],
   "expenseUnits": [
@@ -116,74 +236,716 @@
   "parties": [],
   "godownItems": [],
   "godownMovements": [],
-  "dailyLogs": [],
-  "cropCycles": [],
-  "cropExpenses": [],
-  "cropIncomes": [],
-  "workers": [],
-  "workerAttendances": [],
-  "workerActivityLogs": [],
-  "wageEntries": [],
-  "machines": [
+  "dailyLogs": [
     {
-      "id": "m_jd_5050",
-      "name": "John Deere 5050 D",
-      "type": "TRACTOR",
-      "registrationNumber": "TN-38-BZ-4412",
-      "fuelType": "Diesel",
-      "active": true,
-      "notes": "Main farm tractor with rotavator and trolley attachments",
-      "createdAt": "2026-10-13T15:09:06.399Z",
-      "updatedAt": "2026-10-13T15:09:06.399Z"
+      "id": "dl_1612a18d-277c-4bd1-ab15-7f31fee39929_1rsfc",
+      "date": "2026-06-15",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "PLANNED",
+      "createdBy": "Field Supervisor",
+      "notes": "Testing labor activity logging",
+      "activities": [],
+      "createdAt": "2026-11-21T18:19:01.412Z",
+      "updatedAt": "2026-11-21T18:19:01.412Z"
     },
     {
-      "id": "m_vst_shakti",
-      "name": "VST Shakti 130DI Tiller",
-      "type": "TILLER",
-      "registrationNumber": "TN-38-TR-1029",
-      "fuelType": "Diesel",
-      "active": true,
-      "notes": "Power tiller for inter-cultivation and weeding",
-      "createdAt": "2026-10-13T15:09:06.399Z",
-      "updatedAt": "2026-10-13T15:09:06.399Z"
+      "id": "dl_b68a3416-575b-4f34-a555-0a1118862233_hzv45",
+      "date": "2026-07-15",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "COMPLETED",
+      "createdBy": "Supervisor Raman",
+      "notes": "Clear sunny weather, full operations run",
+      "activities": [
+        {
+          "id": "act_2ec659a7-9dea-44d7-be62-d5cb6ed513f7_3gxuc",
+          "dailyLogId": "dl_b68a3416-575b-4f34-a555-0a1118862233_hzv45",
+          "activityType": "IRRIGATION",
+          "description": "4-hour drip run block 1 to 5",
+          "plannedFlag": false,
+          "completedFlag": true,
+          "reasonIfNotDone": null,
+          "carriedForwardFromId": null,
+          "assignedWorkerIds": [],
+          "createdAt": "2026-11-21T18:15:18.883Z",
+          "updatedAt": "2026-11-21T18:15:18.883Z",
+          "assignedWorkerNames": []
+        }
+      ],
+      "createdAt": "2026-11-21T18:15:18.883Z",
+      "updatedAt": "2026-11-21T18:16:14.163Z"
     },
     {
-      "id": "m_aspee_sprayer",
-      "name": "Aspee HTP Tractor Sprayer",
-      "type": "SPRAYER",
-      "registrationNumber": "ASPEE-HTP-50",
-      "fuelType": "Diesel / PTO",
-      "active": true,
-      "notes": "High pressure orchard and field sprayer",
-      "createdAt": "2026-10-13T15:09:06.399Z",
-      "updatedAt": "2026-10-13T15:09:06.399Z"
+      "id": "dl_4813effd-f60a-484c-972b-cfc4470c5d27_jqr9m",
+      "date": "2026-06-20",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "IN_PROGRESS",
+      "createdBy": "Field Supervisor",
+      "notes": "",
+      "activities": [
+        {
+          "id": "act_6312750f-3592-40d9-8159-6b4da804c889_bb8co",
+          "dailyLogId": "dl_4813effd-f60a-484c-972b-cfc4470c5d27_jqr9m",
+          "activityType": "HARVESTING",
+          "description": "Morning tomato harvest batch 1",
+          "plannedFlag": false,
+          "completedFlag": true,
+          "reasonIfNotDone": null,
+          "carriedForwardFromId": null,
+          "assignedWorkerIds": [],
+          "createdAt": "2026-11-21T18:15:18.248Z",
+          "updatedAt": "2026-11-21T18:15:18.255Z",
+          "assignedWorkerNames": []
+        },
+        {
+          "id": "act_5ae547de-5799-4c25-ba0c-f967530ed907_4yog7",
+          "dailyLogId": "dl_4813effd-f60a-484c-972b-cfc4470c5d27_jqr9m",
+          "activityType": "SPRAYING",
+          "description": "Neem oil spray for whiteflies",
+          "plannedFlag": false,
+          "completedFlag": false,
+          "reasonIfNotDone": "Not marked complete by end of day",
+          "carriedForwardFromId": null,
+          "assignedWorkerIds": [],
+          "createdAt": "2026-11-21T18:15:18.261Z",
+          "updatedAt": "2026-11-21T18:15:18.268Z",
+          "assignedWorkerNames": []
+        }
+      ],
+      "createdAt": "2026-11-21T18:15:18.241Z",
+      "updatedAt": "2026-11-21T18:16:14.163Z"
     },
     {
-      "id": "m_kirloskar_pump",
-      "name": "Kirloskar 7.5HP Borewell Pump",
-      "type": "PUMP",
-      "registrationNumber": "KIRL-75-SUB",
-      "fuelType": "Electric",
-      "active": true,
-      "notes": "Submersible pump connected to drip irrigation network",
-      "createdAt": "2026-10-13T15:09:06.399Z",
-      "updatedAt": "2026-10-13T15:09:06.399Z"
+      "id": "dl_8de8f29a-cc50-448a-a1d6-a36b403e510b_1kp8c",
+      "date": "2026-07-01",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "NOT_DONE",
+      "createdBy": "Field Staff A",
+      "notes": "Updated planning note",
+      "activities": [
+        {
+          "id": "act_6dd4c26c-46e0-41b5-923c-05cfe7a14b02_32ez6",
+          "dailyLogId": "dl_8de8f29a-cc50-448a-a1d6-a36b403e510b_1kp8c",
+          "activityType": "IRRIGATION",
+          "description": "2-hour drip cycle North quadrant",
+          "plannedFlag": false,
+          "completedFlag": false,
+          "reasonIfNotDone": "Not marked complete by end of day",
+          "carriedForwardFromId": null,
+          "assignedWorkerIds": [
+            "w_80766025-69c9-4f00-8a5b-6afee395a291_zbmf"
+          ],
+          "createdAt": "2026-11-21T18:15:18.133Z",
+          "updatedAt": "2026-11-21T18:16:14.136Z",
+          "assignedWorkerNames": [
+            "w_80766025-69c9-4f00-8a5b-6afee395a291_zbmf"
+          ]
+        },
+        {
+          "id": "act_3ddc9aec-cdfc-4872-a815-c347cf407914_bm761",
+          "dailyLogId": "dl_8de8f29a-cc50-448a-a1d6-a36b403e510b_1kp8c",
+          "activityType": "WEEDING",
+          "description": "Inter-row weeding",
+          "plannedFlag": false,
+          "completedFlag": false,
+          "reasonIfNotDone": "Rain interrupted field work",
+          "carriedForwardFromId": null,
+          "assignedWorkerIds": [],
+          "createdAt": "2026-11-21T18:15:18.166Z",
+          "updatedAt": "2026-11-21T18:15:18.189Z",
+          "assignedWorkerNames": []
+        }
+      ],
+      "createdAt": "2026-11-21T18:15:18.074Z",
+      "updatedAt": "2026-11-21T18:16:14.163Z"
     },
     {
-      "id": "m_bolero_pickup",
-      "name": "Mahindra Bolero Maxi Truck Plus",
-      "type": "VEHICLE",
-      "registrationNumber": "TN-38-CB-8891",
-      "fuelType": "Diesel",
-      "active": true,
-      "notes": "Estate produce transport and market dispatch vehicle",
-      "createdAt": "2026-10-13T15:09:06.399Z",
-      "updatedAt": "2026-10-13T15:09:06.399Z"
+      "id": "dl_c30f17f9-697d-4dc2-aa3e-aaa4c8a63a57_x3oc1",
+      "date": "2026-06-21",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "NOT_DONE",
+      "createdBy": "Auto Carry-Forward System",
+      "notes": "Auto-created to carry forward incomplete work from 2026-06-20",
+      "activities": [
+        {
+          "id": "act_cf_64f70182-7ac3-4e71-bbaf-877269d2866b_uih6",
+          "dailyLogId": "dl_c30f17f9-697d-4dc2-aa3e-aaa4c8a63a57_x3oc1",
+          "activityType": "SPRAYING",
+          "description": "Neem oil spray for whiteflies",
+          "plannedFlag": false,
+          "completedFlag": false,
+          "reasonIfNotDone": "Not marked complete by end of day",
+          "carriedForwardFromId": "act_5ae547de-5799-4c25-ba0c-f967530ed907_4yog7",
+          "assignedWorkerIds": [],
+          "assignedWorkerNames": [],
+          "createdAt": "2026-11-21T18:15:18.268Z",
+          "updatedAt": "2026-11-21T18:16:14.137Z"
+        }
+      ],
+      "createdAt": "2026-11-21T18:15:18.268Z",
+      "updatedAt": "2026-11-21T18:16:14.163Z"
+    },
+    {
+      "id": "dl_b7058c19-3ec8-4d99-ace8-bcb58b94b57b_xeti6",
+      "date": "2026-07-02",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "NOT_DONE",
+      "createdBy": "Auto Carry-Forward System",
+      "notes": "Auto-created to carry forward incomplete work from 2026-07-01",
+      "activities": [
+        {
+          "id": "act_cf_651484d8-87a7-4992-8c2f-5282ef6113f0_0eaj",
+          "dailyLogId": "dl_b7058c19-3ec8-4d99-ace8-bcb58b94b57b_xeti6",
+          "activityType": "IRRIGATION",
+          "description": "2-hour drip cycle North quadrant",
+          "plannedFlag": false,
+          "completedFlag": false,
+          "reasonIfNotDone": "Not marked complete by end of day",
+          "carriedForwardFromId": "act_6dd4c26c-46e0-41b5-923c-05cfe7a14b02_32ez6",
+          "assignedWorkerIds": [
+            "w_80766025-69c9-4f00-8a5b-6afee395a291_zbmf"
+          ],
+          "assignedWorkerNames": [
+            "w_80766025-69c9-4f00-8a5b-6afee395a291_zbmf"
+          ],
+          "createdAt": "2026-11-21T18:16:14.136Z",
+          "updatedAt": "2026-11-21T18:16:14.163Z"
+        }
+      ],
+      "createdAt": "2026-11-21T18:16:14.136Z",
+      "updatedAt": "2026-11-21T18:16:14.163Z"
+    },
+    {
+      "id": "dl_7290b8f7-2496-4102-8d85-ec2b45697e23_2gjbf",
+      "date": "2026-06-22",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "NOT_DONE",
+      "createdBy": "Auto Carry-Forward System",
+      "notes": "Auto-created to carry forward incomplete work from 2026-06-21",
+      "activities": [
+        {
+          "id": "act_cf_062ad5d8-9d26-40bc-af39-ec65e185beaa_qtb2",
+          "dailyLogId": "dl_7290b8f7-2496-4102-8d85-ec2b45697e23_2gjbf",
+          "activityType": "SPRAYING",
+          "description": "Neem oil spray for whiteflies",
+          "plannedFlag": false,
+          "completedFlag": false,
+          "reasonIfNotDone": "Not marked complete by end of day",
+          "carriedForwardFromId": "act_cf_64f70182-7ac3-4e71-bbaf-877269d2866b_uih6",
+          "assignedWorkerIds": [],
+          "assignedWorkerNames": [],
+          "createdAt": "2026-11-21T18:16:14.137Z",
+          "updatedAt": "2026-11-21T18:16:14.163Z"
+        }
+      ],
+      "createdAt": "2026-11-21T18:16:14.137Z",
+      "updatedAt": "2026-11-21T18:16:14.163Z"
+    },
+    {
+      "id": "dl_17ac1c2b-8f4d-4595-88c1-fdcc467f6b29_lxlp3",
+      "date": "2026-07-03",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "PLANNED",
+      "createdBy": "Auto Carry-Forward System",
+      "notes": "Auto-created to carry forward incomplete work from 2026-07-02",
+      "activities": [
+        {
+          "id": "act_cf_6d4f7b00-f5dc-4d56-85f6-68a22cc8c286_lijl",
+          "dailyLogId": "dl_17ac1c2b-8f4d-4595-88c1-fdcc467f6b29_lxlp3",
+          "activityType": "IRRIGATION",
+          "description": "2-hour drip cycle North quadrant",
+          "plannedFlag": true,
+          "completedFlag": false,
+          "reasonIfNotDone": null,
+          "carriedForwardFromId": "act_cf_651484d8-87a7-4992-8c2f-5282ef6113f0_0eaj",
+          "assignedWorkerIds": [
+            "w_80766025-69c9-4f00-8a5b-6afee395a291_zbmf"
+          ],
+          "assignedWorkerNames": [
+            "w_80766025-69c9-4f00-8a5b-6afee395a291_zbmf"
+          ],
+          "createdAt": "2026-11-21T18:16:14.163Z",
+          "updatedAt": "2026-11-21T18:16:14.163Z"
+        }
+      ],
+      "createdAt": "2026-11-21T18:16:14.163Z",
+      "updatedAt": "2026-11-21T18:16:14.163Z"
+    },
+    {
+      "id": "dl_e75e50ae-1590-42d1-bf73-d3023cc640db_71o1x",
+      "date": "2026-06-23",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "status": "PLANNED",
+      "createdBy": "Auto Carry-Forward System",
+      "notes": "Auto-created to carry forward incomplete work from 2026-06-22",
+      "activities": [
+        {
+          "id": "act_cf_7b083759-3830-4317-90ef-ba98d39fa653_tt4z",
+          "dailyLogId": "dl_e75e50ae-1590-42d1-bf73-d3023cc640db_71o1x",
+          "activityType": "SPRAYING",
+          "description": "Neem oil spray for whiteflies",
+          "plannedFlag": true,
+          "completedFlag": false,
+          "reasonIfNotDone": null,
+          "carriedForwardFromId": "act_cf_062ad5d8-9d26-40bc-af39-ec65e185beaa_qtb2",
+          "assignedWorkerIds": [],
+          "assignedWorkerNames": [],
+          "createdAt": "2026-11-21T18:16:14.163Z",
+          "updatedAt": "2026-11-21T18:16:14.163Z"
+        }
+      ],
+      "createdAt": "2026-11-21T18:16:14.163Z",
+      "updatedAt": "2026-11-21T18:16:14.163Z"
     }
   ],
-  "machineUsageLogs": [],
-  "generalExpenses": [],
-  "pettyCashLedger": [],
+  "cropCycles": [
+    {
+      "id": "cc_d791dd2a-04ac-4465-8244-dc5370bdef72_qnvf",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "cropName": "Test Banana Labor Cycle",
+      "sowingDate": "2026-06-01",
+      "expectedHarvestDate": "2026-09-30",
+      "actualHarvestDate": null,
+      "status": "SOWN",
+      "notes": "",
+      "createdAt": "2026-11-21T18:19:01.403Z",
+      "updatedAt": "2026-11-21T18:19:01.403Z"
+    },
+    {
+      "id": "cc_2f7c10cb-b9f8-4c40-b70a-e2f3e8c0289d_hx52",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "cropName": "Test Sugarcane Consolidated Cycle",
+      "sowingDate": "2026-07-01",
+      "expectedHarvestDate": "2026-11-30",
+      "actualHarvestDate": null,
+      "status": "SOWN",
+      "notes": "",
+      "createdAt": "2026-11-21T18:16:13.829Z",
+      "updatedAt": "2026-11-21T18:16:13.829Z"
+    },
+    {
+      "id": "cc_47fd2693-0de1-41b7-88b4-4adf83fa61da_u6qi",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "cropName": "Operational Sync Test",
+      "sowingDate": "2026-07-01",
+      "expectedHarvestDate": "2026-07-31",
+      "actualHarvestDate": null,
+      "status": "SOWN",
+      "notes": "",
+      "createdAt": "2026-11-21T18:15:17.991Z",
+      "updatedAt": "2026-11-21T18:15:17.991Z"
+    },
+    {
+      "id": "cc_4a50ddf8-8b5a-431c-89b0-3d32e7dd147c_9yws",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "cropName": "Brinjal Test",
+      "sowingDate": "2026-08-01",
+      "expectedHarvestDate": "2026-11-01",
+      "actualHarvestDate": null,
+      "status": "SOWN",
+      "notes": "",
+      "createdAt": "2026-11-21T18:15:17.953Z",
+      "updatedAt": "2026-11-21T18:15:17.953Z"
+    },
+    {
+      "id": "cc_63ea1db3-6637-47ec-8814-588be91acf35_l3sb",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "cropName": "Watermelon (Sugar Baby)",
+      "sowingDate": "2026-07-01",
+      "expectedHarvestDate": "2026-10-01",
+      "actualHarvestDate": null,
+      "status": "GROWING",
+      "notes": "",
+      "createdAt": "2026-11-21T18:15:17.892Z",
+      "updatedAt": "2026-11-21T18:15:17.892Z"
+    },
+    {
+      "id": "cc_58d1da0b-8831-451d-a3fa-f50db2d2fe8b_1se3",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "cropName": "Chilli (Teja Hybrid)",
+      "cropType": "Spices",
+      "sowingDate": "2026-05-01",
+      "expectedHarvestDate": "2026-09-01",
+      "actualHarvestDate": "2026-08-28",
+      "status": "HARVESTED",
+      "notes": "",
+      "createdAt": "2026-11-21T18:15:17.807Z",
+      "updatedAt": "2026-11-21T18:15:17.807Z"
+    }
+  ],
+  "cropExpenses": [
+    {
+      "id": "ce_51ca06ca-03ad-45f5-a7ab-814cb80ab3e2_ydwi",
+      "cropCycleId": "cc_d791dd2a-04ac-4465-8244-dc5370bdef72_qnvf",
+      "category": "LABOR",
+      "amount": 750,
+      "date": "2026-06-17",
+      "description": "Field Labor: Chinnaswamy Test Worker (2026-06-17)",
+      "linkedDailyLogId": null,
+      "sourceRefId": "wage_we_c65c8602-0cf7-4047-84d8-c295fa51c445_8rg5",
+      "createdAt": "2026-11-21T18:19:01.580Z",
+      "updatedAt": "2026-11-21T18:19:01.597Z"
+    },
+    {
+      "id": "ce_5f70b659-6c55-4465-aeeb-868c9d83c409_jmlj",
+      "cropCycleId": "cc_4a50ddf8-8b5a-431c-89b0-3d32e7dd147c_9yws",
+      "category": "MISC",
+      "amount": 1200,
+      "date": "2026-01-01",
+      "description": "Prior season land clearance",
+      "linkedDailyLogId": null,
+      "sourceRefId": null,
+      "createdAt": "2026-11-21T18:15:17.964Z",
+      "updatedAt": "2026-11-21T18:15:17.964Z"
+    },
+    {
+      "id": "ce_a324ceaf-36ad-48b2-87fd-f279b04fe356_m9bm",
+      "cropCycleId": "cc_63ea1db3-6637-47ec-8814-588be91acf35_l3sb",
+      "category": "IRRIGATION",
+      "amount": 2500,
+      "date": "2026-07-10",
+      "description": "Drip fittings and mulch roll",
+      "linkedDailyLogId": null,
+      "sourceRefId": null,
+      "createdAt": "2026-11-21T18:15:17.905Z",
+      "updatedAt": "2026-11-21T18:15:17.905Z"
+    },
+    {
+      "id": "ce_3e08f212-82e5-4174-8a0e-f73da7ac1fae_h4jm",
+      "cropCycleId": "cc_63ea1db3-6637-47ec-8814-588be91acf35_l3sb",
+      "category": "SEEDS",
+      "amount": 3000,
+      "date": "2026-07-01",
+      "description": "Sugar baby seeds",
+      "linkedDailyLogId": null,
+      "sourceRefId": null,
+      "createdAt": "2026-11-21T18:15:17.898Z",
+      "updatedAt": "2026-11-21T18:15:17.898Z"
+    },
+    {
+      "id": "ce_02bc13ea-7055-44db-b5fd-00035f6fe1a1_5vko",
+      "cropCycleId": "cc_58d1da0b-8831-451d-a3fa-f50db2d2fe8b_1se3",
+      "category": "LABOR",
+      "amount": 6300,
+      "date": "2026-06-15",
+      "description": "Weeding and staking",
+      "linkedDailyLogId": null,
+      "sourceRefId": null,
+      "createdAt": "2026-11-21T18:15:17.831Z",
+      "updatedAt": "2026-11-21T18:15:17.831Z"
+    },
+    {
+      "id": "ce_69b3fcee-9880-4bb6-a81f-2b59a25a714c_zyqw",
+      "cropCycleId": "cc_58d1da0b-8831-451d-a3fa-f50db2d2fe8b_1se3",
+      "category": "FERTILIZER",
+      "amount": 8200,
+      "date": "2026-05-20",
+      "description": "19-19-19 and Micronutrient foliar spray",
+      "linkedDailyLogId": null,
+      "sourceRefId": null,
+      "createdAt": "2026-11-21T18:15:17.823Z",
+      "updatedAt": "2026-11-21T18:15:17.823Z"
+    },
+    {
+      "id": "ce_c5c92f6b-486f-4fea-8537-f5778156af88_ou7a",
+      "cropCycleId": "cc_58d1da0b-8831-451d-a3fa-f50db2d2fe8b_1se3",
+      "category": "SEEDS",
+      "amount": 4500,
+      "date": "2026-05-02",
+      "description": "Hybrid Teja Chilli seeds",
+      "linkedDailyLogId": null,
+      "sourceRefId": null,
+      "createdAt": "2026-11-21T18:15:17.815Z",
+      "updatedAt": "2026-11-21T18:15:17.815Z"
+    },
+    {
+      "id": "ce_mch_df37b6ea-1880-446c-ac6b-fee9bea91c36_8jn3",
+      "cropCycleId": "cc_2f7c10cb-b9f8-4c40-b70a-e2f3e8c0289d_hx52",
+      "category": "MACHINERY",
+      "amount": 1850,
+      "date": "2026-07-15",
+      "description": "Mahindra 575 DI Test Tractor Usage: Deep plowing and furrow making (5 hrs, Fuel ₹1500, Maint ₹350)",
+      "linkedDailyLogId": null,
+      "sourceRefId": "machine_log_mul_8b672a40-0659-4bfe-8249-c00a3a5f6646_u0is",
+      "createdAt": "2026-11-21T18:16:13.923Z",
+      "updatedAt": "2026-11-21T18:16:13.923Z"
+    },
+    {
+      "id": "ce_exp_718e659a-92e8-4e4e-88f7-d8c65ee5d2c3_emwv",
+      "cropCycleId": "cc_2f7c10cb-b9f8-4c40-b70a-e2f3e8c0289d_hx52",
+      "category": "MISC",
+      "amount": 2400,
+      "date": "2026-07-20",
+      "description": "[GENERAL] Organic manure bio-culture delivery (Paid by: Bank NEFT)",
+      "linkedDailyLogId": null,
+      "sourceRefId": "expense_exp_57cdc1a6-0a24-42c2-88ac-d7b7e1575ca3_m235",
+      "createdAt": "2026-11-21T18:16:13.993Z",
+      "updatedAt": "2026-11-21T18:16:13.993Z"
+    }
+  ],
+  "cropIncomes": [
+    {
+      "id": "ci_407a5770-118c-4a33-ae41-508856157881_mmn7",
+      "cropCycleId": "cc_58d1da0b-8831-451d-a3fa-f50db2d2fe8b_1se3",
+      "source": "DIRECT_BUYER",
+      "quantitySold": 800,
+      "unit": "kg",
+      "ratePerUnit": 20,
+      "amount": 16000,
+      "date": "2026-08-26",
+      "buyerName": "Spice Traders Co",
+      "createdAt": "2026-11-21T18:15:17.844Z",
+      "updatedAt": "2026-11-21T18:15:17.844Z"
+    },
+    {
+      "id": "ci_bfce8c2b-5eb3-471d-81e7-f1bec4c2ec10_heqz",
+      "cropCycleId": "cc_58d1da0b-8831-451d-a3fa-f50db2d2fe8b_1se3",
+      "source": "MARKET_SALE",
+      "quantitySold": 1500,
+      "unit": "kg",
+      "ratePerUnit": 18,
+      "amount": 27000,
+      "date": "2026-08-15",
+      "buyerName": "Local Mandi",
+      "createdAt": "2026-11-21T18:15:17.838Z",
+      "updatedAt": "2026-11-21T18:15:17.838Z"
+    }
+  ],
+  "workers": [
+    {
+      "id": "w_80766025-69c9-4f00-8a5b-6afee395a291_zbmf",
+      "name": "Activity assignment fixture",
+      "role": "General Field Worker",
+      "dailyWageRate": 600,
+      "active": true,
+      "createdAt": "2026-11-21T18:15:18.118Z",
+      "updatedAt": "2026-11-21T18:15:18.118Z"
+    },
+    {
+      "id": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "name": "Chinnaswamy Test Worker",
+      "phone": "9843210987",
+      "role": "Pruning & Harvesting Specialist",
+      "dailyWageRate": 600,
+      "active": true,
+      "createdAt": "2026-11-21T18:19:01.391Z",
+      "updatedAt": "2026-11-21T18:19:01.391Z"
+    }
+  ],
+  "workerAttendances": [
+    {
+      "id": "wa_d42fb5ba-e3b9-436d-a6a6-7d4406a5b9c8_dkru",
+      "workerId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "workerName": "Chinnaswamy Test Worker",
+      "date": "2026-06-16",
+      "status": "PRESENT",
+      "hoursWorked": 8,
+      "createdAt": "2026-11-21T18:19:01.488Z",
+      "updatedAt": "2026-11-21T18:19:01.506Z"
+    },
+    {
+      "id": "wa_fe640d53-1d59-4084-9dcb-5b32a1c490f6_e3rm",
+      "workerId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "workerName": "Chinnaswamy Test Worker",
+      "date": "2026-06-17",
+      "status": "PRESENT",
+      "hoursWorked": 10,
+      "createdAt": "2026-11-21T18:19:01.579Z",
+      "updatedAt": "2026-11-21T18:19:01.597Z"
+    },
+    {
+      "id": "wa_4532e211-58c3-41a0-930c-9639e261408e_8ke3",
+      "workerId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "workerName": "Chinnaswamy Test Worker",
+      "date": "2026-06-18",
+      "status": "PRESENT",
+      "hoursWorked": 8,
+      "createdAt": "2026-11-21T18:19:01.666Z",
+      "updatedAt": "2026-11-21T18:19:01.666Z"
+    }
+  ],
+  "workerActivityLogs": [
+    {
+      "id": "wal_87bcc84c-2b13-48d0-b636-e9d1f830c3d6_n9tx",
+      "workerId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "workerName": "Chinnaswamy Test Worker",
+      "dailyLogId": "dl_1612a18d-277c-4bd1-ab15-7f31fee39929_1rsfc",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "cropCycleId": "cc_d791dd2a-04ac-4465-8244-dc5370bdef72_qnvf",
+      "cropName": "Test Banana Labor Cycle",
+      "activityDescription": "Sprayed bio-pesticide and de-suckered banana shoots",
+      "timeSpentHours": 4.5,
+      "createdAt": "2026-11-21T18:19:01.635Z",
+      "updatedAt": "2026-11-21T18:19:01.635Z"
+    }
+  ],
+  "wageEntries": [
+    {
+      "id": "we_f6421984-04e8-491d-afd9-325fa05644b8_j4be",
+      "workerId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "workerName": "Chinnaswamy Test Worker",
+      "date": "2026-06-16",
+      "computedAmount": 600,
+      "paidStatus": "UNPAID",
+      "paidAmount": 0,
+      "paidDate": null,
+      "cropCycleId": null,
+      "paymentNotes": null,
+      "createdAt": "2026-11-21T18:19:01.488Z",
+      "updatedAt": "2026-11-21T18:19:01.506Z"
+    },
+    {
+      "id": "we_c65c8602-0cf7-4047-84d8-c295fa51c445_8rg5",
+      "workerId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "workerName": "Chinnaswamy Test Worker",
+      "date": "2026-06-17",
+      "computedAmount": 750,
+      "paidStatus": "UNPAID",
+      "paidAmount": 0,
+      "paidDate": null,
+      "cropCycleId": "cc_d791dd2a-04ac-4465-8244-dc5370bdef72_qnvf",
+      "paymentNotes": null,
+      "createdAt": "2026-11-21T18:19:01.579Z",
+      "updatedAt": "2026-11-21T18:19:01.597Z"
+    },
+    {
+      "id": "we_1f5b744d-576d-4e70-bbcd-d746dcee7211_6442",
+      "workerId": "w_7207780d-73fe-46b7-aec4-57fbd1bdbe30_7pwj",
+      "workerName": "Chinnaswamy Test Worker",
+      "date": "2026-06-18",
+      "computedAmount": 600,
+      "paidStatus": "PAID",
+      "paidAmount": 600,
+      "paidDate": "2026-06-18",
+      "cropCycleId": null,
+      "paymentNotes": "Full settlement via UPI",
+      "createdAt": "2026-11-21T18:19:01.666Z",
+      "updatedAt": "2026-11-21T18:19:01.687Z"
+    }
+  ],
+  "machines": [
+    {
+      "id": "m_e1405595-0d77-490d-9207-ea5d2439b3d3_uxud",
+      "name": "Mahindra 575 DI Test Tractor",
+      "type": "TRACTOR",
+      "registrationNumber": "TN-38-TEST-99",
+      "fuelType": "Diesel",
+      "active": true,
+      "createdAt": "2026-11-21T18:16:13.815Z",
+      "updatedAt": "2026-11-21T18:16:13.815Z"
+    }
+  ],
+  "machineUsageLogs": [
+    {
+      "id": "mul_8b672a40-0659-4bfe-8249-c00a3a5f6646_u0is",
+      "machineId": "m_e1405595-0d77-490d-9207-ea5d2439b3d3_uxud",
+      "machineName": "Mahindra 575 DI Test Tractor",
+      "machineType": "TRACTOR",
+      "date": "2026-07-15",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "dailyLogId": null,
+      "workerId": null,
+      "hoursUsed": 5,
+      "workDescription": "Deep plowing and furrow making",
+      "fuelCost": 1500,
+      "maintenanceCost": 350,
+      "cropCycleId": "cc_2f7c10cb-b9f8-4c40-b70a-e2f3e8c0289d_hx52",
+      "cropName": "Test Sugarcane Consolidated Cycle",
+      "createdAt": "2026-11-21T18:16:13.923Z",
+      "updatedAt": "2026-11-21T18:16:13.923Z"
+    }
+  ],
+  "generalExpenses": [
+    {
+      "id": "exp_0f625a75-6dfc-4ec4-bab2-21ac0abc52cd_cnfa",
+      "category": "PETTY_CASH",
+      "amount": 1150,
+      "date": "2026-07-03",
+      "description": "Hardware store PVC fittings and Teflon tape",
+      "plotId": null,
+      "plotName": null,
+      "cropCycleId": null,
+      "createdAt": "2026-11-21T18:16:14.089Z",
+      "updatedAt": "2026-11-21T18:16:14.089Z"
+    },
+    {
+      "id": "exp_13dec1eb-f4a0-4573-af3d-4dc318028997_gno1",
+      "category": "PETTY_CASH",
+      "amount": 850,
+      "date": "2026-07-02",
+      "description": "Farm tea, refreshments, and worker drinking water cans",
+      "plotId": null,
+      "plotName": null,
+      "cropCycleId": null,
+      "createdAt": "2026-11-21T18:16:14.073Z",
+      "updatedAt": "2026-11-21T18:16:14.073Z"
+    },
+    {
+      "id": "exp_57cdc1a6-0a24-42c2-88ac-d7b7e1575ca3_m235",
+      "category": "GENERAL",
+      "amount": 2400,
+      "date": "2026-07-20",
+      "description": "Organic manure bio-culture delivery",
+      "plotId": "p_ab1506bc-c164-4b68-a010-2f451e166178",
+      "plotName": "Plot A - North Field",
+      "cropCycleId": "cc_2f7c10cb-b9f8-4c40-b70a-e2f3e8c0289d_hx52",
+      "cropName": "Test Sugarcane Consolidated Cycle",
+      "paidBy": "Bank NEFT",
+      "createdAt": "2026-11-21T18:16:13.993Z",
+      "updatedAt": "2026-11-21T18:16:13.993Z"
+    }
+  ],
+  "pettyCashLedger": [
+    {
+      "id": "pcl_73edef88-492a-4c40-8a03-d4c2153266cd_9u9k",
+      "date": "2026-07-01",
+      "openingBalance": 0,
+      "amountIn": 10000,
+      "amountOut": 0,
+      "closingBalance": 10000,
+      "notes": "Top-up: ₹10000 (Initial cash replenishment)",
+      "createdAt": "2026-11-21T18:16:14.061Z",
+      "updatedAt": "2026-11-21T18:16:14.099Z"
+    },
+    {
+      "id": "pcl_19c43b97-0f64-4ada-ae2e-7b6f626f31b4_ubna",
+      "date": "2026-07-02",
+      "openingBalance": 10000,
+      "amountIn": 0,
+      "amountOut": 850,
+      "closingBalance": 9150,
+      "notes": null,
+      "createdAt": "2026-11-21T18:16:14.073Z",
+      "updatedAt": "2026-11-21T18:16:14.099Z"
+    },
+    {
+      "id": "pcl_792a31b3-88b0-41d8-b94c-a060d4fc1b11_p17f",
+      "date": "2026-07-03",
+      "openingBalance": 9150,
+      "amountIn": 0,
+      "amountOut": 1150,
+      "closingBalance": 8000,
+      "notes": null,
+      "createdAt": "2026-11-21T18:16:14.089Z",
+      "updatedAt": "2026-11-21T18:16:14.099Z"
+    }
+  ],
   "cropCategories": [
     "CROP",
     "ACTIVITY",
@@ -211,7 +973,6 @@
     "Tools & Hardware",
     "General Estate Supplies"
   ],
-  "operationItems": [],
   "salesCategories": [
     "Vegetables & Greens",
     "Fruits & Orchards",
@@ -219,5 +980,9 @@
     "Organic Compost & Vermicompost",
     "Crop Produce",
     "General Estate Sales"
-  ]
+  ],
+  "referenceCounters": {
+    "SLS-VCH-2026-": 1,
+    "PUR-VCH-2026-": 1
+  }
 }

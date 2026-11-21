@@ -1,3 +1,4 @@
+import { csvDocument } from './csv';
 import { getCropCycles } from "./crop-cycle-data";
 import { getDailyLogs } from "./daily-log-data";
 import {
@@ -520,21 +521,16 @@ export function generateConsolidatedReportCsv(filters?: ConsolidatedReportFilter
     "Credit (Income)",
   ];
 
-  const escapeCsv = (val: string | number) => {
-    const s = String(val ?? "").replace(/"/g, '""');
-    return `"${s}"`;
-  };
-
   const rows = report.ledger.map((row) => [
-    escapeCsv(row.date),
-    escapeCsv(row.stream),
-    escapeCsv(row.plotName),
-    escapeCsv(row.cropName),
-    escapeCsv(row.categoryOrStatus),
-    escapeCsv(row.description),
+    row.date,
+    row.stream,
+    row.plotName,
+    row.cropName,
+    row.categoryOrStatus,
+    row.description,
     row.debitExpense > 0 ? row.debitExpense.toFixed(2) : "0.00",
     row.creditIncome > 0 ? row.creditIncome.toFixed(2) : "0.00",
   ]);
 
-  return [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  return csvDocument(headers, rows);
 }

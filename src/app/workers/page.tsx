@@ -1,33 +1,35 @@
 "use client";
-import type { CropCycleItem,DailyLogItem,PlotItem } from "@/lib/db-storage";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
-import type { MonthlyWorkerSummary,WorkerSheet } from "@/types/api";
-
-import { StatCard } from "@/components/ui/stat-card";
-import {
-WageEntryItem,
-WorkerActivityLogItem,
-WorkerAttendanceItem,
-WorkerAttendanceStatus,
-WorkerItem
-} from "@/lib/db-storage";
-import {
-AlertTriangle,
-Briefcase,
-Calendar,
-CheckCircle2,
-ChevronLeft,
-ChevronRight,
-Download,
-FileSpreadsheet,
-Plus,
-Trash2,
-UserCheck,
-Users,
-X
-} from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import React,{ useCallback,useEffect,useState } from "react";
+import {
+  AlertTriangle,
+  Briefcase,
+  Calendar,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileSpreadsheet,
+  Plus,
+  Trash2,
+  UserCheck,
+  Users,
+  X,
+} from "lucide-react";
+import type { CropCycleItem, DailyLogItem, PlotItem } from "@/lib/db-storage";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import type { MonthlyWorkerSummary, WorkerSheet } from "@/types/api";
+import {
+  WageEntryItem,
+  WorkerActivityLogItem,
+  WorkerAttendanceItem,
+  WorkerAttendanceStatus,
+  WorkerItem,
+} from "@/lib/db-storage";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
+import { StatCard } from "@/components/ui/stat-card";
 
 export default function WorkersManagementPage() {
   const todayStr = new Date().toISOString().split("T")[0];
@@ -78,7 +80,7 @@ export default function WorkersManagementPage() {
   const [actDescription, setActDescription] = useState("");
   const [actHours, setActHours] = useState("8");
 
-  // 1. Fetch Reference Data (Plots, Crop Cycles, Daily Logs, Employee Roles)
+  // 1. Fetch Reference Data (Plots, Crop Cycles, Daily Logs)
   useEffect(() => {
     async function loadRefs() {
       try {
@@ -166,17 +168,22 @@ export default function WorkersManagementPage() {
   // Tab-based data trigger
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchWorkers();
-    if (activeTab === "attendance") {
-      fetchDailySheet();
-    } else if (activeTab === "activities") {
-      fetchActivities();
-    } else if (activeTab === "summary") {
-      fetchMonthlySummary();
-    }
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchWorkers();
+        if (activeTab === "attendance") {
+          fetchDailySheet();
+        } else if (activeTab === "activities") {
+          fetchActivities();
+        } else if (activeTab === "summary") {
+          fetchMonthlySummary();
+        }
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, [activeTab, fetchWorkers, fetchDailySheet, fetchActivities, fetchMonthlySummary]);
 
   // Date Navigation Helpers
@@ -248,7 +255,7 @@ export default function WorkersManagementPage() {
         type: "success",
         text: `Marked all active workers as PRESENT for ${selectedDate}!`,
       });
-    } catch  {
+    } catch {
       setActionAlert({ type: "error", text: "Error updating attendance." });
     } finally {
       setLoading(false);
@@ -282,14 +289,12 @@ export default function WorkersManagementPage() {
         type: "success",
         text: `Calculated all active workers as LEAVE for Sunday ${selectedDate} (No salary, absent not marked).`,
       });
-    } catch  {
+    } catch {
       setActionAlert({ type: "error", text: "Error updating attendance." });
     } finally {
       setLoading(false);
     }
   };
-
-
 
   // Delete Worker
   const handleDeleteWorker = async (workerId: string, workerName: string) => {
@@ -362,234 +367,220 @@ export default function WorkersManagementPage() {
     }
   };
 
-
-
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-emerald-800/60">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                Workforce Operations
-              </span>
-              <span className="text-xs text-emerald-300/80 font-mono">
-                {todayStr}
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Daily Attendance & Tracking
-            </h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              id="employees-roster-btn"
-              href="/employees"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-emerald-950 hover:bg-emerald-50 shadow-md transition-all hover:scale-[1.02]"
-            >
-              <Users className="w-4 h-4 text-emerald-700" />
-              <span>Employees Roster</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Daily Attendance & Tracking"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "HR & Labor", href: "/employees" },
+          { label: "Daily Attendance" },
+        ]}
+        actions={
+          <Link
+            id="employees-roster-btn"
+            href="/employees"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#174D3C] text-white hover:bg-[#103C30] shadow-2xs transition-colors"
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Employees Roster</span>
+          </Link>
+        }
+      />
 
       {/* Action Notification Alert */}
       {actionAlert && (
         <div
           id="worker-feedback-alert"
-          className={`p-4 rounded-2xl flex items-center justify-between shadow-xs transition-all ${
+          className={`p-3 rounded-xl flex items-center justify-between shadow-2xs transition-all text-xs font-medium ${
             actionAlert.type === "success"
-              ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+              ? "bg-[#EAF3EE] text-[#174D3C] border border-[#C5DEC8]"
               : actionAlert.type === "warning"
               ? "bg-amber-50 text-amber-900 border border-amber-200"
-              : "bg-rose-50 text-rose-900 border border-rose-200"
+              : "bg-red-50 text-red-900 border border-red-200"
           }`}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             {actionAlert.type === "success" ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#174D3C] shrink-0" />
             ) : actionAlert.type === "warning" ? (
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             ) : (
-              <X className="w-5 h-5 text-rose-600 shrink-0" />
+              <X className="w-4 h-4 text-red-600 shrink-0" />
             )}
-            <span className="text-sm font-semibold">{actionAlert.text}</span>
+            <span>{actionAlert.text}</span>
           </div>
           <button
             onClick={() => setActionAlert(null)}
-            className="p-1 rounded-lg hover:bg-black/5 text-slate-500"
+            className="p-1 rounded-md hover:bg-black/5 text-[#64748B]"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
       {/* Main Tab Navigation */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/80 w-full sm:w-fit">
+      <div className="flex items-center gap-1 bg-[#F1F5F9] p-1 rounded-lg border border-[#E2E8F0] w-full sm:w-fit">
         <button
           id="tab-attendance"
           onClick={() => setActiveTab("attendance")}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
             activeTab === "attendance"
-              ? "bg-white text-emerald-900 shadow-xs"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-[#111827] shadow-2xs font-semibold"
+              : "text-[#64748B] hover:text-[#111827]"
           }`}
         >
-          <Calendar className="w-4 h-4" />
+          <Calendar className="w-3.5 h-3.5" />
           <span>Daily Attendance</span>
         </button>
         <button
           id="tab-activities"
           onClick={() => setActiveTab("activities")}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
             activeTab === "activities"
-              ? "bg-white text-emerald-900 shadow-xs"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-[#111827] shadow-2xs font-semibold"
+              : "text-[#64748B] hover:text-[#111827]"
           }`}
         >
-          <Briefcase className="w-4 h-4" />
+          <Briefcase className="w-3.5 h-3.5" />
           <span>Worker Activities</span>
         </button>
-
         <button
           id="tab-summary"
           onClick={() => setActiveTab("summary")}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
             activeTab === "summary"
-              ? "bg-white text-emerald-900 shadow-xs"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-white text-[#111827] shadow-2xs font-semibold"
+              : "text-[#64748B] hover:text-[#111827]"
           }`}
         >
-          <FileSpreadsheet className="w-4 h-4" />
+          <FileSpreadsheet className="w-3.5 h-3.5" />
           <span>Monthly Summary &amp; CSV</span>
         </button>
       </div>
 
-      {/* ========================================================================= */}
       {/* TAB 1: DAILY ATTENDANCE & HOURS TRACKING */}
-      {/* ========================================================================= */}
       {activeTab === "attendance" && (
-        <div className="space-y-6 animate-in fade-in">
+        <div className="space-y-4">
           {/* Date Selector & Action Bar */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                id="prev-date-btn"
-                onClick={handlePrevDay}
-                className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <input
-                id="attendance-date-picker"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-              />
-              <button
-                id="next-date-btn"
-                onClick={handleNextDay}
-                className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button
-                id="today-btn"
-                onClick={() => setSelectedDate(todayStr)}
-                className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700"
-              >
-                Today
-              </button>
-              {new Date(selectedDate + "T00:00:00").getDay() === 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
-                  <Calendar className="w-3.5 h-3.5 text-amber-700" />
-                  <span>Sunday - Weekly Off (Leave)</span>
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {new Date(selectedDate + "T00:00:00").getDay() === 0 && (
+          <ContentCard>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
-                  id="bulk-mark-sunday-leave-btn"
-                  onClick={handleBulkMarkSundayLeave}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-700 hover:bg-sky-800 text-white shadow-xs"
+                  id="prev-date-btn"
+                  onClick={handlePrevDay}
+                  className="p-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#64748B]"
                 >
-                  <Calendar className="w-4 h-4" />
-                  <span>Mark All Sunday Leave</span>
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-              )}
-              <button
-                id="bulk-mark-present-btn"
-                onClick={handleBulkMarkPresent}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>Mark All Present (8 hrs)</span>
-              </button>
+                <input
+                  id="attendance-date-picker"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-2.5 py-1 rounded-lg border border-[#E2E8F0] text-xs font-semibold text-[#111827] focus:ring-1 focus:ring-[#174D3C]"
+                />
+                <button
+                  id="next-date-btn"
+                  onClick={handleNextDay}
+                  className="p-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#64748B]"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  id="today-btn"
+                  onClick={() => setSelectedDate(todayStr)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#111827]"
+                >
+                  Today
+                </button>
+                {new Date(selectedDate + "T00:00:00").getDay() === 0 && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                    <Calendar className="w-3 h-3 text-amber-700" />
+                    <span>Sunday - Weekly Off (Leave)</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {new Date(selectedDate + "T00:00:00").getDay() === 0 && (
+                  <button
+                    id="bulk-mark-sunday-leave-btn"
+                    onClick={handleBulkMarkSundayLeave}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-sky-700 hover:bg-sky-800 text-white shadow-2xs"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Mark All Sunday Leave</span>
+                  </button>
+                )}
+                <button
+                  id="bulk-mark-present-btn"
+                  onClick={handleBulkMarkPresent}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#174D3C] hover:bg-[#103C30] text-white shadow-2xs"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Mark All Present (8 hrs)</span>
+                </button>
+              </div>
             </div>
-          </div>
+          </ContentCard>
 
           {/* Daily Metric Stat Pills */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="bg-white rounded-xl p-3.5 border border-slate-200 text-center">
-              <span className="text-[11px] font-bold text-slate-500 block uppercase">Present</span>
-              <span className="text-xl font-extrabold text-emerald-700">
+            <div className="bg-white rounded-xl p-3 border border-[#E2E8F0] text-center shadow-2xs">
+              <span className="text-[10px] font-semibold text-[#64748B] block uppercase">Present</span>
+              <span className="text-lg font-bold text-[#174D3C]">
                 {dailySheet?.summary?.presentCount || 0}
               </span>
             </div>
-            <div className="bg-white rounded-xl p-3.5 border border-slate-200 text-center">
-              <span className="text-[11px] font-bold text-slate-500 block uppercase">Half-Day</span>
-              <span className="text-xl font-extrabold text-amber-700">
+            <div className="bg-white rounded-xl p-3 border border-[#E2E8F0] text-center shadow-2xs">
+              <span className="text-[10px] font-semibold text-[#64748B] block uppercase">Half-Day</span>
+              <span className="text-lg font-bold text-amber-700">
                 {dailySheet?.summary?.halfDayCount || 0}
               </span>
             </div>
-            <div className="bg-white rounded-xl p-3.5 border border-slate-200 text-center">
-              <span className="text-[11px] font-bold text-slate-500 block uppercase">Absent</span>
-              <span className="text-xl font-extrabold text-rose-700">
+            <div className="bg-white rounded-xl p-3 border border-[#E2E8F0] text-center shadow-2xs">
+              <span className="text-[10px] font-semibold text-[#64748B] block uppercase">Absent</span>
+              <span className="text-lg font-bold text-rose-700">
                 {dailySheet?.summary?.absentCount || 0}
               </span>
             </div>
-            <div className="bg-white rounded-xl p-3.5 border border-slate-200 text-center">
-              <span className="text-[11px] font-bold text-slate-500 block uppercase">Leave</span>
-              <span className="text-xl font-extrabold text-sky-700">
+            <div className="bg-white rounded-xl p-3 border border-[#E2E8F0] text-center shadow-2xs">
+              <span className="text-[10px] font-semibold text-[#64748B] block uppercase">Leave</span>
+              <span className="text-lg font-bold text-sky-700">
                 {dailySheet?.summary?.leaveCount || 0}
               </span>
             </div>
-            <div className="bg-white rounded-xl p-3.5 border border-slate-200 text-center">
-              <span className="text-[11px] font-bold text-slate-500 block uppercase">Total Hours</span>
-              <span className="text-xl font-extrabold text-indigo-700">
+            <div className="bg-white rounded-xl p-3 border border-[#E2E8F0] text-center shadow-2xs">
+              <span className="text-[10px] font-semibold text-[#64748B] block uppercase">Hours</span>
+              <span className="text-lg font-bold text-[#111827]">
                 {dailySheet?.summary?.totalHoursWorked || 0} hrs
               </span>
             </div>
-            <div className="bg-white rounded-xl p-3.5 border border-slate-200 text-center">
-              <span className="text-[11px] font-bold text-slate-500 block uppercase">Wages Owed</span>
-              <span className="text-xl font-black text-slate-900" id="daily-total-wages-badge">
+            <div className="bg-white rounded-xl p-3 border border-[#E2E8F0] text-center shadow-2xs">
+              <span className="text-[10px] font-semibold text-[#64748B] block uppercase">Wages</span>
+              <span className="text-lg font-bold text-[#174D3C] font-mono" id="daily-total-wages-badge">
                 ₹{(dailySheet?.summary?.totalWagesComputed || 0).toLocaleString()}
               </span>
             </div>
           </div>
 
           {/* Attendance Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs" id="attendance-table">
+          <ContentCard title="Muster Roll Matrix">
+            <div className="overflow-x-auto -mx-6">
+              <table className="w-full text-left text-xs border-collapse" id="attendance-table">
                 <thead>
-                  <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="py-3 px-4">Worker</th>
-                    <th className="py-3 px-4">Daily Rate</th>
-                    <th className="py-3 px-4 text-center">Attendance Status</th>
-                    <th className="py-3 px-4 text-center">Hours Worked</th>
-                    <th className="py-3 px-4">Crop Cycle Link (Labor Expense)</th>
-                    <th className="py-3 px-4 text-right">Computed Wage</th>
-                    <th className="py-3 px-4 text-center">Action</th>
+                  <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                    <th className="py-2.5 px-4 font-medium">Worker</th>
+                    <th className="py-2.5 px-4 font-medium">Daily Rate</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Attendance Status</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Hours</th>
+                    <th className="py-2.5 px-4 font-medium">Crop Cycle Link</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Computed Wage</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
                   {dailySheet?.workers && dailySheet.workers.length > 0 ? (
                     dailySheet.workers.map((w) => {
                       const currentStatus = w.attendance?.status;
@@ -600,25 +591,25 @@ export default function WorkersManagementPage() {
                       return (
                         <tr
                           key={w.id}
-                          className="hover:bg-slate-50/60 transition-colors"
+                          className="hover:bg-[#F8FAFC] transition-colors"
                           id={`worker-row-${w.id}`}
                         >
-                          <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900">{w.name}</div>
-                            <div className="text-[11px] text-slate-500">{w.role || "Worker"}</div>
+                          <td className="py-2.5 px-4">
+                            <div className="font-semibold text-[#111827] text-xs">{w.name}</div>
+                            <div className="text-[10px] text-[#64748B]">{w.role || "Worker"}</div>
                           </td>
-                          <td className="py-3 px-4 font-bold text-slate-800">
+                          <td className="py-2.5 px-4 font-mono text-[#111827] text-xs">
                             ₹{w.dailyWageRate.toLocaleString()}/day
                           </td>
-                          <td className="py-3 px-4 text-center">
-                            <div className="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                          <td className="py-2.5 px-4 text-center">
+                            <div className="inline-flex items-center gap-1 bg-[#F1F5F9] p-0.5 rounded-lg border border-[#E2E8F0]">
                               <button
                                 id={`btn-present-${w.id}`}
                                 onClick={() => handleUpdateAttendance(w.id, "PRESENT", 8, cycleId)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
                                   currentStatus === "PRESENT"
-                                    ? "bg-emerald-600 text-white shadow-xs"
-                                    : "text-slate-600 hover:text-emerald-700"
+                                    ? "bg-[#174D3C] text-white shadow-2xs font-semibold"
+                                    : "text-[#64748B] hover:text-[#111827]"
                                 }`}
                               >
                                 Present
@@ -626,10 +617,10 @@ export default function WorkersManagementPage() {
                               <button
                                 id={`btn-halfday-${w.id}`}
                                 onClick={() => handleUpdateAttendance(w.id, "HALF_DAY", 4, cycleId)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
                                   currentStatus === "HALF_DAY"
-                                    ? "bg-amber-600 text-white shadow-xs"
-                                    : "text-slate-600 hover:text-amber-700"
+                                    ? "bg-amber-600 text-white shadow-2xs font-semibold"
+                                    : "text-[#64748B] hover:text-[#111827]"
                                 }`}
                               >
                                 Half-Day
@@ -637,10 +628,10 @@ export default function WorkersManagementPage() {
                               <button
                                 id={`btn-absent-${w.id}`}
                                 onClick={() => handleUpdateAttendance(w.id, "ABSENT", 0, cycleId)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
                                   currentStatus === "ABSENT"
-                                    ? "bg-rose-600 text-white shadow-xs"
-                                    : "text-slate-600 hover:text-rose-700"
+                                    ? "bg-rose-600 text-white shadow-2xs font-semibold"
+                                    : "text-[#64748B] hover:text-[#111827]"
                                 }`}
                               >
                                 Absent
@@ -648,17 +639,17 @@ export default function WorkersManagementPage() {
                               <button
                                 id={`btn-leave-${w.id}`}
                                 onClick={() => handleUpdateAttendance(w.id, "LEAVE", 0, cycleId)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
                                   currentStatus === "LEAVE"
-                                    ? "bg-sky-600 text-white shadow-xs"
-                                    : "text-slate-600 hover:text-sky-700"
+                                    ? "bg-sky-600 text-white shadow-2xs font-semibold"
+                                    : "text-[#64748B] hover:text-[#111827]"
                                 }`}
                               >
                                 Leave
                               </button>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="py-2.5 px-4 text-center">
                             <input
                               type="number"
                               step="0.5"
@@ -672,10 +663,10 @@ export default function WorkersManagementPage() {
                                   handleUpdateAttendance(w.id, currentStatus, val, cycleId);
                                 }
                               }}
-                              className="w-16 px-2 py-1 rounded-lg border border-slate-200 text-center font-bold text-slate-800 text-xs"
+                              className="w-14 px-1.5 py-1 rounded-md border border-[#E2E8F0] text-center font-semibold text-[#111827] text-xs"
                             />
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-2.5 px-4">
                             <select
                               value={cycleId}
                               onChange={(e) => {
@@ -684,7 +675,7 @@ export default function WorkersManagementPage() {
                                   handleUpdateAttendance(w.id, currentStatus, hours, newCycle);
                                 }
                               }}
-                              className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-slate-50 w-48"
+                              className="px-2 py-1 rounded-lg border border-[#E2E8F0] text-xs font-medium text-[#111827] bg-[#F8FAFC] w-44"
                             >
                               <option value="">-- No cycle sync --</option>
                               {cropCycles.map((c) => (
@@ -694,22 +685,22 @@ export default function WorkersManagementPage() {
                               ))}
                             </select>
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-2.5 px-4 text-right">
                             <span
-                              className="text-sm font-black text-slate-900"
+                              className="text-xs font-bold text-[#174D3C] font-mono"
                               id={`worker-wage-${w.id}`}
                             >
                               ₹{wage.toLocaleString()}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="py-2.5 px-4 text-center">
                             <button
                               id={`delete-worker-${w.id}`}
                               onClick={() => handleDeleteWorker(w.id, w.name)}
                               title={`Delete worker ${w.name}`}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center justify-center"
+                              className="p-1 rounded-md text-[#94A3B8] hover:text-red-700 hover:bg-red-50 transition-colors inline-flex items-center justify-center"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </td>
                         </tr>
@@ -717,9 +708,9 @@ export default function WorkersManagementPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                      <td colSpan={7} className="py-8 text-center text-[#64748B]">
                         No active employees found. Please register employees in the{" "}
-                        <Link href="/employees" className="underline font-bold text-emerald-700 hover:text-emerald-800">
+                        <Link href="/employees" className="underline font-semibold text-[#174D3C]">
                           Employees Roster
                         </Link>
                         .
@@ -729,61 +720,58 @@ export default function WorkersManagementPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </ContentCard>
         </div>
       )}
 
-      {/* ========================================================================= */}
       {/* TAB 2: WORKER ACTIVITIES BREAKDOWN */}
-      {/* ========================================================================= */}
       {activeTab === "activities" && (
-        <div className="space-y-6 animate-in fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Granular Field Activities</h2>
-            </div>
-            <button
-              id="log-activity-btn"
-              onClick={() => setIsActivityModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Log Worker Activity</span>
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs" id="activities-table">
+        <div className="space-y-4">
+          <ContentCard
+            title="Granular Field Activities"
+            badge={`${activitiesList.length} logs`}
+            actions={
+              <button
+                id="log-activity-btn"
+                onClick={() => setIsActivityModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#174D3C] hover:bg-[#103C30] text-white shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Log Worker Activity</span>
+              </button>
+            }
+          >
+            <div className="overflow-x-auto -mx-6">
+              <table className="w-full text-left text-xs border-collapse" id="activities-table">
                 <thead>
-                  <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="py-3 px-4">Worker</th>
-                    <th className="py-3 px-4">Plot</th>
-                    <th className="py-3 px-4">Crop Cycle</th>
-                    <th className="py-3 px-4">Activity Description</th>
-                    <th className="py-3 px-4 text-center">Time Spent</th>
-                    <th className="py-3 px-4 text-center">Action</th>
+                  <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                    <th className="py-2.5 px-4 font-medium">Worker</th>
+                    <th className="py-2.5 px-4 font-medium">Plot</th>
+                    <th className="py-2.5 px-4 font-medium">Crop Cycle</th>
+                    <th className="py-2.5 px-4 font-medium">Activity Description</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Time Spent</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
                   {activitiesList.length > 0 ? (
                     activitiesList.map((act) => (
-                      <tr key={act.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-bold text-slate-900">{act.workerName}</td>
-                        <td className="py-3 px-4">{act.plotName}</td>
-                        <td className="py-3 px-4 text-emerald-700 font-semibold">
-                          {act.cropName || "-"}
+                      <tr key={act.id} className="hover:bg-[#F8FAFC] transition-colors">
+                        <td className="py-2.5 px-4 font-semibold text-[#111827] text-xs">{act.workerName}</td>
+                        <td className="py-2.5 px-4 text-[#475569]">{act.plotName}</td>
+                        <td className="py-2.5 px-4 text-[#174D3C] font-medium">
+                          {act.cropName || "—"}
                         </td>
-                        <td className="py-3 px-4 text-slate-800 font-medium">
+                        <td className="py-2.5 px-4 text-[#111827]">
                           {act.activityDescription}
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-indigo-700">
+                        <td className="py-2.5 px-4 text-center font-medium font-mono text-[#111827]">
                           {act.timeSpentHours} hrs
                         </td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-2.5 px-4 text-center">
                           <button
                             onClick={() => handleDeleteActivity(act.id)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="p-1 rounded-md text-[#94A3B8] hover:text-red-700 hover:bg-red-50 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -792,7 +780,7 @@ export default function WorkersManagementPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
+                      <td colSpan={6} className="py-8 text-center text-[#64748B]">
                         No worker activity logs recorded yet. Click &ldquo;Log Worker Activity&rdquo;.
                       </td>
                     </tr>
@@ -800,52 +788,50 @@ export default function WorkersManagementPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </ContentCard>
         </div>
       )}
 
-
-
-      {/* ========================================================================= */}
-      {/* TAB 4: MONTHLY SUMMARY & CSV EXPORT */}
-      {/* ========================================================================= */}
+      {/* TAB 3: MONTHLY SUMMARY & CSV EXPORT */}
       {activeTab === "summary" && (
-        <div className="space-y-6 animate-in fade-in">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <select
-                id="summary-month-select"
-                value={summaryMonth}
-                onChange={(e) => setSummaryMonth(Number(e.target.value))}
-                className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <option key={m} value={m}>
-                    {new Date(2026, m - 1, 1).toLocaleString("default", { month: "long" })}
-                  </option>
-                ))}
-              </select>
-              <select
-                id="summary-year-select"
-                value={summaryYear}
-                onChange={(e) => setSummaryYear(Number(e.target.value))}
-                className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50"
-              >
-                <option value={2026}>2026</option>
-                <option value={2025}>2025</option>
-              </select>
-            </div>
+        <div className="space-y-4">
+          <ContentCard>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <select
+                  id="summary-month-select"
+                  value={summaryMonth}
+                  onChange={(e) => setSummaryMonth(Number(e.target.value))}
+                  className="px-2.5 py-1 rounded-lg border border-[#E2E8F0] text-xs font-semibold text-[#111827] bg-[#F8FAFC]"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>
+                      {new Date(2026, m - 1, 1).toLocaleString("default", { month: "long" })}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  id="summary-year-select"
+                  value={summaryYear}
+                  onChange={(e) => setSummaryYear(Number(e.target.value))}
+                  className="px-2.5 py-1 rounded-lg border border-[#E2E8F0] text-xs font-semibold text-[#111827] bg-[#F8FAFC]"
+                >
+                  <option value={2026}>2026</option>
+                  <option value={2025}>2025</option>
+                </select>
+              </div>
 
-            <a
-              id="export-csv-btn"
-              href={`/api/workers/summary?year=${summaryYear}&month=${summaryMonth}&format=csv`}
-              download
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-colors"
-            >
-              <Download className="w-4 h-4 text-emerald-400" />
-              <span>Export Monthly Summary CSV</span>
-            </a>
-          </div>
+              <a
+                id="export-csv-btn"
+                href={`/api/workers/summary?year=${summaryYear}&month=${summaryMonth}&format=csv`}
+                download
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#111827] hover:bg-black text-white shadow-2xs transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Export Monthly Summary CSV</span>
+              </a>
+            </div>
+          </ContentCard>
 
           {/* Monthly Rollup KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -868,66 +854,66 @@ export default function WorkersManagementPage() {
               title="Net Balance Due"
               value={`₹${(monthlySummary?.estateTotals?.totalBalanceDue || 0).toLocaleString()}`}
               isPositive={(monthlySummary?.estateTotals?.totalBalanceDue || 0) === 0}
-              change={(monthlySummary?.estateTotals?.totalBalanceDue || 0) === 0 ? "ALL SETTLED" : "OUTSTANDING"}
+              change={(monthlySummary?.estateTotals?.totalBalanceDue || 0) === 0 ? "SETTLED" : "DUE"}
             />
           </div>
 
           {/* Summary Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs" id="monthly-summary-table">
+          <ContentCard title="Monthly Attendance & Payroll Ledger">
+            <div className="overflow-x-auto -mx-6">
+              <table className="w-full text-left text-xs border-collapse" id="monthly-summary-table">
                 <thead>
-                  <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="py-3 px-4">Worker</th>
-                    <th className="py-3 px-4 text-right">Daily Rate</th>
-                    <th className="py-3 px-4 text-center">Days</th>
-                    <th className="py-3 px-4 text-center">Present</th>
-                    <th className="py-3 px-4 text-center">Half-Day</th>
-                    <th className="py-3 px-4 text-center">Attendance %</th>
-                    <th className="py-3 px-4 text-center">Total Hours</th>
-                    <th className="py-3 px-4 text-right">Earned (₹)</th>
-                    <th className="py-3 px-4 text-right">Paid (₹)</th>
-                    <th className="py-3 px-4 text-right">Balance Due (₹)</th>
+                  <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                    <th className="py-2.5 px-4 font-medium">Worker</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Daily Rate</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Days</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Present</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Half-Day</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Att. %</th>
+                    <th className="py-2.5 px-4 font-medium text-center">Hours</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Earned (₹)</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Paid (₹)</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Balance Due (₹)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
                   {monthlySummary?.summaries && monthlySummary.summaries.length > 0 ? (
                     monthlySummary.summaries.map((s) => (
-                      <tr key={s.workerId} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{s.workerName}</div>
-                          <div className="text-[11px] text-slate-500">{s.role}</div>
+                      <tr key={s.workerId} className="hover:bg-[#F8FAFC] transition-colors">
+                        <td className="py-2.5 px-4">
+                          <div className="font-semibold text-[#111827] text-xs">{s.workerName}</div>
+                          <div className="text-[10px] text-[#64748B]">{s.role}</div>
                         </td>
-                        <td className="py-3 px-4 text-right font-bold text-slate-800">
+                        <td className="py-2.5 px-4 text-right font-mono font-medium text-[#111827]">
                           ₹{s.dailyWageRate.toLocaleString()}
                         </td>
-                        <td className="py-3 px-4 text-center">{s.totalDaysRecorded}</td>
-                        <td className="py-3 px-4 text-center font-semibold text-emerald-700">
+                        <td className="py-2.5 px-4 text-center font-mono">{s.totalDaysRecorded}</td>
+                        <td className="py-2.5 px-4 text-center font-semibold text-[#174D3C]">
                           {s.presentDays}
                         </td>
-                        <td className="py-3 px-4 text-center font-semibold text-amber-700">
+                        <td className="py-2.5 px-4 text-center font-semibold text-amber-700">
                           {s.halfDays}
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-slate-800">
+                        <td className="py-2.5 px-4 text-center font-medium font-mono">
                           {s.attendancePercent}%
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-indigo-700">
+                        <td className="py-2.5 px-4 text-center font-medium font-mono">
                           {s.totalHoursWorked} hrs
                         </td>
-                        <td className="py-3 px-4 text-right font-bold text-slate-900">
+                        <td className="py-2.5 px-4 text-right font-mono font-medium text-[#111827]">
                           ₹{s.totalWagesEarned.toLocaleString()}
                         </td>
-                        <td className="py-3 px-4 text-right font-bold text-emerald-700">
+                        <td className="py-2.5 px-4 text-right font-mono font-medium text-[#174D3C]">
                           ₹{s.totalWagesPaid.toLocaleString()}
                         </td>
-                        <td className="py-3 px-4 text-right font-black text-rose-700">
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-rose-700">
                           ₹{s.balanceDue.toLocaleString()}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={10} className="py-8 text-center text-slate-400">
+                      <td colSpan={10} className="py-8 text-center text-[#64748B]">
                         No monthly records found.
                       </td>
                     </tr>
@@ -935,38 +921,32 @@ export default function WorkersManagementPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </ContentCard>
         </div>
       )}
 
-
-
-
-
-      {/* ========================================================================= */}
-      {/* MODAL 2: LOG WORKER ACTIVITY MODAL */}
-      {/* ========================================================================= */}
+      {/* LOG WORKER ACTIVITY MODAL */}
       {isActivityModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">Log Worker Field Activity</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 shadow-xl border border-[#E2E8F0] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
+              <h3 className="text-sm font-semibold text-[#111827]">Log Worker Field Activity</h3>
               <button
                 onClick={() => setIsActivityModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded-md text-[#64748B] hover:text-[#111827]"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateActivity} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Worker *</label>
+            <form onSubmit={handleCreateActivity} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Worker *</label>
                 <select
                   id="act-worker-select"
                   value={actWorkerId}
                   onChange={(e) => setActWorkerId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-xs font-medium text-[#111827]"
                 >
                   {workers.map((w) => (
                     <option key={w.id} value={w.id}>
@@ -976,13 +956,13 @@ export default function WorkersManagementPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Plot *</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Plot *</label>
                 <select
                   id="act-plot-select"
                   value={actPlotId}
                   onChange={(e) => setActPlotId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-xs font-medium text-[#111827]"
                 >
                   <option value="">-- Choose Plot --</option>
                   {plots.map((p) => (
@@ -993,13 +973,13 @@ export default function WorkersManagementPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Daily Log Link *</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Daily Log Link *</label>
                 <select
                   id="act-daily-log-select"
                   value={actDailyLogId}
                   onChange={(e) => setActDailyLogId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-xs font-medium text-[#111827]"
                 >
                   <option value="">-- Choose Daily Log --</option>
                   {dailyLogs.map((dl) => (
@@ -1010,13 +990,13 @@ export default function WorkersManagementPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Crop Cycle (Optional)</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Crop Cycle (Optional)</label>
                 <select
                   id="act-cycle-select"
                   value={actCropCycleId}
                   onChange={(e) => setActCropCycleId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-xs font-medium text-[#111827]"
                 >
                   <option value="">-- No crop cycle link --</option>
                   {cropCycles.map((c) => (
@@ -1027,8 +1007,8 @@ export default function WorkersManagementPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Activity Description *</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Activity Description *</label>
                 <input
                   id="act-desc-input"
                   type="text"
@@ -1036,12 +1016,12 @@ export default function WorkersManagementPage() {
                   placeholder="e.g. Trellising vines, spraying neem oil..."
                   value={actDescription}
                   onChange={(e) => setActDescription(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-xs font-medium text-[#111827]"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Time Spent (Hours) *</label>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Time Spent (Hours) *</label>
                 <input
                   id="act-hours-input"
                   type="number"
@@ -1049,22 +1029,22 @@ export default function WorkersManagementPage() {
                   required
                   value={actHours}
                   onChange={(e) => setActHours(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-xs font-medium text-[#111827]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={() => setIsActivityModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#64748B] hover:bg-[#F1F5F9]"
                 >
                   Cancel
                 </button>
                 <button
                   id="save-activity-btn"
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
+                  className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#174D3C] hover:bg-[#103C30] text-white shadow-2xs"
                 >
                   Save Activity Log
                 </button>
@@ -1073,8 +1053,6 @@ export default function WorkersManagementPage() {
           </div>
         </div>
       )}
-
-
-    </div>
+    </PageContainer>
   );
 }

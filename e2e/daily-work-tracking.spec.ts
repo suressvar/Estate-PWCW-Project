@@ -1,4 +1,4 @@
-import { expect,test } from "@playwright/test";
+import { expect,test } from "./fixtures";
 import { authenticate } from "./auth";
 
 test.describe("Epic: Daily Work Tracking & Operations Module", () => {
@@ -28,8 +28,16 @@ test.describe("Epic: Daily Work Tracking & Operations Module", () => {
 
     // Mark Activity 1 as DONE
     const doneBtn = page.locator('button[id^="status-toggle-done-"]').first();
+    const activityId = (await doneBtn.getAttribute('id'))!.replace('status-toggle-done-', '');
     await doneBtn.click();
-    await expect(doneBtn).toHaveClass(/bg-emerald-600/);
+    // Verify the saved activity state rather than a theme-specific button color.
+    await expect.poll(async () => {
+      const response = await page.request.get('/api/daily-log?skipAuto=true');
+      expect(response.status()).toBe(200);
+      const logs = await response.json();
+      return logs.flatMap((log: { activities: { id: string; completedFlag: boolean }[] }) => log.activities || [])
+        .find((activity: { id: string }) => activity.id === activityId)?.completedFlag;
+    }).toBe(true);
 
     // Add Activity 2: Spraying
     await page.click("#add-activity-btn");

@@ -1,10 +1,13 @@
 "use client";
-import { useCallback } from 'react';
-import type { AttendanceSummary } from "@/types/api";
 
-import { ArrowLeft,FileSpreadsheet } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { csvDocument, csvDataUri } from "@/lib/csv";
+import type { AttendanceSummary } from "@/types/api";
+import { PageContainer } from "@/components/layout/page-container";
+import { PageHeader } from "@/components/layout/page-header";
+import { ContentCard } from "@/components/ui/content-card";
+import { FileSpreadsheet, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useEffect,useState } from "react";
 
 export default function AttendanceSummaryPage() {
   const now = new Date();
@@ -18,7 +21,9 @@ export default function AttendanceSummaryPage() {
   const fetchSummary = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/attendance/summary?year=${year}&month=${month}&workingDays=${workingDays}`);
+      const res = await fetch(
+        `/api/attendance/summary?year=${year}&month=${month}&workingDays=${workingDays}`
+      );
       const data = await res.json();
       setSummary(data);
     } catch (e) {
@@ -30,15 +35,32 @@ export default function AttendanceSummaryPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchSummary();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchSummary();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, [year, month, workingDays, fetchSummary]);
 
   const exportCSV = () => {
     if (summary.length === 0) return;
-    const headers = ["Employee", "Role", "WageType", "Rate", "PresentDays", "HalfDays", "AbsentDays", "LeaveDays", "EffectivePresent", "WorkingDays", "AttendancePercent"];
+    const headers = [
+      "Employee",
+      "Role",
+      "WageType",
+      "Rate",
+      "PresentDays",
+      "HalfDays",
+      "AbsentDays",
+      "LeaveDays",
+      "EffectivePresent",
+      "WorkingDays",
+      "AttendancePercent",
+    ];
     const rows = summary.map((s) => [
       s.employeeName,
       s.roleName,
@@ -53,8 +75,7 @@ export default function AttendanceSummaryPage() {
       `${s.attendancePercent}%`,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const encodedUri = csvDataUri(csvDocument(headers, rows));
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `attendance_summary_${year}_${month}.csv`);
@@ -64,56 +85,72 @@ export default function AttendanceSummaryPage() {
   };
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <PageContainer>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/attendance"
-            className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Attendance Summary & Performance Report</h1>
+      <PageHeader
+        title="Attendance Summary & Performance Report"
+        breadcrumbs={[
+          { label: "HR & Workforce", href: "/employees" },
+          { label: "Attendance Grid", href: "/attendance" },
+          { label: "Performance Summary" },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              href="/attendance"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Matrix View
+            </Link>
+            <button
+              onClick={exportCSV}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" /> Export CSV Report
+            </button>
           </div>
-        </div>
-
-        <button
-          onClick={exportCSV}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
-        >
-          <FileSpreadsheet className="w-4 h-4" /> Export CSV Report
-        </button>
-      </div>
+        }
+      />
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
             <span className="font-semibold text-slate-700">Month:</span>
             <select
               value={month}
               onChange={(e) => setMonth(Number(e.target.value))}
-              className="p-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800"
+              className="px-2.5 py-1 bg-[#F8FAFC] border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#174D3C]"
             >
               {monthNames.map((m, idx) => (
-                <option key={idx} value={idx + 1}>{m}</option>
+                <option key={idx} value={idx + 1}>
+                  {m}
+                </option>
               ))}
             </select>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <span className="font-semibold text-slate-700">Year:</span>
             <select
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
-              className="p-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800"
+              className="px-2.5 py-1 bg-[#F8FAFC] border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#174D3C]"
             >
               <option value={2025}>2025</option>
               <option value={2026}>2026</option>
@@ -121,76 +158,108 @@ export default function AttendanceSummaryPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <span className="font-semibold text-slate-700">Month Working Days:</span>
             <input
               type="number"
               value={workingDays}
               onChange={(e) => setWorkingDays(Number(e.target.value))}
-              className="w-16 p-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 text-center"
+              className="w-16 px-2 py-1 bg-[#F8FAFC] border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 text-center focus:outline-none focus:border-[#174D3C]"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-full text-emerald-800 bg-emerald-50 text-[11px] font-bold border border-emerald-200">
+          <span className="px-2.5 py-0.5 rounded-full text-[#174D3C] bg-[#EAF3EE] text-[10px] font-bold">
             &gt;90% Excellent
           </span>
-          <span className="px-2.5 py-1 rounded-full text-amber-800 bg-amber-50 text-[11px] font-bold border border-amber-200">
+          <span className="px-2.5 py-0.5 rounded-full text-amber-800 bg-amber-50 text-[10px] font-bold">
             75-90% Moderate
           </span>
-          <span className="px-2.5 py-1 rounded-full text-red-800 bg-red-50 text-[11px] font-bold border border-red-200">
+          <span className="px-2.5 py-0.5 rounded-full text-rose-800 bg-rose-50 text-[10px] font-bold">
             &lt;75% Low
           </span>
         </div>
       </div>
 
       {/* Summary Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-              <tr>
-                <th className="p-3.5">Employee Name</th>
-                <th className="p-3.5">Designation</th>
-                <th className="p-3.5">Wage Type & Rate</th>
-                <th className="p-3.5 text-center">Present</th>
-                <th className="p-3.5 text-center">Half Days</th>
-                <th className="p-3.5 text-center">Absent</th>
-                <th className="p-3.5 text-center">Leaves</th>
-                <th className="p-3.5 text-center">Effective Days</th>
-                <th className="p-3.5 text-right">Attendance %</th>
+      <ContentCard
+        title={`${monthNames[month - 1]} ${year} Workforce Attendance Audit`}
+      >
+        <div className="overflow-x-auto -mx-6 -mb-6">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 bg-[#F8FAFC] text-slate-600 font-semibold uppercase tracking-wider">
+                <th className="py-3 px-4">Employee Name</th>
+                <th className="py-3 px-4">Designation</th>
+                <th className="py-3 px-4">Wage Type & Rate</th>
+                <th className="py-3 px-4 text-center">Present</th>
+                <th className="py-3 px-4 text-center">Half Days</th>
+                <th className="py-3 px-4 text-center">Absent</th>
+                <th className="py-3 px-4 text-center">Leaves</th>
+                <th className="py-3 px-4 text-center">Effective Days</th>
+                <th className="py-3 px-4 text-right">Attendance %</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-slate-500 font-medium">Computing summary aggregations...</td>
+                  <td
+                    colSpan={9}
+                    className="p-12 text-center text-slate-400 font-medium"
+                  >
+                    Computing summary aggregations...
+                  </td>
+                </tr>
+              ) : summary.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="p-12 text-center text-slate-400 font-medium"
+                  >
+                    No attendance records logged for this period.
+                  </td>
                 </tr>
               ) : (
                 summary.map((s) => (
-                  <tr key={s.employeeId} className="hover:bg-slate-50">
-                    <td className="p-3.5 font-bold text-slate-900">{s.employeeName}</td>
-                    <td className="p-3.5 font-medium text-slate-600">{s.roleName}</td>
-                    <td className="p-3.5">
-                      <span className="font-semibold text-slate-800">₹{s.wageRate}</span>
-                      <span className="text-slate-500 text-[11px] ml-1">({s.wageType})</span>
+                  <tr key={s.employeeId} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                      {s.employeeName}
                     </td>
-                    <td className="p-3.5 text-center font-bold text-emerald-800">{s.presentDays}</td>
-                    <td className="p-3.5 text-center font-semibold text-amber-700">{s.halfDays}</td>
-                    <td className="p-3.5 text-center font-semibold text-rose-700">{s.absentDays}</td>
-                    <td className="p-3.5 text-center font-semibold text-emerald-700">{s.leaveDays}</td>
-                    <td className="p-3.5 text-center font-bold text-slate-900 font-mono">
+                    <td className="py-3.5 px-4 font-medium text-slate-600">
+                      {s.roleName}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="font-semibold text-slate-800">
+                        ₹{s.wageRate}
+                      </span>
+                      <span className="text-slate-500 text-[11px] ml-1">
+                        ({s.wageType})
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-bold text-[#174D3C]">
+                      {s.presentDays}
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-medium text-amber-700">
+                      {s.halfDays}
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-medium text-rose-600">
+                      {s.absentDays}
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-medium text-emerald-700">
+                      {s.leaveDays}
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-bold text-slate-900 font-mono">
                       {s.effectivePresentDays} / {s.workingDays}
                     </td>
-                    <td className="p-3.5 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
+                        className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
                           s.attendancePercent >= 90
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            ? "bg-[#EAF3EE] text-[#174D3C]"
                             : s.attendancePercent >= 75
-                            ? "bg-amber-50 text-amber-800 border-amber-200"
-                            : "bg-red-50 text-red-800 border-red-200"
+                            ? "bg-amber-50 text-amber-800"
+                            : "bg-rose-50 text-rose-800"
                         }`}
                       >
                         {s.attendancePercent}%
@@ -202,7 +271,7 @@ export default function AttendanceSummaryPage() {
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </ContentCard>
+    </PageContainer>
   );
 }

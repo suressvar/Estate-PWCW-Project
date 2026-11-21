@@ -32,7 +32,8 @@ describe('real disk recovery and separate writer processes', () => {
   }, 30000);
   it('serializes 120 writes from three independent processes without lost updates', async () => {
     await run('init');
-    await Promise.all([run('increment'), run('increment'), run('increment')]);
+    const results = await Promise.allSettled([run('increment'), run('increment'), run('increment')]);
+    for (const result of results) if (result.status === 'rejected') throw result.reason;
     expect(JSON.parse(fs.readFileSync(dataPath(), 'utf8')).plots[0].areaAcres).toBe(121);
     expect(JSON.parse(fs.readFileSync(`${dataPath()}.bak`, 'utf8')).plots[0].areaAcres).toBe(120);
     expect(fs.existsSync(path.join(directory, 'data', 'estate-storage.lock'))).toBe(false);

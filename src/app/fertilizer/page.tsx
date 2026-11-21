@@ -1,26 +1,27 @@
 "use client";
 import { useCallback } from 'react';
-import type { ExpenseUnit,FertilizerLogItem } from "@/lib/db-storage";
+import type { ExpenseUnit, FertilizerLogItem } from "@/lib/db-storage";
 import { errorMessage as getErrorMessage } from "@/lib/errors";
 import type { ModuleStockSummary } from "@/types/api";
 
 import { StatCard } from "@/components/ui/stat-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
+import { ContentCard } from "@/components/ui/content-card";
 import type { GodownItem } from "@/lib/godown-data";
-import type { PlotCropAssociation,PlotItem } from "@/types/estate";
+import type { PlotCropAssociation, PlotItem } from "@/types/estate";
 import {
-AlertCircle,
-CheckCircle2,
-FlaskConical,
-History,
-Package,
-Plus,
-Send,
-ShoppingCart,
-TrendingDown,
-Warehouse,
-X
+  AlertCircle,
+  CheckCircle2,
+  FlaskConical,
+  Package,
+  ShoppingCart,
+  TrendingDown,
+  Warehouse,
+  X,
 } from "lucide-react";
-import React,{ useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function FertilizerPage() {
   const [activeTab, setActiveTab] = useState<"consumption" | "purchases" | "stock">("consumption");
@@ -52,10 +53,10 @@ export default function FertilizerPage() {
   const [selectedPlotId, setSelectedPlotId] = useState("");
   const [selectedCropActivityId, setSelectedCropActivityId] = useState("");
   const [selectedGodownItemId, setSelectedGodownItemId] = useState("");
-  const [customFertilizerName, ] = useState("");
+  const [customFertilizerName] = useState("");
   const [consumeQty, setConsumeQty] = useState<number | "">("");
   const [consumeDate, setConsumeDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [issuedTo, ] = useState("Field Team");
+  const [issuedTo] = useState("Field Team");
   const [submittingConsume, setSubmittingConsume] = useState(false);
 
   // Inward Purchase Modal State
@@ -104,7 +105,6 @@ export default function FertilizerPage() {
         if (filtered.length > 0) setSelectedCropActivityId(filtered[0].id);
       }
 
-      // Pre-select first Godown item if available
       if (stockData?.items?.length > 0 && !selectedGodownItemId) {
         const firstAvailable = stockData.items.find((i: GodownItem) => i.availableQuantity > 0);
         if (firstAvailable) setSelectedGodownItemId(firstAvailable.id);
@@ -118,9 +118,11 @@ export default function FertilizerPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    loadAllData();
-  })(); }, 0);
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        loadAllData();
+      })();
+    }, 0);
     return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [loadAllData]);
 
@@ -136,7 +138,6 @@ export default function FertilizerPage() {
 
   const selectedGodownItem = stockSummary.items.find((i: GodownItem) => i.id === selectedGodownItemId);
 
-  // Submit Consumption from Godown Stock
   const handleApplyFertilizer = async (e: React.FormEvent) => {
     e.preventDefault();
     const qty = Number(consumeQty);
@@ -152,7 +153,6 @@ export default function FertilizerPage() {
       setSubmittingConsume(true);
       setFeedback(null);
 
-      // If user selected a Godown item: consume via /api/godown/issue
       if (selectedGodownItemId && selectedGodownItem) {
         if (qty > selectedGodownItem.availableQuantity) {
           setFeedback({
@@ -188,8 +188,7 @@ export default function FertilizerPage() {
           message: `Successfully consumed & applied ${qty} ${selectedGodownItem.unit} of "${selectedGodownItem.name}" to ${activePlot?.name || "Plot"}! Godown stock updated.`,
         });
       } else {
-        // Direct manual consumption log
-        const costVal = qty * 45; // default fallback estimate
+        const costVal = qty * 45;
         const res = await fetch("/api/fertilizer-logs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -225,7 +224,6 @@ export default function FertilizerPage() {
     }
   };
 
-  // Submit Inward Stock Purchase into Godown
   const handleInwardStock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inwardName.trim() || !inwardQty) {
@@ -274,55 +272,49 @@ export default function FertilizerPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-16">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4 border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#15803d] text-white flex items-center justify-center font-black shadow-xs">
-            <FlaskConical className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Fertilizer & Nutrition Operations</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                Godown Stock & Field Consumption
-              </span>
-            </h1>
-          </div>
-        </div>
+    <PageContainer>
+      {/* Page Header */}
+      <PageHeader
+        title="Fertilizer & Nutrition Operations"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Plot Operations", href: "/items" },
+          { label: "Fertilizer Operations" },
+        ]}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowInwardModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <ShoppingCart className="w-3.5 h-3.5 text-estate-primary" />
+              <span>+ Inward Stock to Godown</span>
+            </button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setShowInwardModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition-all"
-          >
-            <ShoppingCart className="w-3.5 h-3.5 text-emerald-700" />
-            <span>+ Inward Stock to Godown</span>
-          </button>
-
-          <a
-            href="/godown"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold rounded-xl shadow-xs transition-all"
-          >
-            <Warehouse className="w-3.5 h-3.5" />
-            <span>View Godown Inventory</span>
-          </a>
-        </div>
-      </div>
+            <Link
+              href="/godown"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-estate-primary hover:bg-estate-primary-hover text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <Warehouse className="w-3.5 h-3.5" />
+              <span>View Godown Inventory</span>
+            </Link>
+          </div>
+        }
+      />
 
       {/* Notification Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+          className={`p-3.5 rounded-lg text-xs font-semibold flex items-center gap-2 ${
             feedback.type === "success"
               ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
               : "bg-red-50 text-red-900 border border-red-200"
           }`}
         >
           {feedback.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-700" />
+            <AlertCircle className="w-4 h-4 text-red-700 shrink-0" />
           )}
           <span>{feedback.message}</span>
         </div>
@@ -334,29 +326,26 @@ export default function FertilizerPage() {
           title="Godown Available Stock"
           value={`${stockSummary.totalAvailableQty.toLocaleString("en-IN")} Units`}
           subtitle={`Valued at ₹${stockSummary.totalValuation.toLocaleString("en-IN")} across ${stockSummary.itemsCount} products`}
-          icon={Package}
         />
         <StatCard
           title="Total Stock Purchases"
           value={`₹${stockSummary.totalPurchasedCost.toLocaleString("en-IN")}`}
           subtitle={`${stockSummary.totalPurchasedQty.toLocaleString("en-IN")} units purchased & inwarded`}
-          icon={ShoppingCart}
         />
         <StatCard
           title="Total Consumed on Plots"
           value={`₹${stockSummary.totalConsumedCost.toLocaleString("en-IN")}`}
           subtitle={`${stockSummary.totalConsumedQty.toLocaleString("en-IN")} units applied to estate plots`}
-          icon={TrendingDown}
         />
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-2">
         <button
           onClick={() => setActiveTab("consumption")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "consumption"
-              ? "bg-[#15803d] text-white shadow-xs"
+              ? "bg-estate-primary text-white shadow-xs"
               : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
           }`}
         >
@@ -366,9 +355,9 @@ export default function FertilizerPage() {
 
         <button
           onClick={() => setActiveTab("purchases")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "purchases"
-              ? "bg-[#15803d] text-white shadow-xs"
+              ? "bg-estate-primary text-white shadow-xs"
               : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
           }`}
         >
@@ -378,9 +367,9 @@ export default function FertilizerPage() {
 
         <button
           onClick={() => setActiveTab("stock")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "stock"
-              ? "bg-[#15803d] text-white shadow-xs"
+              ? "bg-estate-primary text-white shadow-xs"
               : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
           }`}
         >
@@ -392,26 +381,16 @@ export default function FertilizerPage() {
       {/* TAB 1: CONSUMPTION & PLOT APPLICATION */}
       {activeTab === "consumption" && (
         <div className="space-y-6">
-          {/* Consumption Logger Form */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-5 sm:p-6 space-y-5">
-            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-black">
-                    <TrendingDown className="w-3.5 h-3.5" />
-                  </span>
-                  <span>Apply Fertilizer / Consume Godown Stock</span>
-                </h3>
-              </div>
-            </div>
-
-            <form onSubmit={handleApplyFertilizer} className="space-y-4">
+          <ContentCard
+            title="Apply Fertilizer / Consume Godown Stock"
+          >
+            <form onSubmit={handleApplyFertilizer} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Source: Godown Stock Item */}
                 <div className="space-y-1.5 min-w-0">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                  <label className="font-semibold text-slate-700 flex items-center justify-between">
                     <span>Source Godown Stock *</span>
-                    <span className="text-[11px] text-emerald-700 font-semibold truncate ml-2">
+                    <span className="text-[11px] text-estate-primary font-medium truncate ml-2">
                       {selectedGodownItem ? `${selectedGodownItem.availableQuantity} ${selectedGodownItem.unit} on hand` : ""}
                     </span>
                   </label>
@@ -419,7 +398,7 @@ export default function FertilizerPage() {
                     aria-label="Fertilizer stock item"
                     value={selectedGodownItemId}
                     onChange={(e) => setSelectedGodownItemId(e.target.value)}
-                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   >
                     <option value="">-- Select from Godown Available Stock --</option>
                     {stockSummary.items.map((item: GodownItem) => (
@@ -429,7 +408,7 @@ export default function FertilizerPage() {
                     ))}
                   </select>
                   {stockSummary.items.length === 0 && (
-                    <p className="text-[11px] text-amber-600 font-medium">
+                    <p className="text-[11px] text-amber-700 font-medium">
                       No fertilizer items found in Godown. Use &quot;+ Inward Stock to Godown&quot; to add stock.
                     </p>
                   )}
@@ -437,12 +416,12 @@ export default function FertilizerPage() {
 
                 {/* Target Plot */}
                 <div className="space-y-1.5 min-w-0">
-                  <label className="text-xs font-bold text-slate-700">Target Estate Plot *</label>
+                  <label className="font-semibold text-slate-700">Target Estate Plot *</label>
                   <select
                     required
                     value={selectedPlotId}
                     onChange={(e) => handlePlotSelect(e.target.value)}
-                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   >
                     {plots.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -454,311 +433,256 @@ export default function FertilizerPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Quantity to Apply */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Quantity to Apply ({selectedGodownItem?.unit || "kg"}) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="0.1"
-                    step="any"
-                    max={selectedGodownItem?.availableQuantity}
-                    placeholder="e.g. 50"
-                    aria-label="Fertilizer quantity"
-                    value={consumeQty}
-                    onChange={(e) => setConsumeQty(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  />
-                  {selectedGodownItem && (
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      Max available: {selectedGodownItem.availableQuantity} {selectedGodownItem.unit}
-                    </div>
-                  )}
+                {/* Associated Crop */}
+                <div className="space-y-1.5 min-w-0">
+                  <label className="font-semibold text-slate-700">Associated Crop / Activity</label>
+                  <select
+                    value={selectedCropActivityId}
+                    onChange={(e) => setSelectedCropActivityId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
+                  >
+                    <option value="">-- General Plot Nutrition --</option>
+                    {associations
+                      .filter((a) => a.plotId === selectedPlotId)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.cropActivityName} ({a.status})
+                        </option>
+                      ))}
+                  </select>
                 </div>
 
-                {/* Date */}
+                {/* Quantity */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Application Date *</label>
+                  <label className="font-semibold text-slate-700">Application Quantity *</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      required
+                      min="0.000001"
+                      step="any"
+                      placeholder="e.g. 5"
+                      value={consumeQty}
+                      aria-label="Fertilizer quantity"
+                      onChange={(e) => setConsumeQty(e.target.value === "" ? "" : Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
+                    />
+                    <span className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 flex items-center">
+                      {selectedGodownItem?.unit || "KG"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Application Date *</label>
                   <input
                     type="date"
                     required
                     value={consumeDate}
                     onChange={(e) => setConsumeDate(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end">
+              <div className="flex justify-end pt-2 border-t border-slate-100">
                 <button
                   type="submit"
                   disabled={submittingConsume}
-                  className="px-5 py-2.5 bg-[#15803d] hover:bg-[#166534] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-estate-primary hover:bg-estate-primary-hover text-white text-xs font-semibold rounded-lg shadow-xs transition-colors disabled:opacity-50"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{submittingConsume ? "Recording Consumption..." : "Record Field Consumption"}</span>
+                  {submittingConsume ? "Recording..." : "Record Field Application"}
                 </button>
               </div>
             </form>
-          </div>
+          </ContentCard>
 
-          {/* Consumption History Table */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-              <div className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <History className="w-4 h-4 text-emerald-700" />
-                <span>Fertilizer Field Consumption History ({logs.length})</span>
-              </div>
-            </div>
-
+          {/* Historical Logs */}
+          <ContentCard
+            title="Field Nutrition Application Logs"
+            noPadding
+          >
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+              <table className="w-full text-left text-xs erp-table">
+                <thead>
                   <tr>
-                    <th className="p-3.5">Date</th>
-                    <th className="p-3.5">Plot Location</th>
-                    <th className="p-3.5">Crop / Activity</th>
-                    <th className="p-3.5">Fertilizer Item</th>
-                    <th className="p-3.5 text-right">Quantity Consumed</th>
-                    <th className="p-3.5 text-right">Cost Value</th>
-                    <th className="p-3.5">Applied By</th>
+                    <th className="p-3">Date</th>
+                    <th className="p-3">Fertilizer</th>
+                    <th className="p-3">Target Plot</th>
+                    <th className="p-3">Crop / Activity</th>
+                    <th className="p-3 text-right">Quantity Applied</th>
+                    <th className="p-3">Applied By</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody>
                   {logs.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-500">
-                        No fertilizer consumption logs yet. Use the form above to apply fertilizer from Godown stock.
+                      <td colSpan={6} className="text-center py-10 text-slate-400">
+                        <FlaskConical className="w-8 h-8 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
+                        <p className="font-semibold text-slate-700">No application logs recorded yet.</p>
                       </td>
                     </tr>
                   ) : (
                     logs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">{log.date}</td>
-                        <td className="p-3.5 font-bold text-slate-900">{log.plotName}</td>
-                        <td className="p-3.5 text-emerald-800 font-semibold">{log.cropActivityName}</td>
-                        <td className="p-3.5 font-bold text-slate-900">{log.fertilizerName}</td>
-                        <td className="p-3.5 text-right font-mono font-semibold text-slate-800">
-                          {log.quantityKg} kg
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold text-[#15803d]">
-                          ₹{Number(log.cost).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3.5 text-slate-600">{log.loggedBy}</td>
+                        <td className="p-3 text-slate-900 font-medium">{log.date}</td>
+                        <td className="p-3 font-semibold text-slate-900">{log.fertilizerName}</td>
+                        <td className="p-3 text-slate-800">{log.plotName || "General Estate"}</td>
+                        <td className="p-3 text-slate-600">{log.cropActivityName || "—"}</td>
+                        <td className="p-3 text-right font-bold text-slate-900">{log.quantityKg} Units</td>
+                        <td className="p-3 text-slate-600">{log.loggedBy}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
             </div>
-          </div>
+          </ContentCard>
         </div>
       )}
 
       {/* TAB 2: STOCK PURCHASES & INWARD */}
       {activeTab === "purchases" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-emerald-700" />
-                <span>Fertilizer Stock Purchases Received into Godown ({stockSummary.purchases?.length || 0})</span>
-              </h3>
-            </div>
-
-            <button
-              onClick={() => setShowInwardModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold rounded-lg shadow-2xs transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Record New Purchase</span>
-            </button>
-          </div>
-
+        <ContentCard
+          title="Godown Stock Purchases & Inward Receipts"
+          noPadding
+        >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <table className="w-full text-left text-xs erp-table">
+              <thead>
                 <tr>
-                  <th className="p-3.5">Date Received</th>
-                  <th className="p-3.5">Fertilizer Item</th>
-                  <th className="p-3.5">Procurement Source / Vendor</th>
-                  <th className="p-3.5 text-right">Quantity Inwarded</th>
-                  <th className="p-3.5 text-right">Rate / Unit</th>
-                  <th className="p-3.5 text-right">Total Cost</th>
-                  <th className="p-3.5">Storage Bay</th>
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Fertilizer Product</th>
+                  <th className="p-3">Supplier / Vendor</th>
+                  <th className="p-3 text-right">Quantity</th>
+                  <th className="p-3 text-right">Rate / Unit</th>
+                  <th className="p-3 text-right">Total Cost</th>
+                  <th className="p-3">Godown Location</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {(!stockSummary.purchases || stockSummary.purchases.length === 0) ? (
+              <tbody>
+                {stockSummary.purchases?.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-500">
-                      No stock purchase records found in Godown. Click &quot;+ Record New Purchase&quot; to add stock.
+                    <td colSpan={7} className="text-center py-10 text-slate-400">
+                      No stock purchases inwarded yet.
                     </td>
                   </tr>
                 ) : (
-                  stockSummary.purchases.map((m) => (
-                    <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">{m.date}</td>
-                      <td className="p-3.5 font-bold text-slate-900">{m.itemName}</td>
-                      <td className="p-3.5 text-slate-600">{m.source}</td>
-                      <td className="p-3.5 text-right font-mono font-bold text-slate-900">
-                        {m.quantity} {m.unit}
-                      </td>
-                      <td className="p-3.5 text-right font-mono text-slate-600">
-                        ₹{Number(m.ratePerUnit || 0).toFixed(2)}
-                      </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-[#15803d]">
-                        ₹{Number(m.totalCost || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="p-3.5 text-slate-600">{m.destinationMenu || "Godown Bay A"}</td>
+                  stockSummary.purchases?.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 text-slate-900 font-medium">{p.date}</td>
+                      <td className="p-3 font-semibold text-slate-900">{p.itemName}</td>
+                      <td className="p-3 text-slate-600">{p.vendorName || "Agri Supplier"}</td>
+                      <td className="p-3 text-right font-medium text-slate-800">{p.quantity} {p.unit}</td>
+                      <td className="p-3 text-right text-slate-600 font-mono">₹{p.ratePerUnit.toLocaleString("en-IN")}</td>
+                      <td className="p-3 text-right font-bold text-slate-900 font-mono">₹{p.totalCost.toLocaleString("en-IN")}</td>
+                      <td className="p-3 text-slate-600">{p.location}</td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </ContentCard>
       )}
 
-      {/* TAB 3: GODOWN STOCK LEVELS */}
+      {/* TAB 3: GODOWN STOCK BALANCE */}
       {activeTab === "stock" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Package className="w-4 h-4 text-emerald-700" />
-                <span>On-Hand Fertilizer Inventory in Godown ({stockSummary.items?.length || 0})</span>
-              </h3>
-            </div>
-
-            <div className="text-xs font-bold text-slate-700">
-              Valuation:{" "}
-              <span className="text-[#15803d] font-extrabold text-sm">
-                ₹{stockSummary.totalValuation.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-          </div>
-
+        <ContentCard
+          title="Current Godown Inventory Balance"
+          noPadding
+        >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <table className="w-full text-left text-xs erp-table">
+              <thead>
                 <tr>
-                  <th className="p-3.5">Fertilizer Item</th>
-                  <th className="p-3.5">Storage Bay / Location</th>
-                  <th className="p-3.5 text-right">Available Stock</th>
-                  <th className="p-3.5 text-right">Total Inward</th>
-                  <th className="p-3.5 text-right">Rate / Unit</th>
-                  <th className="p-3.5 text-right">Total Value</th>
-                  <th className="p-3.5 text-center">Status</th>
-                  <th className="p-3.5 text-center">Quick Action</th>
+                  <th className="p-3">Product Name</th>
+                  <th className="p-3">Storage Location</th>
+                  <th className="p-3 text-right">Total Received</th>
+                  <th className="p-3 text-right">Consumed</th>
+                  <th className="p-3 text-right">Available Stock</th>
+                  <th className="p-3 text-right">Valuation (₹)</th>
+                  <th className="p-3 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {(!stockSummary.items || stockSummary.items.length === 0) ? (
+              <tbody>
+                {stockSummary.items.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-slate-500">
-                      No fertilizer items currently stored in Godown. Click &quot;+ Inward Stock to Godown&quot; to add stock.
+                    <td colSpan={7} className="text-center py-10 text-slate-400">
+                      No fertilizer items found in Godown inventory.
                     </td>
                   </tr>
                 ) : (
-                  stockSummary.items.map((item: GodownItem) => {
-                    const isLow = item.status === "LOW_STOCK";
-                    const isExhausted = item.status === "EXHAUSTED";
-
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5">
-                          <div className="font-bold text-slate-900">{item.name}</div>
-                          <div className="text-[11px] text-slate-500">{item.vendorName}</div>
-                        </td>
-                        <td className="p-3.5 text-slate-600">{item.location}</td>
-                        <td className="p-3.5 text-right font-mono font-bold text-slate-900 text-sm">
-                          {item.availableQuantity} {item.unit}
-                        </td>
-                        <td className="p-3.5 text-right font-mono text-slate-500">
-                          {item.totalReceivedQuantity} {item.unit}
-                        </td>
-                        <td className="p-3.5 text-right font-mono text-slate-600">
-                          ₹{Number(item.ratePerUnit).toFixed(2)}
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold text-[#15803d]">
-                          ₹{Number(item.totalValue || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3.5 text-center">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                              isExhausted
-                                ? "bg-red-100 text-red-800 border border-red-200"
-                                : isLow
-                                ? "bg-amber-100 text-amber-800 border border-amber-200"
-                                : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                            }`}
-                          >
-                            {item.status.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-center">
-                          <button
-                            onClick={() => {
-                              setSelectedGodownItemId(item.id);
-                              setActiveTab("consumption");
-                            }}
-                            disabled={item.availableQuantity <= 0}
-                            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-bold transition-colors disabled:opacity-40"
-                          >
-                            Apply / Consume
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
+                  stockSummary.items.map((item: GodownItem) => (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 font-semibold text-slate-900">{item.name}</td>
+                      <td className="p-3 text-slate-600">{item.location}</td>
+                      <td className="p-3 text-right font-medium text-slate-700">{(item.quantity ?? item.totalReceivedQuantity ?? 0)} {item.unit}</td>
+                      <td className="p-3 text-right font-medium text-rose-700">
+                        {((item.quantity ?? item.totalReceivedQuantity ?? 0) - item.availableQuantity)} {item.unit}
+                      </td>
+                      <td className="p-3 text-right font-bold text-estate-primary">
+                        {item.availableQuantity} {item.unit}
+                      </td>
+                      <td className="p-3 text-right font-bold text-slate-900 font-mono">
+                        ₹{(item.availableQuantity * (item.ratePerUnit || 0)).toLocaleString("en-IN")}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                            item.availableQuantity > 0
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : "bg-red-50 text-red-800 border border-red-200"
+                          }`}
+                        >
+                          {item.availableQuantity > 0 ? "In Stock" : "Depleted"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </ContentCard>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL: INWARD FERTILIZER STOCK INTO GODOWN                                 */}
-      {/* ========================================================================= */}
+      {/* MODAL: INWARD FERTILIZER STOCK INTO GODOWN */}
       {showInwardModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-black">
-                  <ShoppingCart className="w-4 h-4" />
-                </span>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4 text-estate-primary" />
                 <span>Inward Fertilizer Stock to Godown</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowInwardModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleInwardStock} className="space-y-4">
+            <form onSubmit={handleInwardStock} className="space-y-4 text-xs">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Fertilizer Item Name *</label>
+                <label className="font-semibold text-slate-700">Fertilizer Item Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. NPK 19-19-19 Water Soluble, Urea 46%, Organic Compost"
                   value={inwardName}
                   onChange={(e) => setInwardName(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Quantity Purchased *</label>
+                  <label className="font-semibold text-slate-700">Quantity Purchased *</label>
                   <input
                     type="number"
                     required
@@ -767,17 +691,17 @@ export default function FertilizerPage() {
                     placeholder="e.g. 50"
                     value={inwardQty}
                     onChange={(e) => setInwardQty(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-bold font-mono"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Unit *</label>
+                  <label className="font-semibold text-slate-700">Unit *</label>
                   <select
                     required
                     value={inwardUnit}
                     onChange={(e) => setInwardUnit(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                   >
                     {availableUnits.map((u) => (
                       <option key={u.id} value={u.unitSymbol}>
@@ -791,51 +715,51 @@ export default function FertilizerPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Rate per Unit (₹)</label>
+                  <label className="font-semibold text-slate-700">Rate per Unit (₹)</label>
                   <input
                     type="number"
                     step="any"
                     placeholder="e.g. 1450"
                     value={inwardRate}
                     onChange={(e) => setInwardRate(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium font-mono"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Vendor / Supplier</label>
+                  <label className="font-semibold text-slate-700">Vendor / Supplier</label>
                   <input
                     type="text"
                     placeholder="e.g. Supreme Agro Supplies"
                     value={inwardVendor}
                     onChange={(e) => setInwardVendor(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Godown Storage Location</label>
+                <label className="font-semibold text-slate-700">Godown Storage Location</label>
                 <input
                   type="text"
                   value={inwardLocation}
                   onChange={(e) => setInwardLocation(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowInwardModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingInward}
-                  className="px-4 py-2 text-xs font-bold bg-[#15803d] hover:bg-[#166534] text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-2 text-xs font-semibold bg-estate-primary hover:bg-estate-primary-hover text-white rounded-lg transition-colors disabled:opacity-50"
                 >
                   {submittingInward ? "Saving..." : "Inward Stock"}
                 </button>
@@ -844,6 +768,6 @@ export default function FertilizerPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

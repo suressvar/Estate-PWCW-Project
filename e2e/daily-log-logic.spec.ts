@@ -1,4 +1,4 @@
-import { expect,test } from "@playwright/test";
+import { expect,test } from "./fixtures";
 import {
 addWorkActivity,
 autoTransitionPastPlannedActivities,
@@ -9,6 +9,7 @@ updateActivityStatus,
 upsertDailyLog
 } from "../src/lib/daily-log-data";
 import { createPlot,getPlots } from "../src/lib/master-data";
+import { createWorker } from "../src/lib/worker-data";
 
 test.describe("Daily Work Tracking - Core Unit & Integration Logic", () => {
   let testPlotId = "p1"; // Plot A - North Field
@@ -47,6 +48,7 @@ test.describe("Daily Work Tracking - Core Unit & Integration Logic", () => {
   });
 
   test("2. WorkActivity defaults to plannedFlag: true, completedFlag: false", () => {
+    const worker = createWorker({ name: "Activity assignment fixture", dailyWageRate: 600 });
     const log = upsertDailyLog({
       plotId: testPlotId,
       date: testDatePast,
@@ -55,7 +57,7 @@ test.describe("Daily Work Tracking - Core Unit & Integration Logic", () => {
     const { activity, dailyLog } = addWorkActivity(log.id, {
       activityType: "IRRIGATION",
       description: "2-hour drip cycle North quadrant",
-      assignedWorkerIds: ["emp-1"],
+      assignedWorkerIds: [worker.id],
     });
 
     expect(activity.id).toBeDefined();
@@ -63,6 +65,7 @@ test.describe("Daily Work Tracking - Core Unit & Integration Logic", () => {
     expect(activity.completedFlag).toBe(false);
     expect(activity.reasonIfNotDone).toBeNull();
     expect(activity.carriedForwardFromId).toBeNull();
+    expect(activity.assignedWorkerIds).toEqual([worker.id]);
     expect(dailyLog.status).toBe("PLANNED");
   });
 

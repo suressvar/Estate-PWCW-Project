@@ -2,28 +2,29 @@
 import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import { StatCard } from "@/components/ui/stat-card";
-import { CropItem,PlotItem } from "@/lib/db-storage";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
+import { ContentCard } from "@/components/ui/content-card";
+import { CropItem, PlotItem } from "@/lib/db-storage";
 import { OperationItem } from "@/lib/operation-items-data";
 import {
-AlertCircle,
-Boxes,
-Check,
-CheckCircle2,
-Copy,
-Edit2,
-Layers,
-LayoutGrid,
-List,
-Plus,
-RefreshCw,
-Search,
-Sparkles,
-Sprout,
-Tag,
-Trash2,
-X
+  AlertCircle,
+  Boxes,
+  Check,
+    Copy,
+  Edit2,
+    LayoutGrid,
+  List,
+  Plus,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Sprout,
+  Tag,
+  Trash2,
+  X,
 } from "lucide-react";
-import React,{ useCallback,useEffect,useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 export default function PlotOperationItemsPage() {
   const [items, setItems] = useState<OperationItem[]>([]);
@@ -44,7 +45,7 @@ export default function PlotOperationItemsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
 
   // Modals
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -115,9 +116,11 @@ export default function PlotOperationItemsPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchData();
-  })(); }, 0);
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchData();
+      })();
+    }, 0);
     return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [fetchData]);
 
@@ -328,224 +331,186 @@ export default function PlotOperationItemsPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2.5">
-            <Boxes className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-            Plot Operations — Items Master
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => fetchData()}
-            className="p-2 border border-border rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            title="Reload Items"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-          <button
-            onClick={openCreateModal}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add New Item</span>
-          </button>
-        </div>
-      </div>
+    <PageContainer>
+      {/* Page Header */}
+      <PageHeader
+        title="Plot Operations — Items Master"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Plot Operations", href: "/items" },
+          { label: "Items Master" },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fetchData()}
+              className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+              title="Reload Items"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-estate-primary" : ""}`} />
+            </button>
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2 bg-estate-primary hover:bg-estate-primary-hover text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add New Item</span>
+            </button>
+          </div>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           title="Total Registered Items"
           value={stats.totalItems.toString()}
-          description="Operational supplies & inputs"
-          icon={<Boxes className="w-5 h-5 text-emerald-600" />}
+          subtitle="Operational supplies & inputs"
         />
         <StatCard
           title="Assigned Item Codes"
           value={stats.codedItems.toString()}
-          description="Unique operational SKU codes"
-          icon={<Tag className="w-5 h-5 text-blue-600" />}
+          subtitle="Unique operational SKU codes"
         />
         <StatCard
           title="Active Farm Items"
           value={stats.activeItems.toString()}
-          description="Ready for field application"
-          icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+          subtitle="Ready for field application"
         />
         <StatCard
           title="Supply Categories"
           value={stats.categoriesCount.toString()}
-          description="Fertilizers, seeds, diesel & tools"
-          icon={<Layers className="w-5 h-5 text-purple-600" />}
+          subtitle="Fertilizers, seeds, diesel & tools"
         />
       </div>
 
       {/* Filters & View Switcher */}
-      <div className="bg-card border border-border/60 rounded-xl p-4 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          {/* Search */}
-          <div className="relative min-w-[240px] flex-1 md:flex-none">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search code (e.g. FERT-001), item name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            />
+      <ContentCard noPadding>
+        <div className="p-4 flex flex-col md:flex-row gap-3 items-center justify-between border-b border-slate-100">
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto flex-1">
+            {/* Search */}
+            <div className="relative min-w-[240px] flex-1 md:flex-none">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search code (e.g. FERT-001), item name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary focus:bg-white transition-colors"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary"
+            >
+              <option value="ALL">All Categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
           </div>
 
-          {/* Category Filter */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-2.5 py-1.5 text-xs bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
-          >
-            <option value="ALL">All Categories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          {/* View Toggle */}
+          <div className="flex items-center gap-3 self-end md:self-center">
+            <div className="text-xs text-slate-500 font-medium">
+              Items: <span className="font-semibold text-slate-900">{filteredItems.length}</span>
+            </div>
 
-          {/* Status Filter */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-2.5 py-1.5 text-xs bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
+            <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100">
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === "table"
+                    ? "bg-white text-estate-primary shadow-xs"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+                title="Table View"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("cards")}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === "cards"
+                    ? "bg-white text-estate-primary shadow-xs"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+                title="Cards View"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center gap-3 self-end md:self-center">
-          <div className="text-xs text-muted-foreground">
-            Items: <span className="font-bold text-foreground font-mono">{filteredItems.length}</span>
-          </div>
-
-          <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30">
-            <button
-              type="button"
-              onClick={() => setViewMode("cards")}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "cards"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Cards View"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Cards</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "table"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Table View"
-            >
-              <List className="w-3.5 h-3.5" />
-              <span>Table</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content: Cards or Table */}
-      {viewMode === "cards" ? (
-        filteredItems.length === 0 ? (
-          <div className="bg-card border border-border/60 rounded-xl p-12 text-center text-muted-foreground">
-            <Boxes className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm font-medium">No items found matching your filters.</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Click &quot;Add New Item&quot; to register a new operational item.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* View content */}
+        {viewMode === "cards" ? (
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredItems.map((item) => (
               <div
                 key={item.id}
-                className="bg-card border border-border/60 rounded-xl p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 relative group hover:border-emerald-500/50"
+                className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
               >
                 <div>
-                  {/* Top: Item Code & Status */}
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-lg">
-                      <Tag className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                      <span className="font-mono text-xs font-bold">{item.itemCode}</span>
-                      <button
-                        onClick={() => handleCopyCode(item.itemCode)}
-                        className="text-emerald-600 hover:text-emerald-800 dark:hover:text-emerald-200 ml-0.5 cursor-pointer"
-                        title="Copy Item Code"
-                      >
-                        {copiedCode === item.itemCode ? (
-                          <Check className="w-3 h-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
-
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-mono font-bold">
+                      <Tag className="w-3 h-3 text-emerald-600" />
+                      {item.itemCode}
+                    </span>
                     <span
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                         item.status === "ACTIVE"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                          : "bg-muted text-muted-foreground"
+                          ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          : "bg-slate-100 text-slate-600 border border-slate-200"
                       }`}
                     >
                       {item.status}
                     </span>
                   </div>
 
-                  {/* Name & Category */}
-                  <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-emerald-600 transition-colors">
-                    {item.name}
-                  </h3>
-                  <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                    {item.category}
-                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">{item.name}</h3>
+                  <div className="text-[11px] text-slate-500 font-medium mt-0.5">{item.category}</div>
 
-                  {/* Description */}
                   {item.description && (
-                    <p className="text-xs text-muted-foreground/80 line-clamp-2 mt-2 leading-relaxed">
+                    <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed">
                       {item.description}
                     </p>
                   )}
 
-                  {/* Specs & Pricing Grid */}
-                  <div className="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t border-border/40 text-[11px]">
+                  <div className="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t border-slate-100 text-[11px]">
                     <div>
-                      <span className="text-muted-foreground text-[10px] uppercase font-semibold">
-                        Unit of Measure
-                      </span>
-                      <div className="font-medium text-foreground">{item.unit}</div>
+                      <span className="text-slate-400 text-[10px] uppercase font-semibold">Unit</span>
+                      <div className="font-medium text-slate-800">{item.unit}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-[10px] uppercase font-semibold">
-                        Default Rate
-                      </span>
-                      <div className="font-mono font-bold text-foreground">
+                      <span className="text-slate-400 text-[10px] uppercase font-semibold">Default Rate</span>
+                      <div className="font-mono font-bold text-slate-900">
                         {item.defaultRate ? `₹${item.defaultRate.toLocaleString()}` : "—"}
                       </div>
                     </div>
                   </div>
 
-                  {/* Plot / Crop Tag */}
                   {(item.plotName || item.cropActivityName) && (
-                    <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <Sprout className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500">
+                      <Sprout className="w-3 h-3 text-estate-primary" />
                       <span className="truncate">
                         {item.plotName || "All Plots"} {item.cropActivityName ? `• ${item.cropActivityName}` : ""}
                       </span>
@@ -553,13 +518,11 @@ export default function PlotOperationItemsPage() {
                   )}
                 </div>
 
-                {/* Bottom Actions */}
-                <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                   <button
                     type="button"
                     onClick={() => openAssignCodeModal(item)}
-                    className="flex-1 py-1.5 px-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    title="Assign or Change Item Code"
+                    className="flex-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                   >
                     <Tag className="w-3.5 h-3.5" />
                     <span>Assign Code</span>
@@ -567,7 +530,7 @@ export default function PlotOperationItemsPage() {
                   <button
                     type="button"
                     onClick={() => openEditModal(item)}
-                    className="p-1.5 border border-border rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                     title="Edit Item"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
@@ -575,7 +538,7 @@ export default function PlotOperationItemsPage() {
                   <button
                     type="button"
                     onClick={() => handleDeleteItem(item.id, item.name)}
-                    className="p-1.5 border border-border rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-muted-foreground hover:text-rose-600 transition-colors cursor-pointer"
+                    className="p-1.5 border border-slate-200 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-700 transition-colors cursor-pointer"
                     title="Delete Item"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -584,104 +547,102 @@ export default function PlotOperationItemsPage() {
               </div>
             ))}
           </div>
-        )
-      ) : (
-        /* Table View */
-        <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-xs">
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs erp-table">
               <thead>
-                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground font-semibold">
-                  <th className="py-3 px-4">Item Code</th>
-                  <th className="py-3 px-4">Item Name</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Unit</th>
-                  <th className="py-3 px-4 text-right">Default Rate</th>
-                  <th className="py-3 px-4">Associated Plot / Crop</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                <tr>
+                  <th className="p-3">Item Code</th>
+                  <th className="p-3">Item Name</th>
+                  <th className="p-3">Category</th>
+                  <th className="p-3">Unit</th>
+                  <th className="p-3 text-right">Default Rate</th>
+                  <th className="p-3">Associated Plot / Crop</th>
+                  <th className="p-3 text-center">Status</th>
+                  <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/40">
+              <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-10 text-muted-foreground">
-                      <Boxes className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      No operational items found matching your filters.
+                    <td colSpan={8} className="text-center py-12 text-slate-400">
+                      <Boxes className="w-9 h-9 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
+                      <p className="font-semibold text-sm text-slate-700">No operational items found</p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Try changing your filters or click &ldquo;Add New Item&rdquo; to register one.
+                      </p>
                     </td>
                   </tr>
                 ) : (
                   filteredItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded font-mono text-[11px] font-bold">
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-mono text-[11px] font-bold">
                           <span>{item.itemCode}</span>
                           <button
                             onClick={() => handleCopyCode(item.itemCode)}
-                            className="text-emerald-600 hover:text-emerald-800 dark:hover:text-emerald-200 cursor-pointer"
+                            className="text-emerald-700 hover:text-emerald-900 cursor-pointer"
                             title="Copy Code"
                           >
                             {copiedCode === item.itemCode ? (
-                              <Check className="w-3 h-3 text-emerald-600" />
+                              <Check className="w-3 h-3 text-emerald-700" />
                             ) : (
                               <Copy className="w-3 h-3" />
                             )}
                           </button>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-foreground">
+                      <td className="p-3 font-semibold text-slate-900">
                         <div>{item.name}</div>
                         {item.description && (
-                          <div className="text-[11px] text-muted-foreground max-w-xs truncate font-normal">
+                          <div className="text-[11px] text-slate-400 max-w-xs truncate font-normal">
                             {item.description}
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap text-muted-foreground font-medium">
-                        {item.category}
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap font-mono">{item.unit}</td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap font-bold text-foreground font-mono">
+                      <td className="p-3 whitespace-nowrap text-slate-600 font-medium">{item.category}</td>
+                      <td className="p-3 whitespace-nowrap font-mono text-slate-700">{item.unit}</td>
+                      <td className="p-3 text-right whitespace-nowrap font-bold text-slate-900 font-mono">
                         {item.defaultRate ? `₹${item.defaultRate.toLocaleString()}` : "—"}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap text-muted-foreground">
+                      <td className="p-3 whitespace-nowrap text-slate-600">
                         {item.plotName || item.cropActivityName ? (
                           <span className="text-[11px]">
                             {item.plotName || "All Plots"} {item.cropActivityName ? `• ${item.cropActivityName}` : ""}
                           </span>
                         ) : (
-                          <span className="text-[11px] text-muted-foreground/50">Estate-wide</span>
+                          <span className="text-[11px] text-slate-400">Estate-wide</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <td className="p-3 text-center whitespace-nowrap">
                         <span
                           className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                             item.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                              : "bg-muted text-muted-foreground"
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
                           }`}
                         >
                           {item.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap space-x-1">
+                      <td className="p-3 text-right whitespace-nowrap space-x-1">
                         <button
                           onClick={() => openAssignCodeModal(item)}
-                          className="px-2 py-1 text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded transition-colors cursor-pointer"
+                          className="px-2 py-1 text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-md transition-colors cursor-pointer"
                           title="Assign or Change Item Code"
                         >
                           Code
                         </button>
                         <button
                           onClick={() => openEditModal(item)}
-                          className="p-1 hover:bg-muted text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+                          className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-md transition-colors cursor-pointer inline-block"
                           title="Edit Item"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteItem(item.id, item.name)}
-                          className="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-muted-foreground hover:text-rose-600 rounded transition-colors cursor-pointer"
+                          className="p-1.5 hover:bg-red-50 text-slate-500 hover:text-red-700 rounded-md transition-colors cursor-pointer inline-block"
                           title="Delete Item"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -693,44 +654,44 @@ export default function PlotOperationItemsPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </ContentCard>
 
       {/* MODAL 1: ADD / EDIT ITEM */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl w-full max-w-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-muted/20">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-xl shadow-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
-                  <Boxes className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Boxes className="w-4 h-4 text-estate-primary" />
                   {editingItem ? "Edit Operational Item" : "Register New Plot Operation Item"}
                 </h3>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[11px] text-slate-500 mt-0.5">
                   Define item details, assign SKU code, and associate with plot activities
                 </p>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveItem} className="p-5 space-y-4">
+            <form onSubmit={handleSaveItem} className="p-5 space-y-4 text-xs">
               {formError && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-xl text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{formError}</span>
                 </div>
               )}
 
               {/* Item Code (with Auto-Generate Button) */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-foreground">
-                    Item Code (SKU) <span className="text-rose-500">*</span>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-700">
+                    Item Code (SKU) <span className="text-red-500">*</span>
                   </label>
                   <button
                     type="button"
@@ -738,13 +699,13 @@ export default function PlotOperationItemsPage() {
                       const next = await handleAutoGenerateCode(itemForm.category);
                       if (next) setItemForm((prev) => ({ ...prev, itemCode: next }));
                     }}
-                    className="text-[11px] text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] text-estate-primary hover:text-estate-primary-hover font-semibold flex items-center gap-1 cursor-pointer"
                   >
                     <Sparkles className="w-3 h-3" /> Auto-Generate Code
                   </button>
                 </div>
                 <div className="relative">
-                  <Tag className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Tag className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
                     required
@@ -756,18 +717,18 @@ export default function PlotOperationItemsPage() {
                         itemCode: e.target.value.toUpperCase(),
                       }))
                     }
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground font-mono font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:border-estate-primary uppercase text-xs"
                   />
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">
+                <p className="text-[10px] text-slate-400">
                   Unique identifier used across farm store, logs, and purchase vouchers.
                 </p>
               </div>
 
               {/* Item Name */}
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Item Name <span className="text-rose-500">*</span>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">
+                  Item Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -775,14 +736,14 @@ export default function PlotOperationItemsPage() {
                   placeholder="e.g. Urea 46% N, High Speed Diesel, Hybrid Maize Seeds"
                   value={itemForm.name}
                   onChange={(e) => setItemForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                 />
               </div>
 
               {/* Category & Unit */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">Category</label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Category</label>
                   <select
                     value={itemForm.category}
                     onChange={async (e) => {
@@ -793,7 +754,7 @@ export default function PlotOperationItemsPage() {
                         if (next) setItemForm((prev) => ({ ...prev, category: newCat, itemCode: next }));
                       }
                     }}
-                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                   >
                     {categories.map((c) => (
                       <option key={c} value={c}>
@@ -803,12 +764,12 @@ export default function PlotOperationItemsPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">Unit of Measure</label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Unit of Measure</label>
                   <select
                     value={itemForm.unit}
                     onChange={(e) => setItemForm((prev) => ({ ...prev, unit: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                   >
                     <option value="KG">KG (Kilograms)</option>
                     <option value="Litres">Litres</option>
@@ -826,10 +787,8 @@ export default function PlotOperationItemsPage() {
 
               {/* Default Rate & Min Stock Alert */}
               <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
-                    Default Rate (₹)
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Default Rate (₹)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -838,14 +797,12 @@ export default function PlotOperationItemsPage() {
                     onChange={(e) =>
                       setItemForm((prev) => ({ ...prev, defaultRate: e.target.value }))
                     }
-                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
-                    Min Stock Alert
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Min Stock Alert</label>
                   <input
                     type="number"
                     placeholder="5"
@@ -853,12 +810,12 @@ export default function PlotOperationItemsPage() {
                     onChange={(e) =>
                       setItemForm((prev) => ({ ...prev, minStockAlert: e.target.value }))
                     }
-                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">Status</label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Status</label>
                   <select
                     value={itemForm.status}
                     onChange={(e) =>
@@ -867,7 +824,7 @@ export default function PlotOperationItemsPage() {
                         status: e.target.value as "ACTIVE" | "INACTIVE",
                       }))
                     }
-                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-semibold"
                   >
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="INACTIVE">INACTIVE</option>
@@ -877,14 +834,12 @@ export default function PlotOperationItemsPage() {
 
               {/* Optional Plot / Crop Link */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
-                    Default Plot Link (Optional)
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Default Plot Link (Optional)</label>
                   <select
                     value={itemForm.plotId}
                     onChange={(e) => setItemForm((prev) => ({ ...prev, plotId: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                   >
                     <option value="">-- Estate-Wide / Unlinked --</option>
                     {plots.map((p) => (
@@ -895,16 +850,14 @@ export default function PlotOperationItemsPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1">
-                    Default Crop Activity (Optional)
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Default Crop Activity (Optional)</label>
                   <select
                     value={itemForm.cropActivityId}
                     onChange={(e) =>
                       setItemForm((prev) => ({ ...prev, cropActivityId: e.target.value }))
                     }
-                    className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                   >
                     <option value="">-- All Crops / None --</option>
                     {crops.map((c) => (
@@ -917,10 +870,8 @@ export default function PlotOperationItemsPage() {
               </div>
 
               {/* Description */}
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Description & Specifications
-                </label>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">Description & Specifications</label>
                 <textarea
                   rows={2}
                   placeholder="Application details, dosage, technical specifications..."
@@ -928,22 +879,22 @@ export default function PlotOperationItemsPage() {
                   onChange={(e) =>
                     setItemForm((prev) => ({ ...prev, description: e.target.value }))
                   }
-                  className="w-full px-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs"
                 />
               </div>
 
               {/* Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-medium cursor-pointer"
+                  className="px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-estate-primary hover:bg-estate-primary-hover text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                 >
                   {editingItem ? "Update Item" : "Create Item & Assign Code"}
                 </button>
@@ -955,53 +906,53 @@ export default function PlotOperationItemsPage() {
 
       {/* MODAL 2: ASSIGN ITEM CODE MODAL */}
       {showAssignCodeModal && targetItemForCode && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-muted/20">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md shadow-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-estate-primary" />
                   Assign / Change Item Code
                 </h3>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[11px] text-slate-500 mt-0.5">
                   Update the unique SKU code for this operational item
                 </p>
               </div>
               <button
                 onClick={() => setShowAssignCodeModal(false)}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveAssignedCode} className="p-5 space-y-4">
+            <form onSubmit={handleSaveAssignedCode} className="p-5 space-y-4 text-xs">
               {codeError && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-xl text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{codeError}</span>
                 </div>
               )}
 
               {/* Item Info Box */}
-              <div className="p-3 bg-muted/40 rounded-xl space-y-1">
-                <div className="text-xs font-bold text-foreground">{targetItemForCode.name}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  Category: <span className="font-medium text-foreground">{targetItemForCode.category}</span>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                <div className="text-xs font-bold text-slate-900">{targetItemForCode.name}</div>
+                <div className="text-[11px] text-slate-500">
+                  Category: <span className="font-medium text-slate-800">{targetItemForCode.category}</span>
                 </div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-[11px] text-slate-500">
                   Current Code:{" "}
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-mono font-bold text-estate-primary">
                     {targetItemForCode.itemCode}
                   </span>
                 </div>
               </div>
 
               {/* New Item Code Input */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-foreground">
-                    New Item Code <span className="text-rose-500">*</span>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-700">
+                    New Item Code <span className="text-red-500">*</span>
                   </label>
                   <button
                     type="button"
@@ -1009,27 +960,27 @@ export default function PlotOperationItemsPage() {
                       const next = await handleAutoGenerateCode(targetItemForCode.category);
                       if (next) setAssignCodeValue(next);
                     }}
-                    className="text-[11px] text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] text-estate-primary hover:text-estate-primary-hover font-semibold flex items-center gap-1 cursor-pointer"
                   >
                     <Sparkles className="w-3 h-3" /> Auto-Generate
                   </button>
                 </div>
                 <div className="relative">
-                  <Tag className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Tag className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
                     required
                     value={assignCodeValue}
                     onChange={(e) => setAssignCodeValue(e.target.value.toUpperCase())}
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-xl text-foreground font-mono font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:border-estate-primary uppercase text-xs"
                     placeholder="e.g. FERT-001"
                   />
                 </div>
               </div>
 
               {/* Quick Prefix Buttons */}
-              <div>
-                <label className="block text-[10px] uppercase font-bold text-muted-foreground mb-1.5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] uppercase font-bold text-slate-400">
                   Standard Category Prefixes
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -1046,7 +997,7 @@ export default function PlotOperationItemsPage() {
                       key={pfx.label}
                       type="button"
                       onClick={() => setAssignCodeValue(pfx.label)}
-                      className="px-2 py-1 text-[11px] bg-muted/60 hover:bg-muted text-foreground border border-border/80 rounded-md font-mono cursor-pointer"
+                      className="px-2 py-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-md font-mono cursor-pointer transition-colors"
                       title={pfx.name}
                     >
                       {pfx.label}
@@ -1056,17 +1007,17 @@ export default function PlotOperationItemsPage() {
               </div>
 
               {/* Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowAssignCodeModal(false)}
-                  className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-medium cursor-pointer"
+                  className="px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-estate-primary hover:bg-estate-primary-hover text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                 >
                   Confirm & Assign Code
                 </button>
@@ -1075,6 +1026,6 @@ export default function PlotOperationItemsPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -35,6 +35,11 @@ export interface ExpenseReportSummary {
   generalExpensesTotal: number;
   taggedToPlotsTotal: number;
   taggedToCropCyclesTotal: number;
+  cropAllocationBreakdown?: {
+    cropName: string;
+    plotName: string;
+    totalAmount: number;
+  }[];
 }
 
 /**
@@ -106,7 +111,7 @@ function addExpenseImpl(data: {
   }
 
   const plots = getPlots();
-  validateAllocation(data, getDatabase());
+  validateAllocation(getDatabase(), data.plotId, data.cropCycleId);
   const plot = data.plotId ? plots.find((p) => p.id === data.plotId) : undefined;
 
   const cycles = getCropCycles();
@@ -165,7 +170,7 @@ function updateExpenseImpl(
   if (idx < 0) return undefined;
 
   const current = db.generalExpenses[idx];
-  validateAllocation({ ...current, ...data }, db);
+  validateAllocation(db, data.plotId === undefined ? current.plotId : data.plotId, data.cropCycleId === undefined ? current.cropCycleId : data.cropCycleId);
   const updated: GeneralExpenseItem = {
     ...current,
     ...data,

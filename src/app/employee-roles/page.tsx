@@ -1,10 +1,12 @@
 "use client";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
-
-import { EmployeeRoleItem } from "@/lib/hr-data";
-import { ArrowLeft,CheckCircle2,Plus,ShieldAlert,Trash2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import React,{ useEffect,useState } from "react";
+import { ArrowLeft, CheckCircle2, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { EmployeeRoleItem } from "@/lib/hr-data";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
 
 export default function EmployeeRolesPage() {
   const [roles, setRoles] = useState<EmployeeRoleItem[]>([]);
@@ -27,10 +29,15 @@ export default function EmployeeRolesPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchRoles();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchRoles();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -71,79 +78,108 @@ export default function EmployeeRolesPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between glass-panel p-5 rounded-2xl">
-        <div className="flex items-center gap-3">
+    <PageContainer>
+      <PageHeader
+        title="Employee Roles & Designations"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Staff Roster", href: "/employees" },
+          { label: "Roles & Designations" },
+        ]}
+        actions={
           <Link
             href="/employees"
-            className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] text-xs font-medium rounded-lg transition-colors shadow-2xs"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5 text-[#64748B]" />
+            <span>Back to Staff Roster</span>
           </Link>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Employee Roles & Designations</h1>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {msg && (
-        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"}`}>
-          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <ShieldAlert className="w-4 h-4 text-rose-600" />}
-          {msg.text}
+        <div
+          className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+            msg.type === "success"
+              ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]"
+              : "bg-red-50 text-red-800 border-red-200"
+          }`}
+        >
+          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-[#174D3C]" /> : <ShieldAlert className="w-4 h-4 text-red-600" />}
+          <span>{msg.text}</span>
         </div>
       )}
 
-      {/* Inline Add Form */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Add New Designation</h2>
-        <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div>
-            <input
-              type="text"
-              required
-              value={roleName}
-              onChange={(e) => setRoleName(e.target.value)}
-              placeholder="e.g. Milking Operator, Watchman"
-              className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 focus:outline-emerald-600"
-            />
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="w-full py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg shadow-xs transition-all flex items-center justify-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" /> Save Role
-            </button>
-          </div>
-        </form>
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Inline Add Form */}
+        <div className="md:col-span-1">
+          <ContentCard title="Add Designation" badge="New Role">
+            <form onSubmit={handleAdd} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Role Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={roleName}
+                  onChange={(e) => setRoleName(e.target.value)}
+                  placeholder="e.g. Milking Operator, Watchman"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
+                />
+              </div>
 
-      {/* Roles List */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-            <tr>
-              <th className="p-3.5">Role Designation</th>
-              <th className="p-3.5 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {roles.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50">
-                <td className="p-3.5 font-bold text-slate-900">{r.roleName}</td>
-                <td className="p-3.5 text-right">
-                  <button
-                    onClick={() => handleDelete(r.id, r.roleName)}
-                    className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              <div>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Description (Optional)</label>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Responsibilities overview..."
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Save Role
+              </button>
+            </form>
+          </ContentCard>
+        </div>
+
+        {/* Roles List */}
+        <div className="md:col-span-2">
+          <ContentCard title="Configured Roles" badge={`${roles.length} designations`}>
+            <div className="overflow-x-auto -mx-6">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                    <th className="py-2.5 px-4 font-medium">Designation Title</th>
+                    <th className="py-2.5 px-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
+                  {roles.map((r) => (
+                    <tr key={r.id} className="hover:bg-[#F8FAFC] transition-colors">
+                      <td className="py-3 px-4 font-semibold text-[#111827] text-xs">{r.roleName}</td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => handleDelete(r.id, r.roleName)}
+                          className="p-1 text-[#94A3B8] hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                          title="Delete Designation"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ContentCard>
+        </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

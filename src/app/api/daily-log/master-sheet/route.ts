@@ -1,3 +1,5 @@
+import { getDatabase, withTransaction } from "@/lib/db-storage";
+import { dateKey, finiteNumber, oneOf, referenceExists, ValidationError } from "@/lib/validation";
 import { ActivityType,addWorkActivity,upsertDailyLog } from "@/lib/daily-log-data";
 import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { inwardPurchasedItems } from "@/lib/godown-data";
@@ -95,6 +97,26 @@ export interface MasterDailySheetPayload {
 export async function POST(request: Request) {
   try {
     const body: MasterDailySheetPayload = await request.json();
+    return withTransaction(() => {
+    dateKey(body.date); referenceExists(body.plotId, getDatabase().plots, "Plot");
+    const numeric = { labor: ["menCount", "womenCount", "workingHours", "menWageRate", "womenWageRate", "totalCost"], fertilizer: ["quantityKg", "cost"], machinery: ["runningHours", "dieselConsumedLiters", "dieselCost"], sales: ["quantityKg", "value"], purchase: ["cost"] } as const;
+    for (const [section, keys] of Object.entries(numeric)) {
+      const value = body[section as keyof typeof numeric]; if (value === undefined) continue;
+      if (!value || typeof value !== "object" || Array.isArray(value)) throw new ValidationError(`${section} must be an object.`);
+      const record = value as Record<string, unknown>;
+      for (const key of keys) if (record[key] !== undefined) finiteNumber(record[key], `${section} ${key}`);
+    }
+    if (body.labor) {
+      for (const count of [body.labor.menCount, body.labor.womenCount]) if (count !== undefined && !Number.isInteger(Number(count))) throw new ValidationError("Worker counts must be whole numbers.");
+      if (body.labor.workingHours !== undefined && Number(body.labor.workingHours) > 24) throw new ValidationError("Working hours cannot exceed 24 in a daily sheet.");
+    }
+    if (body.activity?.completedFlag !== undefined && typeof body.activity.completedFlag !== "boolean") throw new ValidationError("Activity completion must be a boolean.");
+    if (body.sales?.paymentStatus !== undefined) oneOf(body.sales.paymentStatus, ["PAID", "PENDING"], "Payment status");
+    if (body.plotCropId) {
+      const association = getPlotCrops().find(item => item.id === body.plotCropId);
+      if (!association || association.plotId !== body.plotId) throw new ValidationError("Crop assignment does not belong to this plot.");
+    }
+
 
     if (!body.date) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 });
@@ -109,7 +131,7 @@ export async function POST(request: Request) {
     const plotName = plot?.name || "General Estate";
 
     const plotCrops = getPlotCrops();
-    const plotCrop = plotCrops.find((pc) => pc.id === body.plotCropId || pc.plotId === body.plotId);
+    const plotCrop = body.plotCropId ? plotCrops.find(pc => pc.id === body.plotCropId) : plotCrops.find(pc => pc.plotId === body.plotId);
     const cropActivityName = plotCrop?.cropActivityName || "General Crop";
 
     const loggedBy = body.loggedBy?.trim() || "Field Supervisor";
@@ -153,13 +175,13 @@ export async function POST(request: Request) {
 
     // 3. Labor & Manpower Payout
     if (body.labor) {
-      const men = Number(body.labor.menCount) || 0;
-      const women = Number(body.labor.womenCount) || 0;
-      const workingHours = Number(body.labor.workingHours) || 8;
-      const menRate = Number(body.labor.menWageRate) || 600;
-      const womenRate = Number(body.labor.womenWageRate) || 500;
+      const men = finiteNumber(body.labor.menCount, "Men count", 0, 0);
+      const women = finiteNumber(body.labor.womenCount, "Women count", 0, 0);
+      const workingHours = finiteNumber(body.labor.workingHours, "Working hours", 0, 8);
+      const menRate = finiteNumber(body.labor.menWageRate, "Men wage rate", 0, 600);
+      const womenRate = finiteNumber(body.labor.womenWageRate, "Women wage rate", 0, 500);
       const calculatedCost = Math.round((men * menRate + women * womenRate) * (workingHours / 8));
-      const totalCost = Number(body.labor.totalCost) || calculatedCost;
+      const totalCost = finiteNumber(body.labor.totalCost, "Labor cost", 0, calculatedCost);
 
       if (men > 0 || women > 0 || totalCost > 0) {
         const laborLog = addLaborLog({
@@ -222,7 +244,7 @@ export async function POST(request: Request) {
       const machineName = body.machinery.machineName?.trim() || "";
       const runningHours = Number(body.machinery.runningHours) || 0;
       const dieselLiters = Number(body.machinery.dieselConsumedLiters) || 0;
-      const dieselCost = Number(body.machinery.dieselCost) || (dieselLiters * 95);
+      const dieselCost = finiteNumber(body.machinery.dieselCost, "Fuel cost", 0, dieselLiters * 95);
 
       if (dieselLiters > 0) {
         const dLog = addDieselLog({
@@ -305,7 +327,6 @@ export async function POST(request: Request) {
 
       if (cost > 0 || desc) {
         const pLog = addGeneralPurchaseLog({
-          voucherNo: `PUR-DAY-${Date.now().toString().slice(-6)}`,
           category: body.purchase.category?.trim() || "General Estate Supplies",
           plotCropId: body.plotCropId,
           plotName,
@@ -321,19 +342,7 @@ export async function POST(request: Request) {
           notes: body.purchase.notes?.trim() || `Daily master sheet purchase for ${plotName}`,
         });
 
-        try {
-          if (pLog.items && pLog.items.length > 0) {
-            inwardPurchasedItems(pLog.items, {
-              voucherId: pLog.id,
-              voucherNo: pLog.voucherNo,
-              category: pLog.category,
-              vendorName: pLog.vendorName,
-              date: pLog.date,
-            });
-          }
-        } catch (err) {
-          console.error("Auto inward failed in master sheet:", err);
-        }
+        if (pLog.items && pLog.items.length > 0) inwardPurchasedItems(pLog.items, { voucherId: pLog.id, voucherNo: pLog.voucherNo, category: pLog.category, vendorName: pLog.vendorName, date: pLog.date });
 
         dispatched.purchase = {
           id: pLog.id,
@@ -355,11 +364,12 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
+    });
   } catch (err) {
     console.error("Error in master-sheet route:", err);
     return NextResponse.json(
       { success: false, error: getErrorMessage(err) || "Failed to process master daily sheet" },
-      { status: 500 }
+      { status: err instanceof ValidationError || err instanceof SyntaxError ? 400 : 500 }
     );
   }
 }

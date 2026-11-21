@@ -10,49 +10,73 @@ div[class*="nextjs-portal"] {
   display: none !important;
 }
 
-/* Glassmorphism Structural Tokens */
+/* ==========================================================================
+   ENTERPRISE ESTATE MANAGEMENT ERP — DESIGN SYSTEM TOKENS
+   Primary Brand: #174D3C (Deep Forest Estate Green)
+   Primary Hover: #103C30
+   Primary Subtle: #EAF3EE
+   App Background: #F8FAFC
+   Surface: #FFFFFF
+   Main Text: #111827
+   Secondary Text: #64748B
+   Borders: #E2E8F0
+   Success: #16805D
+   Warning: #D97706
+   Danger: #DC3545
+   Information: #2563EB
+   ========================================================================== */
+
+/* Clean Card & Panel Surfaces */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(203, 243, 187, 0.7);
-  box-shadow: 0 4px 20px -2px rgba(147, 191, 199, 0.2), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
 }
 
 .glass-sidebar {
-  background: rgba(6, 78, 59, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(203, 243, 187, 0.2);
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
 }
 
 .glass-modal {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(171, 231, 178, 0.8);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(147, 191, 199, 0.1);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 }
 
-/* Ambient Estate Light Background Gradient Wash */
+/* Application Neutral Background */
 .bg-ambient-estate {
-  background: linear-gradient(135deg, #ECF4E8 0%, #FAFAF8 40%, #ECF4E8 100%);
+  background: #f8fafc;
 }
 
 @theme inline {
-  --color-estate-soft: #ECF4E8;
-  --color-estate-light: #CBF3BB;
-  --color-estate-mint: #ABE7B2;
-  --color-estate-teal: #93BFC7;
+  --color-estate-primary: #174D3C;
+  --color-estate-hover: #103C30;
+  --color-estate-subtle: #EAF3EE;
+  --color-estate-surface: #FFFFFF;
+  --color-estate-bg: #F8FAFC;
+  --color-estate-border: #E2E8F0;
+  --color-estate-text: #111827;
+  --color-estate-muted: #64748B;
+  --color-estate-success: #16805D;
+  --color-estate-warning: #D97706;
+  --color-estate-danger: #DC3545;
+  --color-estate-info: #2563EB;
 
+  /* Legacy aliases for backwards compatibility with existing components */
+  --color-estate-soft: #EAF3EE;
+  --color-estate-light: #EAF3EE;
+  --color-estate-mint: #d1fae5;
+  --color-estate-teal: #174D3C;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-profit: #10b981;
-  --color-profit-bg: #ecfdf5;
-  --color-loss: #ef4444;
-  --color-loss-bg: #fef2f2;
+  --color-profit: #16805D;
+  --color-profit-bg: #EAF3EE;
+  --color-loss: #DC3545;
+  --color-loss-bg: #FEF2F2;
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -81,59 +105,57 @@ div[class*="nextjs-portal"] {
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
 
-  --color-emerald-500: #10b981;
-  --color-emerald-600: #059669;
-  --color-red-500: #ef4444;
-  --color-red-600: #dc2626;
-  --color-amber-500: #f59e0b;
-  --color-blue-500: #3b82f6;
+  --color-emerald-500: #16805D;
+  --color-emerald-600: #174D3C;
+  --color-emerald-700: #103C30;
+  --color-red-500: #DC3545;
+  --color-red-600: #b91c1c;
+  --color-amber-500: #D97706;
+  --color-blue-500: #2563EB;
 }
 
-/* Tremor SVG color fallbacks for Tailwind v4 */
+/* Tremor SVG color fallbacks */
 .recharts-rectangle.recharts-bar-rectangle[fill="emerald"],
 svg .bg-emerald-500,
 svg [fill="#10b981"] {
-  fill: #10b981 !important;
+  fill: #16805D !important;
 }
 
 .recharts-rectangle.recharts-bar-rectangle[fill="red"],
 svg .bg-red-500,
 svg [fill="#ef4444"] {
-  fill: #ef4444 !important;
+  fill: #DC3545 !important;
 }
 
-/* Tremor default bar color fallback */
 .tremor-BarChart .recharts-bar-rectangle:nth-child(1) path,
 .recharts-layer.recharts-bar-series:nth-child(1) path {
-  fill: #10b981 !important;
+  fill: #16805D !important;
 }
 
 .tremor-BarChart .recharts-bar-rectangle:nth-child(2) path,
 .recharts-layer.recharts-bar-series:nth-child(2) path {
-  fill: #ef4444 !important;
+  fill: #DC3545 !important;
 }
-
-
 
 :root {
   --background: #f8fafc;
-  --foreground: #0f172a;
+  --foreground: #111827;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #111827;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #047857;
+  --popover-foreground: #111827;
+  --primary: #174D3C;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
+  --secondary-foreground: #111827;
+  --muted: #f8fafc;
   --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-  --destructive: #ef4444;
+  --accent: #EAF3EE;
+  --accent-foreground: #174D3C;
+  --destructive: #DC3545;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #10b981;
+  --ring: #174D3C;
   --radius: 0.5rem;
 }
 
@@ -141,9 +163,14 @@ svg [fill="#ef4444"] {
   * {
     @apply border-border;
   }
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-    @apply bg-[#FAFAFA] text-slate-900 antialiased;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    @apply bg-[#F8FAFC] text-slate-900 antialiased;
+    letter-spacing: -0.011em;
   }
 
   /* Consistent input, select, and textarea base interaction styles */
@@ -159,31 +186,54 @@ svg [fill="#ef4444"] {
     @apply transition-colors duration-150 outline-none;
   }
 
-  /* Dropdown selects: ensure proper icon alignment and height normalization */
+  /* Dropdown selects */
   select {
     cursor: pointer;
   }
 
-  /* Consistent button touch & hover feedback */
+  /* Buttons */
   button {
     cursor: pointer;
   }
 }
 
-/* Custom slick scrollbar styling */
+/* Custom slick enterprise scrollbar */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
   background: transparent;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(20, 83, 45, 0.4);
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(20, 83, 45, 0.7);
+  background: #94a3b8;
+}
+
+/* Clean ERP table row dividers & layout */
+.erp-table th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.erp-table td {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.erp-table tr:hover td {
+  background-color: #f8fafc;
 }
 
 @media print {

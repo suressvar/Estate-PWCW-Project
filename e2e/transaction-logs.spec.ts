@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { authenticate } from './auth';
 test.beforeEach(async ({ context }) => {
   await authenticate(context);
@@ -22,7 +22,7 @@ for (const sample of [
     const table = page.locator('table').first();
     if (sample.route === '/diesel') {
       await expect(table).toContainText('15 L');
-      await expect(table).toContainText('₹300.00');
+      await expect(table).toContainText(/₹300(?:\.00)?/);
     } else await expect(table).toContainText(sample.name);
   });
 }
@@ -31,7 +31,7 @@ test('Machinery form calculates runtime and records the operation', async ({ pag
   await page.getByLabel('Start time', { exact: true }).fill('08:00');
   await page.getByLabel('End time', { exact: true }).fill('12:00');
   const saved = page.waitForResponse(response => response.url().endsWith('/api/machinery-logs') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Record Machine Operation', exact: true }).click();
+  await page.getByRole('button', { name: 'Record Machine Run Log', exact: true }).click();
   expect((await saved).status()).toBe(201);
   const logs = await (await context.request.get('/api/machinery-logs')).json();
   expect(logs[0].runningHours).toBe(4);

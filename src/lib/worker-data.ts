@@ -1,3 +1,4 @@
+import { csvDocument } from './csv';
 import { assertRecordId } from "./validation";
 import { employeeDailyRate } from './payroll';
 import { validateAllocation, ValidationError, referenceExists } from './validation';
@@ -624,7 +625,7 @@ export function addWorkerActivityLog(data: {
   const db = getDatabase();
   if (!db.workerActivityLogs) db.workerActivityLogs = [];
   referenceExists(data.dailyLogId, db.dailyLogs || [], 'Daily log');
-  validateAllocation(data, db);
+  validateAllocation(db, data.plotId, data.cropCycleId);
   const parentLog = db.dailyLogs!.find(log => log.id === data.dailyLogId)!;
   if (parentLog.plotId !== data.plotId) throw new ValidationError('Daily log does not belong to the selected plot.');
   const timeSpentHours = finiteNumber(data.timeSpentHours, 'Time spent', 0, 8);
@@ -917,9 +918,9 @@ export function getMonthlyWorkerSummary(year: number, month: number) {
   ];
 
   const csvRows = summaries.map((r) => [
-    `"${r.workerId}"`,
-    `"${r.workerName.replace(/"/g, '""')}"`,
-    `"${r.role.replace(/"/g, '""')}"`,
+    r.workerId,
+    r.workerName,
+    r.role,
     r.dailyWageRate,
     r.totalDaysRecorded,
     r.presentDays,
@@ -935,23 +936,23 @@ export function getMonthlyWorkerSummary(year: number, month: number) {
 
   // Append estate total row
   csvRows.push([
-    '"TOTAL"',
-    `"All Workers (${summaries.length})"`,
-    '""',
-    '""',
-    '""',
-    '""',
-    '""',
-    '""',
-    '""',
-    '""',
+    'TOTAL',
+    `All Workers (${summaries.length})`,
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
     estateTotals.totalHours,
     estateTotals.totalWagesEarned,
     estateTotals.totalWagesPaid,
     estateTotals.totalBalanceDue,
   ]);
 
-  const csvString = [headers.join(","), ...csvRows.map((r) => r.join(","))].join("\n");
+  const csvString = csvDocument(headers, csvRows);
 
   return {
     year,

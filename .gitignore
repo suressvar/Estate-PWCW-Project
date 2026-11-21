@@ -19,6 +19,7 @@
 /eslint-results.json
 /test-lint-results.txt
 /.integration-app/
+/.black-box-app/
 /integration-artifacts/
 /integration-report/
 /integration-results.json
@@ -31,6 +32,9 @@
 /cross-browser-report/
 /cross-browser-artifacts/
 /cross-browser-output.txt
+/black-box*-results.json
+/black-box*-report/
+/black-box*-artifacts/
 /integration-build-output.txt
 /integration-typecheck.txt
 /integration-lint.json

@@ -16,6 +16,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const ok = deleteLeave(id);
-  return NextResponse.json({ success: ok });
+  try {
+    const ok = deleteLeave(id);
+    return ok ? NextResponse.json({ success: true }) : NextResponse.json({ error: 'Leave not found.' }, { status: 404 });
+  } catch (error) { return NextResponse.json({ error: getErrorMessage(error) }, { status: 409 }); }
 }

@@ -271,9 +271,9 @@ export function useMasterDailySheet({
             ? {
               menCount: Number(menCount) || 0,
               womenCount: Number(womenCount) || 0,
-              workingHours: workingHours ? Number(workingHours) : 8,
-              menWageRate: Number(menWageRate) || 600,
-              womenWageRate: Number(womenWageRate) || 500,
+              workingHours: workingHours === "" ? 8 : Number(workingHours),
+              menWageRate: menWageRate === "" ? 600 : Number(menWageRate),
+              womenWageRate: womenWageRate === "" ? 500 : Number(womenWageRate),
               totalCost: laborCostManual ? Number(laborCostManual) : calculatedLaborCost,
               notes: laborNotes.trim() || undefined,
             }

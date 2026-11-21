@@ -8,6 +8,8 @@ import { createVoucher, deleteVoucher, updateVoucher } from '../src/lib/vouchers
 import { addExpense, updateExpense } from '../src/lib/expenses-data';
 import { createMachine, addMachineUsageLog, deleteMachine } from '../src/lib/machinery-data';
 import { POST } from '../src/app/api/workers/route';
+import { createPlot } from '../src/lib/master-data';
+import { createCropCycle } from '../src/lib/crop-cycle-data';
 
 // Ordinary failing regressions: do not skip or invert these to hide defects.
 describe('confirmed defect regressions', () => {
@@ -48,7 +50,9 @@ describe('confirmed defect regressions', () => {
   });
   it('D10 removes synced crop expenses when deleting a machine and its usage', () => {
     const m = createMachine({ name: 'Tractor' });
-    addMachineUsageLog({ machineId: m.id, date: '2026-11-15', hoursUsed: 1, workDescription: 'Tilling', fuelCost: 100, cropCycleId: 'cycle' });
+    const plot = createPlot({ name: 'Machine test', location: 'Test', status: 'ACTIVE', areaAcres: 1 });
+    const cycle = createCropCycle({ plotId: plot.id, cropName: 'Tomato', sowingDate: '2026-11-01', expectedHarvestDate: '2026-12-31' });
+    addMachineUsageLog({ machineId: m.id, date: '2026-11-15', hoursUsed: 1, workDescription: 'Tilling', fuelCost: 100, cropCycleId: cycle.id });
     deleteMachine(m.id);
     expect(getDatabase().cropExpenses).toEqual([]);
   });

@@ -9,7 +9,7 @@ import { getDatabase } from '../src/lib/db-storage';
 import { AppShell } from '../src/components/app-shell';
 import { CascadeLogForm } from '../src/components/cascade-log-form';
 
-const navigation = vi.hoisted(() => ({ pathname: '/', params: {} as Record<string, string>, push: vi.fn(), refresh: vi.fn() }));
+const navigation = vi.hoisted(() => { const push = vi.fn(); return { pathname: '/', params: {} as Record<string, string>, push, replace: push, back: vi.fn(), refresh: vi.fn() }; });
 vi.mock('next/navigation', () => ({ useRouter: () => navigation, usePathname: () => navigation.pathname, useParams: () => navigation.params, useSearchParams: () => new URLSearchParams(), redirect: (path: string) => navigation.push(path) }));
 vi.mock('next/link', () => ({ default: ({ href, children, prefetch: _prefetch, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { prefetch?: boolean }) => { void _prefetch; return <a href={String(href)} {...props}>{children}</a>; } }));
 const pages = import.meta.glob('../src/app/**/page.tsx');
@@ -63,6 +63,36 @@ describe('shared navigation and cascade entry behavior', () => {
 });
 
 describe('form lifecycle and saved master data', () => {
+  it('rolls back a rejected salary adjustment and displays the server error', async () => {
+    seedRecords(); const pageModule = await pages['../src/app/salary/calculate/page.tsx']() as { default: React.ComponentType };
+    render(<pageModule.default />);
+    const input = await screen.findByLabelText<HTMLInputElement>('Bonus for Test Worker');
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ error: 'Adjustment rejected' }, { status: 400 }));
+    fireEvent.change(input, { target: { value: '200' } });
+    await screen.findByText('Adjustment rejected');
+    expect(input.value).toBe(''); expect(getDatabase().wages[0].bonus).toBe(0);
+  });
+  it('serializes rapid salary changes so the newest value is saved last', async () => {
+    seedRecords(); const pageModule = await pages['../src/app/salary/calculate/page.tsx']() as { default: React.ComponentType };
+    render(<pageModule.default />);
+    const input = await screen.findByLabelText<HTMLInputElement>('Bonus for Test Worker');
+    const values: number[] = []; let release!: () => void;
+    const barrier = new Promise<void>(resolve => { release = resolve; });
+    vi.mocked(fetch).mockImplementation(async (url, init) => {
+      if (init?.method === 'PUT') {
+        const body = JSON.parse(String(init.body)); values.push(body.bonus);
+        if (values.length === 1) await barrier;
+        return requestApi(String(url), 'PUT', body);
+      }
+      return requestApi(String(url));
+    });
+    fireEvent.change(input, { target: { value: '100' } });
+    await waitFor(() => expect(values).toEqual([100]));
+    fireEvent.change(input, { target: { value: '200' } });
+    expect(values).toEqual([100]); release();
+    await waitFor(() => expect(getDatabase().wages[0].bonus).toBe(200));
+    expect(values).toEqual([100, 200]); expect(input.value).toBe('200');
+  });
   for (const example of [
     { route: 'employees', open: 'Add Employee', selector: '[placeholder="e.g. Murugan K."]', collection: 'employees' },
     { route: 'ledger-groups', open: 'Add New Group', selector: '[placeholder="e.g. Direct Expenses, Selling Overheads"]', collection: 'ledgerGroups' },

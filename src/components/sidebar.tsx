@@ -1,46 +1,46 @@
 "use client";
 
 import {
-BarChart3,
-BookOpen,
-Boxes,
-Calendar,
-CalendarCheck,
-ChevronDown,
-CircleDollarSign,
-ClipboardList,
-DollarSign,
-FileText,
-FlaskConical,
-FolderTree,
-Fuel,
-History,
-Layers,
-LayoutDashboard,
-Link2,
-LogOut,
-MapPin,
-PackageCheck,
-Receipt,
-ReceiptText,
-Scale,
-Send,
-Settings,
-ShieldCheck,
-Sprout,
-Store,
-Tractor,
-Trees,
-TrendingUp,
-Users,
-Wallet,
-Warehouse,
-Wrench,
-X
+  BarChart3,
+  BookOpen,
+  Boxes,
+  Calendar,
+  CalendarCheck,
+  ChevronDown,
+  CircleDollarSign,
+  ClipboardList,
+  DollarSign,
+  FileText,
+  FlaskConical,
+  FolderTree,
+  Fuel,
+  History,
+  Layers,
+  LayoutDashboard,
+  Link2,
+  LogOut,
+  MapPin,
+  PackageCheck,
+  Receipt,
+  ReceiptText,
+  Scale,
+  Send,
+  Settings,
+  ShieldCheck,
+  Sprout,
+  Store,
+  Tractor,
+  Trees,
+  TrendingUp,
+  Users,
+  Wallet,
+  Warehouse,
+  Wrench,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname,useRouter } from "next/navigation";
-import React,{ useEffect,useState } from "react";
+import { usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
 
 export interface SubNavItem {
   title: string;
@@ -152,27 +152,35 @@ interface SidebarProps {
 
 export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const [logoutError, setLogoutError] = useState("");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    document.cookie = "estate_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    setLogoutError("");
     try {
-      sessionStorage.clear();
-      localStorage.removeItem("estate_session");
-    } catch (e) {
-      console.error(e);
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Unable to sign out. Please try again.");
+      document.cookie = "estate_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      try {
+        sessionStorage.clear();
+        localStorage.removeItem("estate_session");
+      } catch (e) {
+        console.error(e);
+      }
+      window.location.replace("/login");
+    } catch {
+      setLogoutError("Unable to sign out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
     }
-    router.replace("/login");
-    router.refresh();
   };
 
-  // Dynamic state: Submenus start collapsed by default unless active route belongs to it
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
     const initialState: Record<string, boolean> = {};
     navItems.forEach((item) => {
       if (item.children) {
-        // Open only if the current route belongs to this group
         const isChildActive = item.children.some((child) => child.href === pathname);
         initialState[item.title] = isChildActive;
       }
@@ -180,7 +188,6 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     return initialState;
   });
 
-  // Automatically expand parent menu if active route changes
   useEffect(() => {
     navItems.forEach((item) => {
       if (item.children) {
@@ -208,28 +215,28 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
       {mobileOpen && (
         <div
           onClick={onMobileClose}
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-200"
         />
       )}
 
       {/* Sidebar Drawer */}
       <aside
-        className={`w-64 bg-[#14532D] border-r border-[#0E3D20] flex flex-col h-screen fixed top-0 left-0 z-50 text-emerald-100 transition-transform duration-300 ease-in-out md:translate-x-0 print:hidden ${
+        className={`w-64 bg-white border-r border-slate-200 flex flex-col h-screen fixed top-0 left-0 z-50 transition-transform duration-200 ease-in-out md:translate-x-0 print:hidden ${
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        {/* Brand / Logo */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-[#0E3D20]">
-          <Link href="/" prefetch={false} className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-[#1E6C36] group-hover:bg-[#2E7D32] flex items-center justify-center text-white font-bold text-lg shadow-sm transition-colors">
+        {/* Brand Header */}
+        <div className="h-14 flex items-center justify-between px-4 border-b border-slate-200/90 shrink-0">
+          <Link href="/" prefetch={false} className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg bg-[#174D3C] group-hover:bg-[#103C30] flex items-center justify-center text-white font-bold text-sm shadow-xs transition-colors">
               E
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-base tracking-tight text-white leading-none">
+            <div className="flex flex-col text-left">
+              <span className="font-bold text-sm tracking-tight text-slate-900 leading-none">
                 ESTATE
               </span>
-              <span className="text-[11px] text-emerald-300 font-medium tracking-wider uppercase mt-0.5">
-                PWCW Management
+              <span className="text-[10px] text-[#16805D] font-semibold tracking-wider uppercase mt-0.5">
+                PWCW ERP
               </span>
             </div>
           </Link>
@@ -237,15 +244,19 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           {/* Close button on Mobile */}
           <button
             onClick={onMobileClose}
-            className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 md:hidden"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 md:hidden transition-colors"
             aria-label="Close Sidebar"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Navigation Links */}
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1.5 scrollbar-thin">
+        {/* Navigation Section */}
+        <div className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin">
+          <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Enterprise Navigation
+          </div>
+
           {navItems.map((item) => {
             const Icon = item.icon;
             const hasChildren = Boolean(item.children && item.children.length > 0);
@@ -255,36 +266,40 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
               const isAnyChildActive = item.children.some((c) => c.href === pathname);
 
               return (
-                <div key={item.title} className="space-y-1">
-                  {/* Main Accordion Header (Click / Touch to toggle submenus) */}
+                <div key={item.title} className="space-y-0.5">
+                  {/* Collapsible Section Header */}
                   <button
                     onClick={() => toggleMenu(item.title)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-xl transition-all group cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-2.5 py-2 text-[13px] rounded-lg transition-all group cursor-pointer ${
                       isAnyChildActive
-                        ? "text-white bg-[#1E6C36] shadow-xs border border-[#2E7D32]/40"
+                        ? "text-[#174D3C] bg-[#EAF3EE] font-semibold"
                         : isOpen
-                        ? "text-white bg-[#1E6C36]/55"
-                        : "text-emerald-100 hover:text-white hover:bg-[#1E6C36]/40"
+                        ? "text-slate-900 bg-slate-50 font-medium"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <Icon
-                        className={`w-4 h-4 transition-colors ${
-                          isAnyChildActive || isOpen ? "text-emerald-300" : "text-emerald-200/70 group-hover:text-white"
+                        className={`w-4 h-4 shrink-0 transition-colors ${
+                          isAnyChildActive
+                            ? "text-[#174D3C]"
+                            : isOpen
+                            ? "text-slate-700"
+                            : "text-slate-400 group-hover:text-slate-600"
                         }`}
                       />
-                      <span>{item.title}</span>
+                      <span className="truncate">{item.title}</span>
                     </div>
                     <ChevronDown
-                      className={`w-4 h-4 text-emerald-200/70 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-emerald-300" : ""
+                      className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
+                        isOpen ? "rotate-180 text-slate-600" : "text-slate-400"
                       }`}
                     />
                   </button>
 
-                  {/* Sub Menu Links (Collapsible) */}
+                  {/* Submenu Items */}
                   {isOpen && (
-                    <div className="pl-4 pr-1 space-y-1 border-l-2 border-[#1E6C36]/30 ml-4 py-1.5 animate-in slide-in-from-top-2 duration-200">
+                    <div className="ml-3.5 pl-2.5 border-l border-slate-200 space-y-0.5 py-0.5 animate-in slide-in-from-top-1 duration-150">
                       {item.children.map((child) => {
                         const ChildIcon = child.icon;
                         const isChildActive = pathname === child.href;
@@ -294,14 +309,18 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                             key={child.href}
                             href={child.href}
                             prefetch={false}
-                            className={`flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                            className={`flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md transition-all ${
                               isChildActive
-                                ? "bg-[#1E6C36] text-white font-bold shadow-xs border border-[#2E7D32]/40"
-                                : "text-emerald-100/80 hover:text-white hover:bg-[#1E6C36]/40"
+                                ? "bg-[#174D3C] text-white font-semibold shadow-2xs"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
                             }`}
                           >
-                            <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? "text-white" : "text-emerald-300/60"}`} />
-                            <span>{child.title}</span>
+                            <ChildIcon
+                              className={`w-3.5 h-3.5 shrink-0 ${
+                                isChildActive ? "text-white" : "text-slate-400"
+                              }`}
+                            />
+                            <span className="truncate">{child.title}</span>
                           </Link>
                         );
                       })}
@@ -317,28 +336,44 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                 key={item.title}
                 href={item.href || "#"}
                 prefetch={false}
-                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold rounded-xl transition-all ${
+                className={`flex items-center gap-2.5 px-2.5 py-2 text-[13px] rounded-lg transition-all ${
                   isActive
-                    ? "bg-[#1E6C36] text-white font-bold shadow-xs border border-[#2E7D32]/40"
-                    : "text-emerald-100/85 hover:text-white hover:bg-[#1E6C36]/40"
+                    ? "bg-[#174D3C] text-white font-semibold shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-emerald-200/70"}`} />
-                <span>{item.title}</span>
+                <Icon
+                  className={`w-4 h-4 shrink-0 ${
+                    isActive ? "text-white" : "text-slate-400"
+                  }`}
+                />
+                <span className="truncate">{item.title}</span>
               </Link>
             );
           })}
         </div>
 
-        {/* Footer Logout */}
-        <div className="p-3 border-t border-[#0E3D20] bg-[#0E3D20]/30">
+        {/* Footer Account & Logout */}
+        <div className="p-3 border-t border-slate-200/90 bg-slate-50/50 shrink-0">
+          {logoutError && (
+            <p role="alert" className="text-xs text-rose-600 mb-2 font-medium">
+              {logoutError}
+            </p>
+          )}
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold rounded-xl text-emerald-100 hover:text-white bg-[#0E3D20]/60 hover:bg-rose-900/50 border border-[#0E3D20]/80 hover:border-rose-700/50 transition-all shadow-xs group"
+            disabled={isLoggingOut}
+            className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200/70 hover:border-rose-200 bg-white transition-all shadow-2xs group cursor-pointer"
             title="Log Out"
           >
-            <LogOut className="w-4 h-4 text-emerald-300 group-hover:text-rose-300 transition-colors" />
-            <span>Logout</span>
+            <div className="flex items-center gap-2">
+              <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-600 transition-colors" />
+              <span>Logout</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">
+              {isLoggingOut ? "Exiting..." : "End Session"}
+            </span>
           </button>
         </div>
       </aside>

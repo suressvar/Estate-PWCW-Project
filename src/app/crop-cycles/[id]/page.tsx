@@ -2,39 +2,42 @@
 import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import { StatCard } from "@/components/ui/stat-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
+import { ContentCard } from "@/components/ui/content-card";
 import { CropCycleFinancialSummary } from "@/lib/crop-cycle-data";
 import {
-CropCycleItem,
-CropCycleStatus,
-CropExpenseCategory,
-CropExpenseItem,
-CropIncomeItem,
-CropIncomeSource,
+  CropCycleItem,
+  CropCycleStatus,
+  CropExpenseCategory,
+  CropExpenseItem,
+  CropIncomeItem,
+  CropIncomeSource,
 } from "@/lib/db-storage";
 import {
-AlertTriangle,
-ArrowLeft,
-CheckCircle2,
-CircleDollarSign,
-Plus,
-Receipt,
-RefreshCw,
-RotateCcw,
-Trash2,
-X
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  CircleDollarSign,
+  Plus,
+  Receipt,
+  RefreshCw,
+  RotateCcw,
+  Trash2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import React,{ useCallback,useEffect,useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 const EXPENSE_CATEGORIES: { label: string; value: CropExpenseCategory; color: string }[] = [
-  { label: "Seeds & Saplings", value: "SEEDS", color: "bg-emerald-500" },
-  { label: "Fertilizers & Nutrients", value: "FERTILIZER", color: "bg-teal-500" },
-  { label: "Pesticides & Sprays", value: "PESTICIDE", color: "bg-amber-500" },
-  { label: "Field Labor", value: "LABOR", color: "bg-blue-500" },
-  { label: "Machinery & Fuel", value: "MACHINERY", color: "bg-indigo-500" },
-  { label: "Irrigation & Water", value: "IRRIGATION", color: "bg-cyan-500" },
-  { label: "Transport & Cartage", value: "TRANSPORT", color: "bg-purple-500" },
+  { label: "Seeds & Saplings", value: "SEEDS", color: "bg-emerald-600" },
+  { label: "Fertilizers & Nutrients", value: "FERTILIZER", color: "bg-teal-600" },
+  { label: "Pesticides & Sprays", value: "PESTICIDE", color: "bg-amber-600" },
+  { label: "Field Labor", value: "LABOR", color: "bg-blue-600" },
+  { label: "Machinery & Fuel", value: "MACHINERY", color: "bg-indigo-600" },
+  { label: "Irrigation & Water", value: "IRRIGATION", color: "bg-cyan-600" },
+  { label: "Transport & Cartage", value: "TRANSPORT", color: "bg-purple-600" },
   { label: "Miscellaneous", value: "MISC", color: "bg-slate-500" },
 ];
 
@@ -42,7 +45,7 @@ const INCOME_SOURCES: { label: string; value: CropIncomeSource; color: string }[
   { label: "Market / Mandi Sale", value: "MARKET_SALE", color: "bg-emerald-600" },
   { label: "Direct Buyer / Retailer", value: "DIRECT_BUYER", color: "bg-teal-600" },
   { label: "Government Subsidy / Scheme", value: "GOVERNMENT_SCHEME", color: "bg-indigo-600" },
-  { label: "Other Receipts", value: "OTHER", color: "bg-slate-600" },
+  { label: "Other Receipts", value: "OTHER", color: "bg-slate-500" },
 ];
 
 export default function CropCycleDetailPage() {
@@ -107,7 +110,9 @@ export default function CropCycleDetailPage() {
             setDailyLogs(dlData);
           }
         }
-      } else setLoadError(res.status === 404 ? 'Crop cycle not found.' : 'Unable to load crop cycle.');
+      } else {
+        setLoadError(res.status === 404 ? 'Crop cycle not found.' : 'Unable to load crop cycle.');
+      }
     } catch (e) {
       console.error("Failed to load crop cycle details", e);
       setLoadError('Unable to load crop cycle. Please try again.');
@@ -118,9 +123,11 @@ export default function CropCycleDetailPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchCycleData();
-  })(); }, 0);
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchCycleData();
+      })();
+    }, 0);
     return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [fetchCycleData]);
 
@@ -273,7 +280,6 @@ export default function CropCycleDetailPage() {
     }
   };
 
-  // Delete Expense
   const handleDeleteExpense = async (expenseId: string) => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
     try {
@@ -289,7 +295,6 @@ export default function CropCycleDetailPage() {
     }
   };
 
-  // Delete Income
   const handleDeleteIncome = async (incomeId: string) => {
     if (!confirm("Are you sure you want to delete this sales income entry?")) return;
     try {
@@ -305,11 +310,11 @@ export default function CropCycleDetailPage() {
     }
   };
 
-  if (loadError) return <div role="alert" className="p-12 text-center text-slate-600">{loadError}</div>;
+  if (loadError) return <div role="alert" className="p-12 text-center text-slate-600 font-medium">{loadError}</div>;
   if (loading || !cycle) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center text-slate-500 text-sm font-bold">
-        <RefreshCw className="w-5 h-5 animate-spin mr-2 text-emerald-600" />
+      <div className="min-h-[50vh] flex items-center justify-center text-slate-500 text-sm font-semibold">
+        <RefreshCw className="w-5 h-5 animate-spin mr-2 text-estate-primary" />
         Loading Crop Cycle Financial Ledger...
       </div>
     );
@@ -321,12 +326,12 @@ export default function CropCycleDetailPage() {
   const isProfitable = netProfitLoss >= 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300">
+    <PageContainer>
       {/* Back link */}
-      <div className="flex items-center justify-between">
+      <div>
         <Link
           href="/crop-cycles"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-emerald-800 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-estate-primary transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Crop Cycles Overview</span>
@@ -337,7 +342,7 @@ export default function CropCycleDetailPage() {
       {actionAlert && (
         <div
           id="cycle-feedback-alert"
-          className={`p-4 rounded-2xl flex items-center justify-between shadow-xs transition-all ${
+          className={`p-3.5 rounded-xl flex items-center justify-between shadow-xs transition-all ${
             actionAlert.type === "success"
               ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
               : actionAlert.type === "warning"
@@ -347,49 +352,42 @@ export default function CropCycleDetailPage() {
         >
           <div className="flex items-center gap-2.5">
             {actionAlert.type === "success" ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : actionAlert.type === "warning" ? (
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             ) : (
-              <X className="w-5 h-5 text-rose-600 shrink-0" />
+              <X className="w-4 h-4 text-rose-600 shrink-0" />
             )}
-            <span className="text-sm font-semibold">{actionAlert.text}</span>
+            <span className="text-xs font-semibold">{actionAlert.text}</span>
           </div>
           <button
             onClick={() => setActionAlert(null)}
-            className="p-1 rounded-lg hover:bg-black/5 text-slate-500"
+            className="p-1 rounded-md hover:bg-black/5 text-slate-500"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Hero Header Card */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-[#14532D] to-teal-950 text-white p-6 sm:p-8 shadow-xl border border-emerald-800/60">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
-                {cycle.plotName}
-              </span>
-              <span className="text-xs text-emerald-300 font-mono">
-                Sown: {cycle.sowingDate}
-              </span>
-            </div>
-            <h1 id="cycle-detail-title" className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              {cycle.cropName}
-            </h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
+      {/* Clean Page Header with Controls */}
+      <PageHeader
+        title={cycle.cropName}
+        titleId="cycle-detail-title"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Crop Cycles", href: "/crop-cycles" },
+          { label: cycle.cropName },
+        ]}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
             {/* Status Selector */}
-            <div className="bg-emerald-900/80 rounded-xl p-1 border border-emerald-700/60 flex items-center gap-1.5 text-xs font-bold">
-              <span className="pl-2 text-emerald-300 text-[11px] uppercase tracking-wider">Status:</span>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 flex items-center gap-2 text-xs">
+              <span className="text-slate-500 font-semibold text-[11px] uppercase tracking-wider">Status:</span>
               <select
                 id="cycle-status-dropdown"
                 value={cycle.status}
                 onChange={(e) => handleStatusChange(e.target.value as CropCycleStatus)}
-                className="bg-emerald-950 px-3 py-1.5 rounded-lg text-white font-bold text-xs focus:outline-hidden cursor-pointer"
+                className="bg-transparent text-slate-900 font-semibold text-xs focus:outline-none cursor-pointer"
               >
                 <option value="SOWN">Sown</option>
                 <option value="GROWING">Growing</option>
@@ -404,10 +402,10 @@ export default function CropCycleDetailPage() {
               id="sync-operations-btn"
               onClick={handleSyncOperations}
               disabled={isSyncing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 border border-emerald-600/50 shadow-sm transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-xs transition-colors disabled:opacity-50"
               title="Auto-pull labor and machinery usage costs matching this plot and timeframe"
             >
-              <RotateCcw className={`w-3.5 h-3.5 text-cyan-300 ${isSyncing ? "animate-spin" : ""}`} />
+              <RotateCcw className={`w-3.5 h-3.5 text-estate-primary ${isSyncing ? "animate-spin" : ""}`} />
               <span>{isSyncing ? "Syncing..." : "Sync Operational Costs"}</span>
             </button>
 
@@ -415,9 +413,9 @@ export default function CropCycleDetailPage() {
             <button
               id="add-expense-modal-btn"
               onClick={() => setIsExpenseModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 text-rose-700 border border-rose-200 shadow-xs transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 text-rose-600" />
               <span>Log Expense</span>
             </button>
 
@@ -425,14 +423,14 @@ export default function CropCycleDetailPage() {
             <button
               id="add-income-modal-btn"
               onClick={() => setIsIncomeModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-emerald-950 hover:bg-emerald-50 shadow-md transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-estate-primary hover:bg-estate-primary-hover text-white shadow-xs transition-colors"
             >
-              <Plus className="w-3.5 h-3.5 text-emerald-700" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Log Harvest Sale</span>
             </button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* P&L Financial Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -462,16 +460,11 @@ export default function CropCycleDetailPage() {
 
       {/* Visual Analytics & Breakdown Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category Expense Breakdown (Custom SVG/Tailwind Chart) */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
-              <Receipt className="w-4 h-4 text-rose-600" />
-              <span>Expense Breakdown by Category</span>
-            </div>
-            <span className="text-xs font-bold text-slate-600">₹{totalExpenses.toLocaleString()} Total</span>
-          </div>
-
+        {/* Category Expense Breakdown */}
+        <ContentCard
+          title="Expense Breakdown by Category"
+          subtitle={`₹${totalExpenses.toLocaleString()} Total`}
+        >
           {financials?.expenseBreakdown && financials.expenseBreakdown.length > 0 ? (
             <div className="space-y-3 pt-1">
               {financials.expenseBreakdown.map((item) => {
@@ -479,15 +472,15 @@ export default function CropCycleDetailPage() {
                 return (
                   <div key={item.category} className="space-y-1">
                     <div className="flex justify-between text-xs font-medium">
-                      <span className="text-slate-700 font-bold">{catDef?.label || item.category}</span>
-                      <span className="text-slate-900 font-bold">
+                      <span className="text-slate-700 font-semibold">{catDef?.label || item.category}</span>
+                      <span className="text-slate-900 font-semibold">
                         ₹{item.amount.toLocaleString()}{" "}
                         <span className="text-slate-400 font-normal">({item.percentage}%)</span>
                       </span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${catDef?.color || "bg-emerald-600"} transition-all duration-500`}
+                        className={`h-full ${catDef?.color || "bg-estate-primary"} transition-all duration-500`}
                         style={{ width: `${Math.max(item.percentage, 4)}%` }}
                       />
                     </div>
@@ -500,18 +493,13 @@ export default function CropCycleDetailPage() {
               No expenses recorded yet. Click &ldquo;Log Expense&rdquo; or &ldquo;Sync Operational Costs&rdquo;.
             </p>
           )}
-        </div>
+        </ContentCard>
 
         {/* Income Sources Breakdown */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
-              <CircleDollarSign className="w-4 h-4 text-emerald-600" />
-              <span>Income Breakdown by Source</span>
-            </div>
-            <span className="text-xs font-bold text-emerald-700">₹{totalIncome.toLocaleString()} Total</span>
-          </div>
-
+        <ContentCard
+          title="Income Breakdown by Source"
+          subtitle={`₹${totalIncome.toLocaleString()} Total`}
+        >
           {financials?.incomeBreakdown && financials.incomeBreakdown.length > 0 ? (
             <div className="space-y-3 pt-1">
               {financials.incomeBreakdown.map((item) => {
@@ -519,15 +507,15 @@ export default function CropCycleDetailPage() {
                 return (
                   <div key={item.source} className="space-y-1">
                     <div className="flex justify-between text-xs font-medium">
-                      <span className="text-slate-700 font-bold">{srcDef?.label || item.source}</span>
-                      <span className="text-slate-900 font-bold">
+                      <span className="text-slate-700 font-semibold">{srcDef?.label || item.source}</span>
+                      <span className="text-slate-900 font-semibold">
                         ₹{item.amount.toLocaleString()}{" "}
                         <span className="text-slate-400 font-normal">({item.percentage}%)</span>
                       </span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${srcDef?.color || "bg-emerald-600"} transition-all duration-500`}
+                        className={`h-full ${srcDef?.color || "bg-estate-primary"} transition-all duration-500`}
                         style={{ width: `${Math.max(item.percentage, 4)}%` }}
                       />
                     </div>
@@ -540,19 +528,19 @@ export default function CropCycleDetailPage() {
               No harvest sales income recorded yet. Click &ldquo;Log Harvest Sale&rdquo;.
             </p>
           )}
-        </div>
+        </ContentCard>
       </div>
 
       {/* Ledger Entries Section & Timeline */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <ContentCard noPadding>
         {/* Tab Controls */}
-        <div className="flex items-center gap-2 p-2 bg-slate-50 border-b border-slate-200">
+        <div className="flex items-center gap-1.5 p-2 bg-slate-50 border-b border-slate-100">
           <button
             id="tab-btn-expenses"
             onClick={() => setActiveTab("expenses")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "expenses"
-                ? "bg-white text-slate-900 shadow-xs"
+                ? "bg-white text-estate-primary shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -561,9 +549,9 @@ export default function CropCycleDetailPage() {
           <button
             id="tab-btn-incomes"
             onClick={() => setActiveTab("incomes")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "incomes"
-                ? "bg-white text-slate-900 shadow-xs"
+                ? "bg-white text-estate-primary shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -572,9 +560,9 @@ export default function CropCycleDetailPage() {
           <button
             id="tab-btn-timeline"
             onClick={() => setActiveTab("timeline")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "timeline"
-                ? "bg-white text-slate-900 shadow-xs"
+                ? "bg-white text-estate-primary shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -585,44 +573,44 @@ export default function CropCycleDetailPage() {
         {/* Tab 1: Expense Ledger */}
         {activeTab === "expenses" && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs" id="expenses-table">
+            <table className="w-full text-left text-xs erp-table" id="expenses-table">
               <thead>
-                <tr className="bg-slate-50/60 text-slate-600 font-bold border-b border-slate-200">
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Description</th>
-                  <th className="py-3 px-4">Daily Log Link</th>
-                  <th className="py-3 px-4 text-right">Amount (₹)</th>
-                  <th className="py-3 px-4 text-center">Action</th>
+                <tr>
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Category</th>
+                  <th className="p-3">Description</th>
+                  <th className="p-3">Daily Log Link</th>
+                  <th className="p-3 text-right">Amount (₹)</th>
+                  <th className="p-3 text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody>
                 {expenses.length > 0 ? (
                   expenses.map((exp) => (
-                    <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 px-4 text-slate-900 font-semibold">{exp.date}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-800">
+                    <tr key={exp.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 text-slate-900 font-semibold">{exp.date}</td>
+                      <td className="p-3">
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-800">
                           {exp.category}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-slate-800">{exp.description}</td>
-                      <td className="py-3 px-4 text-slate-500">
+                      <td className="p-3 font-medium text-slate-800">{exp.description}</td>
+                      <td className="p-3 text-slate-500">
                         {exp.linkedDailyLogId ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                             Linked Log
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right font-bold text-slate-900">
+                      <td className="p-3 text-right font-bold text-slate-900">
                         ₹{Number(exp.amount).toLocaleString()}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="p-3 text-center">
                         <button
                           onClick={() => handleDeleteExpense(exp.id)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Delete expense"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -645,41 +633,41 @@ export default function CropCycleDetailPage() {
         {/* Tab 2: Income Ledger */}
         {activeTab === "incomes" && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs" id="incomes-table">
+            <table className="w-full text-left text-xs erp-table" id="incomes-table">
               <thead>
-                <tr className="bg-slate-50/60 text-slate-600 font-bold border-b border-slate-200">
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Sales Source</th>
-                  <th className="py-3 px-4">Buyer / Invoice</th>
-                  <th className="py-3 px-4 text-right">Quantity & Rate</th>
-                  <th className="py-3 px-4 text-right">Total Amount (₹)</th>
-                  <th className="py-3 px-4 text-center">Action</th>
+                <tr>
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Sales Source</th>
+                  <th className="p-3">Buyer / Invoice</th>
+                  <th className="p-3 text-right">Quantity & Rate</th>
+                  <th className="p-3 text-right">Total Amount (₹)</th>
+                  <th className="p-3 text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody>
                 {incomes.length > 0 ? (
                   incomes.map((inc) => (
-                    <tr key={inc.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 px-4 text-slate-900 font-semibold">{inc.date}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <tr key={inc.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 text-slate-900 font-semibold">{inc.date}</td>
+                      <td className="p-3">
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                           {inc.source}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-slate-800 font-semibold">
+                      <td className="p-3 text-slate-800 font-medium">
                         {inc.buyerName || "Direct Market"}
                         {inc.invoiceNo && <span className="text-slate-400 text-[10px] block">Inv: {inc.invoiceNo}</span>}
                       </td>
-                      <td className="py-3 px-4 text-right text-slate-600">
+                      <td className="p-3 text-right text-slate-600">
                         {inc.quantitySold} {inc.unit} @ ₹{inc.ratePerUnit}/{inc.unit}
                       </td>
-                      <td className="py-3 px-4 text-right font-black text-emerald-700">
+                      <td className="p-3 text-right font-bold text-emerald-700">
                         ₹{Number(inc.amount).toLocaleString()}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="p-3 text-center">
                         <button
                           onClick={() => handleDeleteIncome(inc.id)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Delete income"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -712,7 +700,7 @@ export default function CropCycleDetailPage() {
                   <div
                     className={`absolute -left-[9px] top-0.5 w-4 h-4 rounded-full border-2 border-white shadow-xs ${
                       item.type === "SOWING"
-                        ? "bg-emerald-600"
+                        ? "bg-estate-primary"
                         : item.type === "HARVEST"
                         ? "bg-teal-600"
                         : item.type === "INCOME"
@@ -726,7 +714,7 @@ export default function CropCycleDetailPage() {
                       <h5 className="text-xs font-bold text-slate-800">{item.title}</h5>
                       {item.amount !== undefined && (
                         <span
-                          className={`text-xs font-extrabold ${
+                          className={`text-xs font-bold ${
                             item.type === "INCOME" ? "text-emerald-700" : "text-rose-700"
                           }`}
                         >
@@ -741,35 +729,33 @@ export default function CropCycleDetailPage() {
             </div>
           </div>
         )}
-      </div>
+      </ContentCard>
 
       {/* MODAL 1: Add Expense Modal */}
       {isExpenseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center">
-                  <Receipt className="w-4 h-4" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Log Crop Cycle Expense</h3>
+                <Receipt className="w-4 h-4 text-rose-600" />
+                <h3 className="text-sm font-bold text-slate-900">Log Crop Cycle Expense</h3>
               </div>
               <button
                 onClick={() => setIsExpenseModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddExpense} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Expense Category *</label>
+            <form onSubmit={handleAddExpense} className="space-y-3.5 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">Expense Category *</label>
                 <select
                   id="expense-cat-select"
                   value={expCategory}
                   onChange={(e) => setExpCategory(e.target.value as CropExpenseCategory)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                 >
                   {EXPENSE_CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>
@@ -779,8 +765,8 @@ export default function CropCycleDetailPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Amount (₹) *</label>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">Amount (₹) *</label>
                 <input
                   id="expense-amount-input"
                   type="number"
@@ -789,24 +775,24 @@ export default function CropCycleDetailPage() {
                   placeholder="e.g. 4500"
                   value={expAmount}
                   onChange={(e) => setExpAmount(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Date *</label>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">Date *</label>
                 <input
                   id="expense-date-input"
                   type="date"
                   required
                   value={expDate}
                   onChange={(e) => setExpDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Description / Details *</label>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">Description / Details *</label>
                 <input
                   id="expense-desc-input"
                   type="text"
@@ -814,17 +800,17 @@ export default function CropCycleDetailPage() {
                   placeholder="e.g. 5 bags urea, seedling purchase, tractor plowing..."
                   value={expDesc}
                   onChange={(e) => setExpDesc(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Link to Daily Log (Optional)</label>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">Link to Daily Log (Optional)</label>
                 <select
                   id="expense-daily-log-select"
                   value={expDailyLogId}
                   onChange={(e) => setExpDailyLogId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                 >
                   <option value="">-- No linked daily log --</option>
                   {dailyLogs.map((dl) => (
@@ -839,7 +825,7 @@ export default function CropCycleDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsExpenseModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                 >
                   Cancel
                 </button>
@@ -847,7 +833,7 @@ export default function CropCycleDetailPage() {
                   id="save-expense-btn"
                   type="submit"
                   disabled={isSubmittingExpense}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors disabled:opacity-50"
                 >
                   {isSubmittingExpense ? "Recording..." : "Record Expense"}
                 </button>
@@ -859,31 +845,29 @@ export default function CropCycleDetailPage() {
 
       {/* MODAL 2: Add Income Modal */}
       {isIncomeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                  <CircleDollarSign className="w-4 h-4" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Log Harvest Sale Income</h3>
+                <CircleDollarSign className="w-4 h-4 text-estate-primary" />
+                <h3 className="text-sm font-bold text-slate-900">Log Harvest Sale Income</h3>
               </div>
               <button
                 onClick={() => setIsIncomeModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddIncome} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Sales Channel / Source *</label>
+            <form onSubmit={handleAddIncome} className="space-y-3.5 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">Sales Channel / Source *</label>
                 <select
                   id="income-source-select"
                   value={incSource}
                   onChange={(e) => setIncSource(e.target.value as CropIncomeSource)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                 >
                   {INCOME_SOURCES.map((s) => (
                     <option key={s.value} value={s.value}>
@@ -894,8 +878,8 @@ export default function CropCycleDetailPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Quantity Sold *</label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Quantity Sold *</label>
                   <input
                     id="income-qty-input"
                     type="number"
@@ -904,11 +888,11 @@ export default function CropCycleDetailPage() {
                     placeholder="e.g. 1500"
                     value={incQuantity}
                     onChange={(e) => setIncQuantity(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Unit *</label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Unit *</label>
                   <input
                     id="income-unit-input"
                     type="text"
@@ -916,14 +900,14 @@ export default function CropCycleDetailPage() {
                     placeholder="kg, tons, boxes"
                     value={incUnit}
                     onChange={(e) => setIncUnit(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Rate per Unit (₹) *</label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Rate per Unit (₹) *</label>
                   <input
                     id="income-rate-input"
                     type="number"
@@ -932,12 +916,12 @@ export default function CropCycleDetailPage() {
                     placeholder="e.g. 22"
                     value={incRate}
                     onChange={(e) => setIncRate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Computed Total</label>
-                  <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm font-black text-emerald-700">
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Computed Total</label>
+                  <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700">
                     ₹
                     {(
                       (Number(incQuantity) || 0) * (Number(incRate) || 0)
@@ -946,39 +930,39 @@ export default function CropCycleDetailPage() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Date *</label>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700">Date *</label>
                 <input
                   id="income-date-input"
                   type="date"
                   required
                   value={incDate}
                   onChange={(e) => setIncDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Buyer Name</label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Buyer Name</label>
                   <input
                     id="income-buyer-input"
                     type="text"
                     placeholder="e.g. Reliance Fresh, Local Mandi"
                     value={incBuyer}
                     onChange={(e) => setIncBuyer(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Invoice / Bill No.</label>
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700">Invoice / Bill No.</label>
                   <input
                     id="income-invoice-input"
                     type="text"
                     placeholder="e.g. INV-2026-09"
                     value={incInvoice}
                     onChange={(e) => setIncInvoice(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
               </div>
@@ -987,7 +971,7 @@ export default function CropCycleDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsIncomeModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                 >
                   Cancel
                 </button>
@@ -995,7 +979,7 @@ export default function CropCycleDetailPage() {
                   id="save-income-btn"
                   type="submit"
                   disabled={isSubmittingIncome}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm transition-colors disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-xs font-semibold bg-estate-primary hover:bg-estate-primary-hover text-white shadow-xs transition-colors disabled:opacity-50"
                 >
                   {isSubmittingIncome ? "Recording..." : "Record Harvest Sale"}
                 </button>
@@ -1004,6 +988,6 @@ export default function CropCycleDetailPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

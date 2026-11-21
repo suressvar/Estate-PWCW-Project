@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { authenticate } from './auth';
 test('Attendance UI, wage register, payment and monthly summary reconcile', async ({ page, context }) => {
   await authenticate(context); const request = context.request;

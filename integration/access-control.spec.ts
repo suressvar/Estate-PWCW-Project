@@ -1,6 +1,7 @@
+import { testBaseURL } from './helpers';
 import { resetTestData, signIn } from "./helpers";
 import { test, expect } from '@playwright/test';
-test.beforeEach(async ({ playwright }) => { const setup = await playwright.request.newContext({ baseURL: 'http://localhost:3107' }); try { await resetTestData(setup); } finally { await setup.dispose(); } });
+test.beforeEach(async ({ playwright }) => { const setup = await playwright.request.newContext({ baseURL: testBaseURL }); try { await resetTestData(setup); } finally { await setup.dispose(); } });
 test.describe('access boundaries on isolated test server', () => {
   test('S01 unauthenticated pages redirect to login', async ({ request }) => {
     const response = await request.get('/workers', { maxRedirects: 0 });

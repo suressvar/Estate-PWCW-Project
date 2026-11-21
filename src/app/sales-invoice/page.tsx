@@ -1,10 +1,12 @@
 "use client";
-import type { SaleRow } from "@/types/api";
 
-import { FileText,Plus } from "lucide-react";
+import type { SaleRow } from "@/types/api";
+import { FileText, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
+import { PageContainer } from "@/components/layout/page-container";
+import { PageHeader } from "@/components/layout/page-header";
 
 export default function SalesInvoiceIndexPage() {
   const router = useRouter();
@@ -35,30 +37,44 @@ export default function SalesInvoiceIndexPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-12 text-center text-xs text-slate-500 font-medium">
-        Loading sales invoices...
-      </div>
+      <PageContainer>
+        <div className="py-20 text-center text-xs text-slate-500 font-medium">
+          Loading sales invoices...
+        </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-8 space-y-4 text-center">
-      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto border border-emerald-200">
-        <FileText className="w-6 h-6" />
+    <PageContainer>
+      <PageHeader
+        title="Sales Invoices"
+        breadcrumbs={[
+          { label: "Sales & Distribution", href: "/sales-register" },
+          { label: "Invoices" },
+        ]}
+      />
+
+      <div className="max-w-md mx-auto py-16 text-center space-y-4 bg-white rounded-2xl border border-slate-200 p-8 shadow-xs">
+        <div className="w-12 h-12 rounded-xl bg-[#EAF3EE] text-[#174D3C] flex items-center justify-center mx-auto">
+          <FileText className="w-6 h-6" />
+        </div>
+        <h2 className="text-base font-bold text-slate-900">
+          No Sales Invoices Generated
+        </h2>
+        <p className="text-xs text-slate-500">
+          No sales transactions have been recorded yet. Create your first sales entry to generate an official tax invoice.
+        </p>
+        <div className="pt-2">
+          <Link
+            href="/sales"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create New Sales Entry</span>
+          </Link>
+        </div>
       </div>
-      <h1 className="text-xl font-bold text-slate-900">Ranga Estate Sales Invoices</h1>
-      <p className="text-xs text-slate-500 max-w-sm mx-auto">
-        No sales transactions have been recorded yet. Create your first sales entry to generate an official tax invoice.
-      </p>
-      <div className="pt-2">
-        <Link
-          href="/sales"
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create New Sales Entry</span>
-        </Link>
-      </div>
-    </div>
+    </PageContainer>
   );
 }

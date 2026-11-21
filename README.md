@@ -10,7 +10,7 @@ See [FINAL_SOFTWARE_REPORT.md](FINAL_SOFTWARE_REPORT.md) for the latest verified
 
 ## Unit testing
 
-Install the locked dependencies with `npm ci --legacy-peer-deps` (the existing UI packages have conflicting optional date-fns peer requirements).
+Install the locked dependencies with `npm ci`.
 
 - `npm test` runs all isolated unit, component, and direct request-handler tests.
 - `npm run test:watch` reruns tests during editing.
@@ -25,16 +25,24 @@ The regression tests retain the original expectations for the defects identified
 
 ## Integration and validation testing
 
-These tests use an isolated production build on port 3107 and disposable records, with real HTTP requests, disk storage and Chromium. Prepare and build it first, then run each test suite separately:
+Run the complete regression suite with one command:
 
 ```text
-npm run test:integration:prepare
-npm run test:integration:build
+npm run test:all
+```
+
+This runs unit coverage, refreshes and builds a disposable application copy when code or copied tests are out of date, then runs production integration, legacy and Firefox/WebKit suites sequentially. It uses `.black-box-app` on port 3117 by default, with separate authentication and synthetic records. Stale builds and unsafe direct legacy launches are rejected before they can use estate records.
+
+The individual commands also refresh stale builds automatically:
+
+```text
 npm run test:integration
 npm run test:integration:legacy
 npm run test:cross-browser
 npm run test:integration:report
 ```
+
+Do not run all projects together through the raw Playwright command. The legacy suite imports storage directly and must run through its wrapper in the marked disposable working directory. Advanced test copies can be selected with `TEST_APP_DIR` and `TEST_SERVER_PORT`; occupied test servers are left running.
 
 The legacy wrapper runs direct-storage tests from inside the isolated copy. Use this wrapper to keep their writes away from working estate records. Reports are available in `integration-report/index.html`, `legacy-browser-report/index.html`, `cross-browser-report/index.html`, and [FINAL_SOFTWARE_REPORT.md](FINAL_SOFTWARE_REPORT.md). The suites share a port and test data, so run them sequentially. Install the matching browsers with `npx playwright install chromium firefox webkit` if missing. The test server uses separate test-only authentication settings; it does not copy real passwords or estate records.
 

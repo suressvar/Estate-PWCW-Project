@@ -1,21 +1,24 @@
 "use client";
-import { useCallback } from 'react';
-import type { SaleRow } from "@/types/api";
-
-import {
-ArrowLeft,
-Calendar,
-CheckCircle2,
-FileSpreadsheet,
-Plus,
-Receipt,
-Search,
-ShieldAlert,
-Trash2
-} from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect,useState } from "react";
+import {
+  Calendar,
+  CheckCircle2,
+  DollarSign,
+  FileSpreadsheet,
+  Layers,
+  Plus,
+  Search,
+  ShieldAlert,
+  Trash2,
+} from "lucide-react";
+import { csvDocument, csvDataUri } from "@/lib/csv";
+import type { SaleRow } from "@/types/api";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
+import { StatCard } from "@/components/ui/stat-card";
 
 export default function SalesRegisterPage() {
   const params = useParams();
@@ -32,7 +35,7 @@ export default function SalesRegisterPage() {
     try {
       const res = await fetch(`/api/sales/${s_type}`);
       const data = await res.json();
-      setRecords(data);
+      setRecords(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -42,10 +45,15 @@ export default function SalesRegisterPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchSales();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchSales();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, [fetchSales, s_type]);
 
   const handleDelete = async (id: string) => {
@@ -65,17 +73,16 @@ export default function SalesRegisterPage() {
       r.srNo || "",
       r.dateOfSale || "",
       r.itemName || "",
-      String(r.quantity || ""),
+      r.quantity ?? "",
       r.unit || "",
-      String(r.pricePerUnit || ""),
-      String(r.totalAmount || ""),
+      r.pricePerUnit ?? "",
+      r.totalAmount ?? "",
       r.buyerName || "",
       r.buyerCity || "",
       r.buyerContact || "",
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const encodedUri = csvDataUri(csvDocument(headers, rows));
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `harvest_produce_sales_register.csv`);
@@ -101,192 +108,173 @@ export default function SalesRegisterPage() {
   const totalVolume = filtered.reduce((acc, r) => acc + Number(r.quantity || 0), 0);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/sales-dashboard"
-            className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">
-              Harvest & PWCW Produce Sales Register
-            </h1>
+    <PageContainer>
+      <PageHeader
+        title="Harvest & Produce Sales Register"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Sales Register", href: "/sales-register" },
+          { label: s_type.toUpperCase() },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportCSV}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] text-xs font-medium rounded-lg transition-colors shadow-2xs"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[#64748B]" /> Export CSV
+            </button>
+            <Link
+              href="/sales"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> New Sales Voucher
+            </Link>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={exportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" /> Export CSV
-          </button>
-          <Link
-            href="/sales"
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
-          >
-            <Plus className="w-4 h-4" /> New Sales Voucher
-          </Link>
-        </div>
-      </div>
+        }
+      />
 
       {msg && (
-        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"}`}>
-          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <ShieldAlert className="w-4 h-4 text-rose-600" />}
-          {msg.text}
+        <div
+          className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+            msg.type === "success"
+              ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]"
+              : "bg-red-50 text-red-800 border-red-200"
+          }`}
+        >
+          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-[#174D3C]" /> : <ShieldAlert className="w-4 h-4 text-red-600" />}
+          <span>{msg.text}</span>
         </div>
       )}
 
-      {/* Summary KPI Highlights */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Filtered Revenue</span>
-          <div className="text-lg font-bold text-emerald-800 mt-0.5">₹{totalRevenue.toLocaleString()}</div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Total Volume / Units</span>
-          <div className="text-lg font-bold text-slate-800 mt-0.5">
-            {totalVolume.toLocaleString()} units
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Total Dispatches</span>
-          <div className="text-lg font-bold text-slate-900 mt-0.5">{filtered.length} Entries</div>
-        </div>
+        <StatCard
+          title="Filtered Revenue"
+          value={`₹${totalRevenue.toLocaleString()}`}
+          subtitle="Realized income"
+          icon={DollarSign}
+        />
+        <StatCard
+          title="Total Volume"
+          value={`${totalVolume.toLocaleString()} units`}
+          subtitle="Cumulative quantity dispatched"
+        />
+        <StatCard
+          title="Dispatches Logged"
+          value={`${filtered.length} Entries`}
+          subtitle="Total transactions"
+          icon={Layers}
+        />
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search buyer, crop or Sr #..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-900 placeholder:text-slate-400"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 font-semibold text-slate-600">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>From:</span>
+      {/* Main Table Card */}
+      <ContentCard
+        title="Sales Invoices"
+        badge={`${filtered.length} records`}
+        actions={
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <div className="flex items-center gap-1 text-[#64748B]">
+              <Calendar className="w-3.5 h-3.5" />
+              <span>From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-2 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#111827]"
+              />
+            </div>
+            <div className="flex items-center gap-1 text-[#64748B]">
+              <span>To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-2 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs text-[#111827]"
+              />
+            </div>
+            {(startDate || endDate || search) && (
+              <button
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setSearch("");
+                }}
+                className="text-xs text-[#64748B] hover:text-[#111827] underline"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
             <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium"
+              type="text"
+              placeholder="Search buyer, crop or Sr #..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 font-semibold text-slate-600">
-            <span>To:</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium"
-            />
-          </div>
-
-          {(startDate || endDate || search) && (
-            <button
-              onClick={() => {
-                setStartDate("");
-                setEndDate("");
-                setSearch("");
-              }}
-              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Table Container */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-              <tr>
-                <th className="p-3.5">Sr #</th>
-                <th className="p-3.5">Date</th>
-                <th className="p-3.5">Item / Produce</th>
-                <th className="p-3.5 text-center">Quantity & Unit</th>
-                <th className="p-3.5">Unit Rate (₹)</th>
-                <th className="p-3.5 font-bold">Total Amount (₹)</th>
-                <th className="p-3.5">Buyer & Location</th>
-                <th className="p-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500 font-medium">Loading sales records...</td>
+          <div className="overflow-x-auto -mx-6">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                  <th className="py-2.5 px-4 font-medium">Sr #</th>
+                  <th className="py-2.5 px-4 font-medium">Date</th>
+                  <th className="py-2.5 px-4 font-medium">Produce Item</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Quantity</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Price / Unit</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Total Amount</th>
+                  <th className="py-2.5 px-4 font-medium">Buyer</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Actions</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No sales entries found matching filter.</td>
-                </tr>
-              ) : (
-                filtered.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
-                    <td className="p-3.5 font-bold font-mono text-slate-900">{r.srNo}</td>
-                    <td className="p-3.5 text-slate-600 font-medium">{r.dateOfSale}</td>
-                    <td className="p-3.5 font-bold text-slate-900">{r.itemName}</td>
-                    <td className="p-3.5 text-center font-mono text-slate-700">{r.quantity} {r.unit}</td>
-                    <td className="p-3.5 font-medium text-slate-700">₹{r.pricePerUnit}</td>
-                    <td className="p-3.5 font-bold text-emerald-900">₹{Number(r.totalAmount).toLocaleString()}</td>
-                    <td className="p-3.5">
-                      <div className="font-semibold text-slate-900">{r.buyerName}</div>
-                      {r.buyerCity && <div className="text-[10px] text-slate-400">{r.buyerCity} • {r.buyerContact}</div>}
-                    </td>
-                    <td className="p-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link
-                          href={`/sales-invoice/${r.invoiceGroupId || r.id}`}
-                          className="p-1.5 text-emerald-800 hover:bg-emerald-50 rounded-lg transition-colors"
-                          title="Print / View Sales Slip"
-                        >
-                          <Receipt className="w-3.5 h-3.5" />
-                        </Link>
+              </thead>
+              <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 px-4 text-center text-[#64748B]">Loading sales...</td>
+                  </tr>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 px-4 text-center text-[#64748B]">No sales records found.</td>
+                  </tr>
+                ) : (
+                  filtered.map((r) => (
+                    <tr key={r.id} className="hover:bg-[#F8FAFC] transition-colors">
+                      <td className="py-3 px-4 font-mono font-semibold text-xs">{r.srNo || "—"}</td>
+                      <td className="py-3 px-4 text-[#475569]">{r.dateOfSale}</td>
+                      <td className="py-3 px-4 font-semibold text-[#111827] text-xs">{r.itemName}</td>
+                      <td className="py-3 px-4 text-right font-mono">{r.quantity} {r.unit}</td>
+                      <td className="py-3 px-4 text-right font-mono">₹{Number(r.pricePerUnit).toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-[#174D3C] text-xs">
+                        ₹{Number(r.totalAmount).toFixed(2)}
+                      </td>
+                      <td className="py-3 px-4 text-[#475569]">
+                        <div>{r.buyerName || "Walk-in"}</div>
+                        {r.buyerCity && <span className="text-[10px] text-[#94A3B8]">{r.buyerCity}</span>}
+                      </td>
+                      <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => handleDelete(r.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1 text-[#94A3B8] hover:text-red-700 rounded transition-colors"
                           title="Delete Record"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-
-            {/* Table Footer Totals */}
-            {filtered.length > 0 && (
-              <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300 text-slate-900">
-                <tr>
-                  <td colSpan={5} className="p-3.5 uppercase tracking-wider text-right">
-                    Total Filtered Revenue:
-                  </td>
-                  <td className="p-3.5 text-emerald-950 font-extrabold">
-                    ₹{totalRevenue.toLocaleString()}
-                  </td>
-                  <td colSpan={2}></td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    </div>
+      </ContentCard>
+    </PageContainer>
   );
 }

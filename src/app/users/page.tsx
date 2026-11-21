@@ -1,7 +1,9 @@
 "use client";
 
-import { ShieldCheck,UserPlus } from "lucide-react";
-import { useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
+import { ContentCard } from "@/components/ui/content-card";
+import { Check, ShieldCheck, UserPlus, X } from "lucide-react";
 
 interface RoleDef {
   id: string;
@@ -64,130 +66,142 @@ const initialRoles: RoleDef[] = [
 ];
 
 export default function UsersPage() {
-  const [roles, setRoles] = useState<RoleDef[]>(initialRoles);
+  const roles = initialRoles;
   const canEdit = false;
-  
-
-  const handleTogglePerm = (roleId: string, permKey: keyof RoleDef) => {
-    if (!canEdit) return;
-    setRoles(
-      roles.map((r) =>
-        r.id === roleId ? { ...r, [permKey]: !r[permKey] } : r
-      )
-    );
-  };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-5 rounded-lg border border-slate-200 shadow-xs gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-700" />
-            <h1 className="text-xl font-bold text-slate-900">Access & Role Templates</h1>
-          </div>
-        </div>
-      </div>
+    <PageContainer>
+      {/* Standardized Page Header */}
+      <PageHeader
+        title="Access & Role Templates"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Users & Roles" },
+        ]}
+      />
 
-      <p className="text-sm text-slate-600">Only the administrator account can sign in. Additional user accounts are not enabled; the role templates below are read-only.</p>
-      {/* Roles Permission Matrix Table */}
-      <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 font-bold text-xs text-slate-900 flex justify-between items-center">
-          <span>Fine-Grained Module Permission Matrix</span>
-          {canEdit && (
-            <button className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-md shadow-xs transition-colors flex items-center gap-1">
+      <p className="text-xs text-slate-500">
+        Only the administrator account can sign in. Additional user accounts are not enabled; the role templates below are read-only.
+      </p>
+
+      {/* Roles Permission Matrix Card */}
+      <ContentCard
+        title="Fine-Grained Module Permission Matrix"
+        actions={
+          canEdit ? (
+            <button className="px-3 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white font-semibold text-xs rounded-lg shadow-2xs transition-colors flex items-center gap-1">
               <UserPlus className="w-3.5 h-3.5" />
-              Add Custom Role
+              <span>Add Custom Role</span>
             </button>
-          )}
-        </div>
-
-        <div className="overflow-x-auto">
+          ) : undefined
+        }
+      >
+        <div className="overflow-x-auto -mx-5 -my-5">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <thead className="bg-[#F8FAFC] border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="p-3">Role Name</th>
-                <th className="p-3">Manage Plots</th>
-                <th className="p-3">Manage Crops</th>
-                <th className="p-3">Fertilizer Log</th>
-                <th className="p-3">Diesel Log</th>
-                <th className="p-3">Labor Log</th>
-                <th className="p-3">Sales Log</th>
-                <th className="p-3">View Reports</th>
+                <th className="px-5 py-3">Role Name</th>
+                <th className="px-3 py-3 text-center">Manage Plots</th>
+                <th className="px-3 py-3 text-center">Manage Crops</th>
+                <th className="px-3 py-3 text-center">Fertilizer Log</th>
+                <th className="px-3 py-3 text-center">Diesel Log</th>
+                <th className="px-3 py-3 text-center">Labor Log</th>
+                <th className="px-3 py-3 text-center">Sales Log</th>
+                <th className="px-5 py-3 text-center">View Reports</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200/80 bg-white">
+            <tbody className="divide-y divide-slate-100">
               {roles.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/80">
-                  <td className="p-3 font-bold text-slate-900">{r.name}</td>
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={r.canManagePlots}
-                      disabled={!canEdit}
-                      onChange={() => handleTogglePerm(r.id, "canManagePlots")}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
+                <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                  <td className="px-5 py-3.5 font-bold text-slate-900">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-[#174D3C]" />
+                      <span>{r.name}</span>
+                    </div>
                   </td>
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={r.canManageCrops}
-                      disabled={!canEdit}
-                      onChange={() => handleTogglePerm(r.id, "canManageCrops")}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
+                  <td className="px-3 py-3.5 text-center">
+                    {r.canManagePlots ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EAF3EE] text-[#16805D]">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-400">
+                        <X className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={r.canLogFertilizer}
-                      disabled={!canEdit}
-                      onChange={() => handleTogglePerm(r.id, "canLogFertilizer")}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
+                  <td className="px-3 py-3.5 text-center">
+                    {r.canManageCrops ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EAF3EE] text-[#16805D]">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-400">
+                        <X className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={r.canLogDiesel}
-                      disabled={!canEdit}
-                      onChange={() => handleTogglePerm(r.id, "canLogDiesel")}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
+                  <td className="px-3 py-3.5 text-center">
+                    {r.canLogFertilizer ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EAF3EE] text-[#16805D]">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-400">
+                        <X className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={r.canLogLabor}
-                      disabled={!canEdit}
-                      onChange={() => handleTogglePerm(r.id, "canLogLabor")}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
+                  <td className="px-3 py-3.5 text-center">
+                    {r.canLogDiesel ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EAF3EE] text-[#16805D]">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-400">
+                        <X className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={r.canLogSales}
-                      disabled={!canEdit}
-                      onChange={() => handleTogglePerm(r.id, "canLogSales")}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
+                  <td className="px-3 py-3.5 text-center">
+                    {r.canLogLabor ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EAF3EE] text-[#16805D]">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-400">
+                        <X className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={r.canViewReports}
-                      disabled={!canEdit}
-                      onChange={() => handleTogglePerm(r.id, "canViewReports")}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
+                  <td className="px-3 py-3.5 text-center">
+                    {r.canLogSales ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EAF3EE] text-[#16805D]">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-400">
+                        <X className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3.5 text-center">
+                    {r.canViewReports ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EAF3EE] text-[#16805D]">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-400">
+                        <X className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </ContentCard>
+    </PageContainer>
   );
 }

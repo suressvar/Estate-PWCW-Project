@@ -1,10 +1,12 @@
 "use client";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
-
-import { ManualStockValuationItem } from "@/lib/inventory-data";
-import { ArrowLeft,CheckCircle2,Edit2,Plus,ShieldAlert,Trash2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import React,{ useEffect,useState } from "react";
+import { ArrowLeft, CheckCircle2, Edit2, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { ManualStockValuationItem } from "@/lib/inventory-data";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { ContentCard } from "@/components/ui/content-card";
 
 export default function StockValuationsPage() {
   const [valuations, setValuations] = useState<ManualStockValuationItem[]>([]);
@@ -25,7 +27,7 @@ export default function StockValuationsPage() {
       setLoading(true);
       const res = await fetch("/api/stock-valuations");
       const data = await res.json();
-      setValuations(data);
+      setValuations(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -35,10 +37,15 @@ export default function StockValuationsPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    fetchValuations();
-  })(); }, 0);
-    return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        fetchValuations();
+      })();
+    }, 0);
+    return () => {
+      clearTimeout(pending);
+      if (typeof dispose === "function") dispose();
+    };
   }, []);
 
   const openAdd = () => {
@@ -112,166 +119,190 @@ export default function StockValuationsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between glass-panel p-5 rounded-2xl">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/reports/pnl"
-            className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Periodic Stock Valuations</h1>
+    <PageContainer>
+      <PageHeader
+        title="Periodic Stock Valuations"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Financial Reports", href: "/reports/pnl" },
+          { label: "Stock Valuations" },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              href="/reports/pnl"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] text-xs font-medium rounded-lg transition-colors shadow-2xs"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-[#64748B]" />
+              <span>Back to P&amp;L Report</span>
+            </Link>
+            <button
+              onClick={openAdd}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Valuation Period
+            </button>
           </div>
-        </div>
-
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
-        >
-          <Plus className="w-4 h-4" /> Add Valuation Period
-        </button>
-      </div>
+        }
+      />
 
       {msg && (
-        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"}`}>
-          {msg.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <ShieldAlert className="w-4 h-4 text-rose-600" />}
-          {msg.text}
+        <div
+          className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+            msg.type === "success"
+              ? "bg-[#EAF3EE] text-[#174D3C] border-[#C5DEC8]"
+              : "bg-red-50 text-red-800 border-red-200"
+          }`}
+        >
+          {msg.type === "success" ? (
+            <CheckCircle2 className="w-4 h-4 text-[#174D3C]" />
+          ) : (
+            <ShieldAlert className="w-4 h-4 text-red-600" />
+          )}
+          <span>{msg.text}</span>
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-            <tr>
-              <th className="p-3.5">Period Name</th>
-              <th className="p-3.5">Date Range</th>
-              <th className="p-3.5">Opening Stock (₹)</th>
-              <th className="p-3.5">Closing Stock (₹)</th>
-              <th className="p-3.5 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {valuations.map((v) => (
-              <tr key={v.id} className="hover:bg-slate-50">
-                <td className="p-3.5 font-bold text-slate-900">{v.periodName}</td>
-                <td className="p-3.5 text-slate-600">{v.fromDate} → {v.toDate}</td>
-                <td className="p-3.5 font-bold text-slate-800 font-mono">₹{Number(v.openingStock).toLocaleString()}</td>
-                <td className="p-3.5 font-bold text-emerald-900 font-mono">₹{Number(v.closingStock).toLocaleString()}</td>
-                <td className="p-3.5 text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    <button
-                      onClick={() => openEdit(v)}
-                      className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(v.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </td>
+      {/* Main Table Card */}
+      <ContentCard title="Valuation Periods" badge={`${valuations.length} periods`}>
+        <div className="overflow-x-auto -mx-6">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                <th className="py-2.5 px-4 font-medium">Period Name</th>
+                <th className="py-2.5 px-4 font-medium">Date Range</th>
+                <th className="py-2.5 px-4 font-medium text-right">Opening Stock (₹)</th>
+                <th className="py-2.5 px-4 font-medium text-right">Closing Stock (₹)</th>
+                <th className="py-2.5 px-4 font-medium text-right">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-[#E2E8F0] text-[#111827]">
+              {valuations.map((v) => (
+                <tr key={v.id} className="hover:bg-[#F8FAFC] transition-colors">
+                  <td className="py-3 px-4 font-semibold text-[#111827] text-xs">{v.periodName}</td>
+                  <td className="py-3 px-4 text-[#475569] text-xs font-mono">
+                    {v.fromDate} → {v.toDate}
+                  </td>
+                  <td className="py-3 px-4 text-right font-medium text-[#111827] font-mono text-xs">
+                    ₹{Number(v.openingStock).toLocaleString()}
+                  </td>
+                  <td className="py-3 px-4 text-right font-semibold text-[#174D3C] font-mono text-xs">
+                    ₹{Number(v.closingStock).toLocaleString()}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => openEdit(v)}
+                        className="p-1 text-[#64748B] hover:text-[#111827] rounded transition-colors"
+                        title="Edit Valuation"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(v.id)}
+                        className="p-1 text-[#94A3B8] hover:text-red-700 rounded transition-colors"
+                        title="Delete Valuation"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ContentCard>
 
       {/* Modal Dialog */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-sm">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+              <h3 className="font-semibold text-[#111827] text-sm">
                 {editingId ? "Edit Valuation Period" : "Record Stock Valuation"}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-700 font-bold text-sm">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-[#64748B] hover:text-[#111827] text-sm font-bold">✕</button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Period Name *</label>
+                <label className="block text-[#111827] font-medium text-xs mb-1">Period Name *</label>
                 <input
                   type="text"
                   required
                   value={periodName}
                   onChange={(e) => setPeriodName(e.target.value)}
                   placeholder="e.g. FY 2026-27 Q1"
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                  className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827] focus:ring-1 focus:ring-[#174D3C] focus:bg-white"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">From Date *</label>
+                  <label className="block text-[#111827] font-medium text-xs mb-1">From Date *</label>
                   <input
                     type="date"
                     required
                     value={fromDate}
                     onChange={(e) => setFromDate(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">To Date *</label>
+                  <label className="block text-[#111827] font-medium text-xs mb-1">To Date *</label>
                   <input
                     type="date"
                     required
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium"
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#111827]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Opening Stock (₹) *</label>
+                  <label className="block text-[#111827] font-medium text-xs mb-1">Opening Stock (₹) *</label>
                   <input
                     type="number"
                     required
                     value={openingStock}
                     onChange={(e) => setOpeningStock(Number(e.target.value))}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900"
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#111827]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-1">Closing Stock (₹) *</label>
+                  <label className="block text-[#111827] font-medium text-xs mb-1">Closing Stock (₹) *</label>
                   <input
                     type="number"
                     required
                     value={closingStock}
                     onChange={(e) => setClosingStock(Number(e.target.value))}
-                    className="w-full p-2 bg-white border border-emerald-300 rounded-lg font-bold text-emerald-900"
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#174D3C]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg"
+                  className="px-3.5 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F1F5F9] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg shadow-sm"
+                  className="px-4 py-1.5 bg-[#174D3C] hover:bg-[#103C30] text-white font-semibold text-xs rounded-lg shadow-2xs transition-colors"
                 >
-                  Save Valuation
+                  Save Period
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -1,7 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { registerHooks } from 'node:module';
 if (!path.basename(process.cwd()).startsWith('estate-storage-verification-') || !fs.existsSync('.test-only')) throw new Error('Storage verification requires a marked disposable directory.');
+const sourceRoot = path.dirname(path.dirname(process.argv[2]));
+registerHooks({ resolve(specifier, context, nextResolve) {
+  const target = specifier.startsWith('@/') ? path.join(sourceRoot, specifier.slice(2)) : specifier.startsWith('.') && context.parentURL?.startsWith('file:') ? path.resolve(path.dirname(fileURLToPath(context.parentURL)), specifier) : undefined;
+  if (target && fs.existsSync(`${target}.ts`)) return nextResolve(pathToFileURL(`${target}.ts`).href, context);
+  return nextResolve(specifier, context);
+} });
 const storage = await import(pathToFileURL(process.argv[2]).href);
 const mode = process.argv[3];
 if (mode === 'init') {

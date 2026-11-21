@@ -5,24 +5,23 @@ import { errorMessage as getErrorMessage } from "@/lib/errors";
 import type { ModuleStockSummary } from "@/types/api";
 
 import { StatCard } from "@/components/ui/stat-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-container";
+import { ContentCard } from "@/components/ui/content-card";
 import type { GodownItem } from "@/lib/godown-data";
-import type { MachineryLogItem,PlotCropAssociation,PlotItem } from "@/types/estate";
+import type { MachineryLogItem, PlotCropAssociation, PlotItem } from "@/types/estate";
 import { MACHINE_RATES } from "@/types/estate";
 import {
-AlertCircle,
-CheckCircle2,
-Clock,
-History,
-Package,
-Plus,
-Send,
-ShoppingCart,
-Tractor,
-Warehouse,
-Wrench,
-X
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Package,
+  ShoppingCart,
+  Tractor,
+      X,
 } from "lucide-react";
-import React,{ useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 
 const MACHINES = [
   "John Deere 5050D Tractor",
@@ -69,7 +68,7 @@ export default function MachineryPage() {
   const [runningHours, setRunningHours] = useState(5);
   const [dieselConsumed, setDieselConsumed] = useState(20);
   const [logDate, setLogDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [operatorName, ] = useState("Ramasamy V.");
+  const [operatorName] = useState("Ramasamy V.");
   const [submittingRun, setSubmittingRun] = useState(false);
 
   // Inward Purchase Modal State
@@ -126,9 +125,11 @@ export default function MachineryPage() {
 
   useEffect(() => {
     let dispose: void | (() => void);
-    const pending = setTimeout(() => { dispose = (() => {
-    loadAllData();
-  })(); }, 0);
+    const pending = setTimeout(() => {
+      dispose = (() => {
+        loadAllData();
+      })();
+    }, 0);
     return () => { clearTimeout(pending); if (typeof dispose === 'function') dispose(); };
   }, [loadAllData]);
 
@@ -156,7 +157,6 @@ export default function MachineryPage() {
     }
   };
 
-  // Submit Machine Running Log
   const handleRecordRun = async (e: React.FormEvent) => {
     e.preventDefault();
     const activePlot = plots.find((p) => p.id === selectedPlotId);
@@ -179,7 +179,7 @@ export default function MachineryPage() {
           runningHours: Number(runningHours) || 0,
           dieselConsumedLiters: Number(dieselConsumed) || 0,
           date: logDate,
-          operatorName,
+          loggedBy: operatorName,
           notes: "",
         }),
       });
@@ -200,11 +200,10 @@ export default function MachineryPage() {
     }
   };
 
-  // Submit Inward Spares / Equipment Purchase into Godown
-  const handleInwardSpares = async (e: React.FormEvent) => {
+  const handleInwardEquipment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inwardName.trim() || !inwardQty) {
-      setFeedback({ type: "error", message: "Item name and quantity are required." });
+      setFeedback({ type: "error", message: "Equipment/parts name and quantity are required." });
       return;
     }
 
@@ -219,7 +218,7 @@ export default function MachineryPage() {
           quantity: Number(inwardQty),
           unit: inwardUnit,
           ratePerUnit: Number(inwardRate) || 0,
-          vendorName: inwardVendor.trim() || "Kovai Tractor Spares",
+          vendorName: inwardVendor.trim() || "Spares Supplier",
           location: inwardLocation,
           module: "Machinery",
           notes: "",
@@ -233,170 +232,150 @@ export default function MachineryPage() {
       setInwardName("");
       setInwardQty("");
       setInwardRate("");
+      setInwardVendor("");
       setFeedback({
         type: "success",
-        message: `Successfully inwarded ${data.totalReceivedQuantity} ${data.unit} of "${data.name}" into Godown Tool Crib!`,
+        message: `Successfully purchased & inwarded ${data.totalReceivedQuantity} ${data.unit} of "${data.name}" into Godown Tool Crib!`,
       });
 
       loadAllData();
       setTimeout(() => setFeedback(null), 4000);
     } catch (err) {
-      setFeedback({ type: "error", message: getErrorMessage(err) || "Failed to inward machinery stock" });
+      setFeedback({ type: "error", message: getErrorMessage(err) || "Failed to inward stock" });
     } finally {
       setSubmittingInward(false);
     }
   };
 
-  const totalRunningHours = logs.reduce((acc, l) => acc + (Number(l.runningHours) || 0), 0);
-  const totalDieselConsumedByMachines = logs.reduce((acc, l) => acc + (Number(l.dieselConsumedLiters) || 0), 0);
-
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-16">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between glass-panel p-5 rounded-2xl gap-4 border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black shadow-xs">
-            <Tractor className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Machinery & Equipment Operations</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-900">
-                Godown Spares & Running Logs
-              </span>
-            </h1>
-          </div>
-        </div>
+    <PageContainer>
+      {/* Page Header */}
+      <PageHeader
+        title="Machinery & Tractor Operations"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Plot Operations", href: "/items" },
+          { label: "Machinery Operations" },
+        ]}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowInwardModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <ShoppingCart className="w-3.5 h-3.5 text-estate-primary" />
+              <span>+ Inward Spares / Parts</span>
+            </button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setShowInwardModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition-all"
-          >
-            <ShoppingCart className="w-3.5 h-3.5 text-blue-600" />
-            <span>+ Inward Spares to Godown</span>
-          </button>
-
-          <a
-            href="/godown"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold rounded-xl shadow-xs transition-all"
-          >
-            <Warehouse className="w-3.5 h-3.5" />
-            <span>View Godown Inventory</span>
-          </a>
-        </div>
-      </div>
+            <Link
+              href="/machines"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-estate-primary hover:bg-estate-primary-hover text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <Tractor className="w-3.5 h-3.5" />
+              <span>View Fleet Directory</span>
+            </Link>
+          </div>
+        }
+      />
 
       {/* Notification Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+          className={`p-3.5 rounded-lg text-xs font-semibold flex items-center gap-2 ${
             feedback.type === "success"
               ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
               : "bg-red-50 text-red-900 border border-red-200"
           }`}
         >
           {feedback.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-700" />
+            <AlertCircle className="w-4 h-4 text-red-700 shrink-0" />
           )}
           <span>{feedback.message}</span>
         </div>
       )}
 
-      {/* Real-time Machinery Stock & Ops KPIs */}
+      {/* Real-time Machinery Stock & Logs KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
-          title="Godown Machinery Spares On-Hand"
+          title="Equipment Spares on Hand"
           value={`${stockSummary.totalAvailableQty.toLocaleString("en-IN")} Units`}
-          subtitle={`Valued at ₹${stockSummary.totalValuation.toLocaleString("en-IN")} in Godown tool crib`}
-          icon={Package}
+          subtitle={`Valued at ₹${stockSummary.totalValuation.toLocaleString("en-IN")} across ${stockSummary.itemsCount} equipment items`}
         />
         <StatCard
-          title="Total Spares & Parts Purchased"
+          title="Total Spares Purchases"
           value={`₹${stockSummary.totalPurchasedCost.toLocaleString("en-IN")}`}
-          subtitle={`${stockSummary.totalPurchasedQty.toLocaleString("en-IN")} items inwarded into Godown`}
-          icon={ShoppingCart}
+          subtitle={`${stockSummary.totalPurchasedQty.toLocaleString("en-IN")} parts received into Godown`}
         />
         <StatCard
-          title="Total Operating Hours"
-          value={`${totalRunningHours.toFixed(1)} Hours`}
-          subtitle={`${totalDieselConsumedByMachines.toFixed(1)} L diesel fuel consumed across operations`}
-          icon={Clock}
+          title="Total Hours Logged"
+          value={`${logs.reduce((acc, l) => acc + (Number(l.runningHours) || 0), 0)} Hours`}
+          subtitle={`${logs.reduce((acc, l) => acc + (Number(l.dieselConsumedLiters) || 0), 0)} L diesel consumed in runs`}
         />
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-2">
         <button
           onClick={() => setActiveTab("operations")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "operations"
-              ? "bg-[#15803d] text-white shadow-xs"
+              ? "bg-estate-primary text-white shadow-xs"
               : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
           }`}
         >
-          <Tractor className="w-3.5 h-3.5" />
-          <span>Machinery Usage & Running Logs ({logs.length})</span>
+          <Clock className="w-3.5 h-3.5" />
+          <span>Tractor Run Logs ({logs.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("purchases")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "purchases"
-              ? "bg-[#15803d] text-white shadow-xs"
+              ? "bg-estate-primary text-white shadow-xs"
               : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
           }`}
         >
           <ShoppingCart className="w-3.5 h-3.5" />
-          <span>Spares Purchases & Inward ({stockSummary.purchases?.length || 0})</span>
+          <span>Spares Purchases ({stockSummary.purchases?.length || 0})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("stock")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "stock"
-              ? "bg-[#15803d] text-white shadow-xs"
+              ? "bg-estate-primary text-white shadow-xs"
               : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
           }`}
         >
-          <Wrench className="w-3.5 h-3.5" />
-          <span>Godown Spares Inventory ({stockSummary.items?.length || 0})</span>
+          <Package className="w-3.5 h-3.5" />
+          <span>Spares Inventory Balance ({stockSummary.items?.length || 0})</span>
         </button>
       </div>
 
-      {/* TAB 1: MACHINERY USAGE & OPERATIONS */}
+      {/* TAB 1: RUNNING OPERATIONS */}
       {activeTab === "operations" && (
         <div className="space-y-6">
-          {/* Machine Run Logger Form */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-5 sm:p-6 space-y-5">
-            <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-900 flex items-center justify-center text-xs font-black">
-                  <Tractor className="w-3.5 h-3.5" />
-                </span>
-                <span>Log Machinery Operation & Fuel Consumption</span>
-              </h3>
-            </div>
-
-            <form onSubmit={handleRecordRun} className="space-y-4">
+          <ContentCard
+            title="Log Machine Running Time"
+          >
+            <form onSubmit={handleRecordRun} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Machine Selection */}
                 <div className="space-y-1.5 min-w-0">
-                  <label className="text-xs font-bold text-slate-700">Machine / Tractor *</label>
+                  <label className="font-semibold text-slate-700">Tractor / Machine Unit *</label>
                   <select
-                    aria-label="Machine name"
                     value={machineName}
                     onChange={(e) => {
                       setMachineName(e.target.value);
                       handleTimeChange(startTime, endTime, e.target.value);
                     }}
-                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   >
                     {MACHINES.map((m) => (
                       <option key={m} value={m}>
-                        {m}
+                        {m} ({MACHINE_RATES[m] || 4} L/hr avg)
                       </option>
                     ))}
                   </select>
@@ -404,370 +383,310 @@ export default function MachineryPage() {
 
                 {/* Target Plot */}
                 <div className="space-y-1.5 min-w-0">
-                  <label className="text-xs font-bold text-slate-700">Operating Plot *</label>
+                  <label className="font-semibold text-slate-700">Target Estate Plot *</label>
                   <select
+                    required
                     value={selectedPlotId}
                     onChange={(e) => handlePlotSelect(e.target.value)}
-                    className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   >
                     {plots.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} ({p.location})
+                        {p.name} ({p.areaAcres} Acres - {p.location})
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                {/* Start Time */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Start Time</label>
-                  <input
-                    type="time"
-                    aria-label="Start time"
-                    value={startTime}
-                    onChange={(e) => handleTimeChange(e.target.value, endTime, machineName)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Associated Crop */}
+                <div className="space-y-1.5 min-w-0">
+                  <label className="font-semibold text-slate-700">Associated Crop / Activity</label>
+                  <select
+                    value={selectedCropActivityId}
+                    onChange={(e) => setSelectedCropActivityId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
+                  >
+                    <option value="">-- General Field Preparation --</option>
+                    {associations
+                      .filter((a) => a.plotId === selectedPlotId)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.cropActivityName} ({a.status})
+                        </option>
+                      ))}
+                  </select>
                 </div>
 
-                {/* End Time */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">End Time</label>
-                  <input
-                    type="time"
-                    aria-label="End time"
-                    value={endTime}
-                    onChange={(e) => handleTimeChange(startTime, e.target.value, machineName)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  />
-                </div>
-
-                {/* Running Hours */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Running Hours</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={runningHours}
-                    onChange={(e) => setRunningHours(Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                  />
-                </div>
-
-                {/* Diesel Consumed */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                    <span>Est. Fuel Consumed</span>
-                    <span className="text-[10px] text-amber-700 font-bold">~{MACHINE_RATES[machineName] || 4}L/hr</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={dieselConsumed}
-                      onChange={(e) => setDieselConsumed(Number(e.target.value))}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-amber-800 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">L</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
                 {/* Date */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Operation Date *</label>
+                  <label className="font-semibold text-slate-700">Operation Date *</label>
                   <input
                     type="date"
                     required
                     value={logDate}
                     onChange={(e) => setLogDate(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#15803d]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end">
+              {/* Time Range and Computed Liters */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-lg">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600">Start Time</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                      aria-label="Start time"
+                    onChange={(e) => handleTimeChange(e.target.value, endTime, machineName)}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600">End Time</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                      aria-label="End time"
+                    onChange={(e) => handleTimeChange(startTime, e.target.value, machineName)}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600">Running Hours</label>
+                  <div className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-bold text-estate-primary font-mono">
+                    {runningHours} hrs
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600">Est. Diesel Burn</label>
+                  <div className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-bold text-amber-700 font-mono">
+                    {dieselConsumed} L
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-slate-100">
                 <button
                   type="submit"
                   disabled={submittingRun}
-                  className="px-5 py-2.5 bg-[#15803d] hover:bg-[#166534] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-estate-primary hover:bg-estate-primary-hover text-white text-xs font-semibold rounded-lg shadow-xs transition-colors disabled:opacity-50"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{submittingRun ? "Recording Run Log..." : "Record Machine Operation"}</span>
+                  {submittingRun ? "Saving..." : "Record Machine Run Log"}
                 </button>
               </div>
             </form>
-          </div>
+          </ContentCard>
 
-          {/* Running History Table */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-              <div className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <History className="w-4 h-4 text-blue-600" />
-                <span>Machinery Operations & Fuel Consumption History ({logs.length})</span>
-              </div>
-            </div>
-
+          {/* Historical Logs */}
+          <ContentCard
+            title="Tractor & Machinery Historical Run Logs"
+            noPadding
+          >
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+              <table className="w-full text-left text-xs erp-table">
+                <thead>
                   <tr>
-                    <th className="p-3.5">Date</th>
-                    <th className="p-3.5">Machine Name</th>
-                    <th className="p-3.5">Plot Location</th>
-                    <th className="p-3.5">Activity</th>
-                    <th className="p-3.5 text-right">Running Hours</th>
-                    <th className="p-3.5 text-right">Fuel Consumed</th>
-                    <th className="p-3.5">Operator</th>
+                    <th className="p-3">Date</th>
+                    <th className="p-3">Machine</th>
+                    <th className="p-3">Target Plot</th>
+                    <th className="p-3">Activity</th>
+                    <th className="p-3 text-center">Runtime</th>
+                    <th className="p-3 text-right">Diesel Consumed</th>
+                    <th className="p-3">Operator</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody>
                   {logs.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-500">
-                        No machinery operation logs recorded yet. Use the form above to record machine running hours.
+                      <td colSpan={7} className="text-center py-10 text-slate-400">
+                        <Tractor className="w-8 h-8 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
+                        <p className="font-semibold text-slate-700">No machinery run logs recorded yet.</p>
                       </td>
                     </tr>
                   ) : (
                     logs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">{log.date}</td>
-                        <td className="p-3.5 font-bold text-slate-900 flex items-center gap-2">
-                          <Tractor className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{log.machineName}</span>
-                        </td>
-                        <td className="p-3.5 font-bold text-slate-800">{log.plotName}</td>
-                        <td className="p-3.5 text-blue-800 font-semibold">{log.cropActivityName}</td>
-                        <td className="p-3.5 text-right font-mono font-bold text-slate-900 text-sm">
-                          {log.runningHours} hrs
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold text-amber-700">
-                          {log.dieselConsumedLiters} L
-                        </td>
-                        <td className="p-3.5 text-slate-600">{("operatorName" in log ? String(log.operatorName) : "") || log.loggedBy}</td>
+                        <td className="p-3 text-slate-900 font-medium">{log.date}</td>
+                        <td className="p-3 font-semibold text-slate-900">{log.machineName}</td>
+                        <td className="p-3 text-slate-800">{log.plotName || "General Field"}</td>
+                        <td className="p-3 text-slate-600">{log.cropActivityName || "—"}</td>
+                        <td className="p-3 text-center font-bold text-estate-primary font-mono">{log.runningHours} hrs</td>
+                        <td className="p-3 text-right font-bold text-amber-700 font-mono">{log.dieselConsumedLiters} L</td>
+                        <td className="p-3 text-slate-600">{log.operatorName || log.loggedBy || "—"}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
             </div>
-          </div>
+          </ContentCard>
         </div>
       )}
 
-      {/* TAB 2: SPARES PURCHASES & INWARD */}
+      {/* TAB 2: STOCK PURCHASES */}
       {activeTab === "purchases" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-blue-600" />
-                <span>Machinery Spares, Parts & Implements Inwarded to Godown ({stockSummary.purchases?.length || 0})</span>
-              </h3>
-            </div>
-
-            <button
-              onClick={() => setShowInwardModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-2xs transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Inward Spares / Equipment</span>
-            </button>
-          </div>
-
+        <ContentCard
+          title="Equipment Spares Purchases & Inward Receipts"
+          noPadding
+        >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <table className="w-full text-left text-xs erp-table">
+              <thead>
                 <tr>
-                  <th className="p-3.5">Date Received</th>
-                  <th className="p-3.5">Spare Part / Equipment</th>
-                  <th className="p-3.5">Supplier / Workshop Vendor</th>
-                  <th className="p-3.5 text-right">Quantity Inwarded</th>
-                  <th className="p-3.5 text-right">Rate / Unit</th>
-                  <th className="p-3.5 text-right">Total Invoice Cost</th>
-                  <th className="p-3.5">Tool Crib Storage Rack</th>
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Part / Spare Name</th>
+                  <th className="p-3">Supplier / Vendor</th>
+                  <th className="p-3 text-right">Quantity</th>
+                  <th className="p-3 text-right">Rate / Unit</th>
+                  <th className="p-3 text-right">Total Cost</th>
+                  <th className="p-3">Location</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {(!stockSummary.purchases || stockSummary.purchases.length === 0) ? (
+              <tbody>
+                {stockSummary.purchases?.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-500">
-                      No machinery spares purchase records found in Godown. Click &quot;+ Inward Spares / Equipment&quot; to add parts.
+                    <td colSpan={7} className="text-center py-10 text-slate-400">
+                      No spares purchases inwarded yet.
                     </td>
                   </tr>
                 ) : (
-                  stockSummary.purchases.map((m) => (
-                    <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 whitespace-nowrap font-medium text-slate-800">{m.date}</td>
-                      <td className="p-3.5 font-bold text-slate-900">{m.itemName}</td>
-                      <td className="p-3.5 text-slate-600">{m.source}</td>
-                      <td className="p-3.5 text-right font-mono font-bold text-slate-900">
-                        {m.quantity} {m.unit}
-                      </td>
-                      <td className="p-3.5 text-right font-mono text-slate-600">
-                        ₹{Number(m.ratePerUnit || 0).toFixed(2)}
-                      </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-[#15803d]">
-                        ₹{Number(m.totalCost || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="p-3.5 text-slate-600">{m.destinationMenu || "Tool Crib Rack 4"}</td>
+                  stockSummary.purchases?.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 text-slate-900 font-medium">{p.date}</td>
+                      <td className="p-3 font-semibold text-slate-900">{p.itemName}</td>
+                      <td className="p-3 text-slate-600">{p.vendorName || "Spares Vendor"}</td>
+                      <td className="p-3 text-right font-medium text-slate-800">{p.quantity} {p.unit}</td>
+                      <td className="p-3 text-right text-slate-600 font-mono">₹{p.ratePerUnit.toLocaleString("en-IN")}</td>
+                      <td className="p-3 text-right font-bold text-slate-900 font-mono">₹{p.totalCost.toLocaleString("en-IN")}</td>
+                      <td className="p-3 text-slate-600">{p.location}</td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </ContentCard>
       )}
 
-      {/* TAB 3: GODOWN MACHINERY SPARES INVENTORY */}
+      {/* TAB 3: SPARES INVENTORY BALANCE */}
       {activeTab === "stock" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-blue-600" />
-                <span>On-Hand Machinery Spares & Implements in Godown ({stockSummary.items?.length || 0})</span>
-              </h3>
-            </div>
-
-            <div className="text-xs font-bold text-slate-700">
-              Valuation:{" "}
-              <span className="text-[#15803d] font-extrabold text-sm">
-                ₹{stockSummary.totalValuation.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-          </div>
-
+        <ContentCard
+          title="Current Tool Crib & Spares Inventory"
+          noPadding
+        >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+            <table className="w-full text-left text-xs erp-table">
+              <thead>
                 <tr>
-                  <th className="p-3.5">Spare Part / Implement</th>
-                  <th className="p-3.5">Tool Crib Rack Location</th>
-                  <th className="p-3.5 text-right">Available Qty</th>
-                  <th className="p-3.5 text-right">Total Inward</th>
-                  <th className="p-3.5 text-right">Rate / Unit</th>
-                  <th className="p-3.5 text-right">Total Valuation</th>
-                  <th className="p-3.5 text-center">Stock Status</th>
+                  <th className="p-3">Item Name</th>
+                  <th className="p-3">Storage Location</th>
+                  <th className="p-3 text-right">Total Received</th>
+                  <th className="p-3 text-right">Consumed</th>
+                  <th className="p-3 text-right">Available Stock</th>
+                  <th className="p-3 text-right">Valuation (₹)</th>
+                  <th className="p-3 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {(!stockSummary.items || stockSummary.items.length === 0) ? (
+              <tbody>
+                {stockSummary.items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-500">
-                      No machinery spares currently in Godown. Click &quot;+ Inward Spares to Godown&quot; to add parts.
+                    <td colSpan={7} className="text-center py-10 text-slate-400">
+                      No spares items found in Godown inventory.
                     </td>
                   </tr>
                 ) : (
-                  stockSummary.items.map((item: GodownItem) => {
-                    const isLow = item.status === "LOW_STOCK";
-                    const isExhausted = item.status === "EXHAUSTED";
-
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5">
-                          <div className="font-bold text-slate-900">{item.name}</div>
-                          <div className="text-[11px] text-slate-500">{item.vendorName}</div>
-                        </td>
-                        <td className="p-3.5 text-slate-600">{item.location}</td>
-                        <td className="p-3.5 text-right font-mono font-bold text-slate-900 text-sm">
-                          {item.availableQuantity} {item.unit}
-                        </td>
-                        <td className="p-3.5 text-right font-mono text-slate-500">
-                          {item.totalReceivedQuantity} {item.unit}
-                        </td>
-                        <td className="p-3.5 text-right font-mono text-slate-600">
-                          ₹{Number(item.ratePerUnit).toFixed(2)}
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold text-[#15803d]">
-                          ₹{Number(item.totalValue || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3.5 text-center">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                              isExhausted
-                                ? "bg-red-100 text-red-800 border border-red-200"
-                                : isLow
-                                ? "bg-amber-100 text-amber-800 border border-amber-200"
-                                : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                            }`}
-                          >
-                            {item.status.replace("_", " ")}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
+                  stockSummary.items.map((item: GodownItem) => (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 font-semibold text-slate-900">{item.name}</td>
+                      <td className="p-3 text-slate-600">{item.location}</td>
+                      <td className="p-3 text-right font-medium text-slate-700">{(item.quantity ?? item.totalReceivedQuantity ?? 0)} {item.unit}</td>
+                      <td className="p-3 text-right font-medium text-rose-700">
+                        {((item.quantity ?? item.totalReceivedQuantity ?? 0) - item.availableQuantity)} {item.unit}
+                      </td>
+                      <td className="p-3 text-right font-bold text-estate-primary">
+                        {item.availableQuantity} {item.unit}
+                      </td>
+                      <td className="p-3 text-right font-bold text-slate-900 font-mono">
+                        ₹{(item.availableQuantity * (item.ratePerUnit || 0)).toLocaleString("en-IN")}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                            item.availableQuantity > 0
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : "bg-red-50 text-red-800 border border-red-200"
+                          }`}
+                        >
+                          {item.availableQuantity > 0 ? "In Stock" : "Depleted"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </ContentCard>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL: INWARD MACHINERY SPARES INTO GODOWN                                 */}
-      {/* ========================================================================= */}
+      {/* MODAL: INWARD MACHINERY STOCK */}
       {showInwardModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black">
-                  <Wrench className="w-4 h-4" />
-                </span>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4 text-estate-primary" />
                 <span>Inward Machinery Spares to Godown</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowInwardModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleInwardSpares} className="space-y-4">
+            <form onSubmit={handleInwardEquipment} className="space-y-4 text-xs">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Spare Part / Implement Name *</label>
+                <label className="font-semibold text-slate-700">Part / Equipment Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Tractor Rotavator Blades (Set), Hydraulic Oil 15W-40, Oil Filter"
+                  placeholder="e.g. Tractor Rotavator Blades, Diesel Fuel Filter, V-Belt"
                   value={inwardName}
                   onChange={(e) => setInwardName(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Quantity Purchased *</label>
+                  <label className="font-semibold text-slate-700">Quantity Purchased *</label>
                   <input
                     type="number"
                     required
                     min="1"
-                    step="any"
                     placeholder="e.g. 10"
                     value={inwardQty}
                     onChange={(e) => setInwardQty(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-bold font-mono"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Unit *</label>
+                  <label className="font-semibold text-slate-700">Unit *</label>
                   <select
                     required
                     value={inwardUnit}
                     onChange={(e) => setInwardUnit(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium"
                   >
                     {availableUnits.map((u) => (
                       <option key={u.id} value={u.unitSymbol}>
@@ -781,59 +700,59 @@ export default function MachineryPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Rate per Unit (₹)</label>
+                  <label className="font-semibold text-slate-700">Rate per Unit (₹)</label>
                   <input
                     type="number"
                     step="any"
-                    placeholder="e.g. 650"
+                    placeholder="e.g. 850"
                     value={inwardRate}
                     onChange={(e) => setInwardRate(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs font-medium font-mono"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Supplier / Vendor</label>
+                  <label className="font-semibold text-slate-700">Vendor / Supplier</label>
                   <input
                     type="text"
                     placeholder="e.g. Kovai Tractor Spares"
                     value={inwardVendor}
                     onChange={(e) => setInwardVendor(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Storage Rack in Godown</label>
+                <label className="font-semibold text-slate-700">Godown Location</label>
                 <input
                   type="text"
                   value={inwardLocation}
                   onChange={(e) => setInwardLocation(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-estate-primary text-xs"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowInwardModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingInward}
-                  className="px-4 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-2 text-xs font-semibold bg-estate-primary hover:bg-estate-primary-hover text-white rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {submittingInward ? "Saving..." : "Inward Spares"}
+                  {submittingInward ? "Saving..." : "Inward Stock"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }
