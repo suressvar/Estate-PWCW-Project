@@ -231,6 +231,8 @@ function markAttendanceImpl(payload: {
 }
 
 function bulkMarkAttendanceImpl(attendanceDate: string, status: AttendanceStatus) {
+  dateKey(attendanceDate);
+  oneOf(status, ["PRESENT", "ABSENT", "HALF_DAY", "LEAVE", "HOLIDAY"], "Attendance status");
   const db = getDatabase();
   const activeEmps = (db.employees || []).filter((e) => e.status === "ACTIVE");
   activeEmps.forEach((emp) => {

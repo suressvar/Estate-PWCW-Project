@@ -385,7 +385,8 @@ export function addCropIncome(data: {
     throw new Error("Rate per unit must be greater than zero.");
   }
 
-  const finalAmount = data.amount !== undefined ? Number(data.amount) : Math.round(qty * rate * 100) / 100;
+  const finalAmount = positiveNumber(data.amount !== undefined ? Number(data.amount) : Math.round(qty * rate * 100) / 100, "Income amount");
+  const unit = requiredText(data.unit, "Income unit");
   const { warning } = validateCropCycleDateRange(cycle, data.date);
 
   const db = getDatabase();
@@ -397,7 +398,7 @@ export function addCropIncome(data: {
     cropCycleId: data.cropCycleId,
     source: data.source,
     quantitySold: qty,
-    unit: data.unit.trim(),
+    unit,
     ratePerUnit: rate,
     amount: finalAmount,
     date: data.date,

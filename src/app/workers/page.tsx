@@ -31,7 +31,19 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ContentCard } from "@/components/ui/content-card";
 import { StatCard } from "@/components/ui/stat-card";
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
 export default function WorkersManagementPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => { if (active) setMounted(true); });
+    return () => { active = false; };
+  }, []);
+
   const todayStr = new Date().toISOString().split("T")[0];
   const [activeTab, setActiveTab] = useState<
     "attendance" | "activities" | "summary"
@@ -478,6 +490,7 @@ export default function WorkersManagementPage() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
+                  suppressHydrationWarning
                   className="px-2.5 py-1 rounded-lg border border-[#E2E8F0] text-xs font-semibold text-[#111827] focus:ring-1 focus:ring-[#174D3C]"
                 />
                 <button
@@ -494,7 +507,7 @@ export default function WorkersManagementPage() {
                 >
                   Today
                 </button>
-                {new Date(selectedDate + "T00:00:00").getDay() === 0 && (
+                {mounted && new Date(selectedDate + "T00:00:00").getDay() === 0 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                     <Calendar className="w-3 h-3 text-amber-700" />
                     <span>Sunday - Weekly Off (Leave)</span>
@@ -503,7 +516,7 @@ export default function WorkersManagementPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {new Date(selectedDate + "T00:00:00").getDay() === 0 && (
+                {mounted && new Date(selectedDate + "T00:00:00").getDay() === 0 && (
                   <button
                     id="bulk-mark-sunday-leave-btn"
                     onClick={handleBulkMarkSundayLeave}
@@ -806,7 +819,7 @@ export default function WorkersManagementPage() {
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                     <option key={m} value={m}>
-                      {new Date(2026, m - 1, 1).toLocaleString("default", { month: "long" })}
+                      {MONTH_NAMES[m - 1]}
                     </option>
                   ))}
                 </select>

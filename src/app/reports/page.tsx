@@ -65,6 +65,7 @@ export default function ReportsPage() {
     <PageContainer>
       <PageHeader
         title="Financial & Operational Reports"
+        description="Comprehensive audit of estate revenues, expenditures, plot profitability, and operational performance."
         breadcrumbs={[
           { label: "Financial Reports", href: "/reports" },
           { label: "Analytics Overview" },
@@ -165,16 +166,19 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Total Estate Revenue"
+          description="All crop sales & harvests"
           value={`₹${kpis.totalRevenue.toLocaleString()}`}
           icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
         />
         <StatCard
           title="Total Operating Expense"
+          description="Labor, inputs & farm overheads"
           value={`₹${kpis.totalExpenses.toLocaleString()}`}
           icon={<TrendingDown className="w-5 h-5 text-rose-600" />}
         />
         <StatCard
           title="Net PWCW Profit"
+          description={kpis.netProfit >= 0 ? "Operating Profit" : "Operating Loss"}
           value={`₹${kpis.netProfit.toLocaleString()}`}
           trend={{
             value: kpis.netProfit >= 0 ? "NET PROFIT" : "NET LOSS",
@@ -193,6 +197,7 @@ export default function ReportsPage() {
       {/* Plot-Wise P&L Report Table */}
       <ContentCard
         title="Plot-wise Profitability Audit Report"
+        subtitle="Gross revenue, operating expenses, and net margin segmented per cultivated plot."
       >
         <div className="overflow-x-auto -mx-6 -mb-6">
           <table className="w-full text-left text-xs border-collapse">
@@ -245,6 +250,7 @@ export default function ReportsPage() {
       {/* Crop-Wise Audit Table */}
       <ContentCard
         title="Crop-wise Performance Audit Report"
+        subtitle="Operational economics and margins per cultivated crop across all seasons."
       >
         <div className="overflow-x-auto -mx-6 -mb-6">
           <table className="w-full text-left text-xs border-collapse">

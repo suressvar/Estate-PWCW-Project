@@ -64,7 +64,7 @@ const framework = read('node_modules/next/package.json').version;
 const total = unit.numTotalTests + current.total + old.total + compatibility.total;
 const report = `# Final software repair and verification report
 
-Date: 21 November 2026 (Asia/Kolkata). Updated after black-box testing and the full regression pass.
+Date: 22 November 2026 (Asia/Kolkata). Verification ran on 21–22 November 2026.
 
 See [BLACK_BOX_TEST_REPORT.md](BLACK_BOX_TEST_REPORT.md) for the latest public-interface findings, repairs and remaining verification limits.
 
@@ -222,15 +222,11 @@ $env:TEST_APP_DIR = '${path.basename(testAppDir)}'
 $env:TEST_SERVER_PORT = '${testPort}'
 $env:TEST_EVIDENCE_DIR = '${evidence}'
 npm ci
-npm run lint
-npx tsc --noEmit
-npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
-npm run test:integration:prepare
-npm run test:integration:build
-npm run test:integration
-npm run test:e2e
-npm run test:cross-browser
-npm audit
+npm run test:all
+npx eslint . --format json --output-file "$env:TEST_EVIDENCE_DIR/fix-lint.json"
+npx tsc --noEmit --pretty false *> "$env:TEST_EVIDENCE_DIR/fix-typecheck.txt"
+npm audit --json > "$env:TEST_EVIDENCE_DIR/dependency-audit-final.json"
+npm run test:integration:report
 ~~~
 
 Run the production suites sequentially. Install the corresponding Chromium, Firefox and WebKit Playwright browsers first. The safe legacy wrapper sets its working directory to the isolated copy; direct-storage tests are blocked from running against working estate records.
@@ -245,7 +241,7 @@ fs.writeFileSync(path.join(root, 'FINAL_SOFTWARE_REPORT.md'), report);
 const blackBoxCases = integration.filter(result => result.file.includes('black-box'));
 const blackBoxReport = `# Black-box testing and repair report
 
-21 November 2026, Asia/Kolkata. Application: Ranga Estate PWCW.
+22 November 2026, Asia/Kolkata. Application: Ranga Estate PWCW. Verification ran on 21–22 November.
 
 ## Result and score
 
@@ -279,6 +275,7 @@ The additional cases cover 80 invalid-body combinations across 16 public write e
 | A failed plot/crop loading request caused a page exception. | Validate loading responses, retain existing data, show a clear error and provide Retry. | Injected 503 responses cause no page exception; retry retrieves and displays a saved record. |
 | Operational APIs accepted negative, invalid, overflowing quantities and impossible dates, including values serialized as null. | Validate before committing logs and return a client error. Preserve required transaction data and rollback on rejection. | All 16 new boundary cases failed before repair; final cases require rejection and an unchanged register. |
 | Fuel quantities were saved but displayed blank, selected metadata was lost, and fractional issues were blocked by the form. | Use canonical log fields, retain plot/equipment/operator metadata and permit the supported quantity precision. | A public 0.001 L issue leaves 0.999 L in stock and appears in the register; metadata retention is asserted. |
+| Already-fixed failures reappeared when an older application and copied test snapshot was launched. | Normal test commands refresh stale builds/copies, verify build fingerprints, and guard legacy tests against the real workspace. | The old snapshot is rejected; both storage-safety unit checks pass. All regression cases pass, with compatibility rerun after an interrupted browser cleanup. |
 
 Related export repairs preserve commas, quotes, newlines, Unicode, hash characters and zero amounts. Download data is encoded completely rather than treating hash characters as URL fragments. Fifteen additional unit cases check CSV safety, cell boundaries, numeric fidelity and download encoding.
 
@@ -293,6 +290,7 @@ Spreadsheet protection follows [OWASP CSV Injection guidance](https://community.
 - Full accessibility certification, independent penetration testing, long-running soak tests, production-scale capacity and every interaction in every browser remain outside the verified scope.
 - The product remains a single-administrator application with cooperating local file writers. Multi-host storage and external service integrations are not certified by these tests. Legacy approved leave without provenance snapshots still needs manual attendance review before reversal.
 - Other layout work was retained and retested. Generated evidence was moved outside the shared cleanup area. Earlier interrupted runs and corrected test assumptions are excluded from the final passing totals.
+- The all-suite command reached the final browser cleanup before a long interruption caused a teardown timeout. The complete compatibility suite was rerun against the same verified source; the final tables use that rerun rather than treating the interrupted command as a clean run.
 
 ## Evidence and data preservation
 

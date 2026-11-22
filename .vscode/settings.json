@@ -18,8 +18,9 @@
     "**/test-results": true,
     "**/playwright-report": true
   },
-  "files.autoSave": "afterDelay",
+  "files.autoSave": "off",
   "files.autoSaveDelay": 2000,
   "files.autoSaveWhenNoErrors": true,
-  "editor.formatOnSave": false
+  "editor.formatOnSave": false,
+  "diffEditor.renderSideBySide": true
 }

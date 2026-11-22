@@ -1,3 +1,4 @@
+import { withTransaction } from "@/lib/db-storage";
 import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
 getPettyCashLedger,
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
 
+    return withTransaction(() => {
     if (action === "recalculate") {
       recalculatePettyCashLedger();
       const status = getPettyCashStatus();
@@ -55,6 +57,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+    });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: getErrorMessage(error) || "Failed to process petty cash transaction" },

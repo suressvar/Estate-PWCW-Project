@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Menu, Search } from "lucide-react";
+import { ChevronRight, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -108,20 +108,8 @@ export function Topbar({ onOpenMobileMenu }: TopbarProps) {
         </nav>
       </div>
 
-      {/* Right: Search shortcut, User profile */}
+      {/* Right: User profile */}
       <div className="flex items-center gap-3 shrink-0">
-        {/* Global Quick Search Hint */}
-        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 text-xs text-slate-400 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-lg transition-colors cursor-pointer">
-          <Search className="w-3.5 h-3.5 text-slate-400" />
-          <span>Search ERP...</span>
-          <kbd className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded font-mono text-slate-500 shadow-2xs">
-            ⌘K
-          </kbd>
-        </div>
-
-        {/* Vertical divider */}
-        <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-
         {/* User Identity Preview */}
         <div className="flex items-center gap-2.5 pl-1">
           <div className="w-8 h-8 rounded-lg bg-[#174D3C] text-white flex items-center justify-center font-bold text-xs shadow-xs">

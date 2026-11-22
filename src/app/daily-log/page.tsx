@@ -434,6 +434,7 @@ function DailyLogContent() {
       {/* Page Header */}
       <PageHeader
         title="Daily Work Tracking & Operations"
+        description="Comprehensive day book logging field tasks, workforce attendance, machinery running hours, and operational material issues."
         breadcrumbs={[
           { label: "Operations", href: "/daily-log" },
           { label: "Daily Work Log" },
@@ -733,6 +734,7 @@ function DailyLogContent() {
           <div className="lg:col-span-2 space-y-4">
             <ContentCard
               title={`Planned Activities for ${currentPlot?.name || "Plot"}`}
+              subtitle={`Scheduled tasks, field crew allocations, and status for ${selectedDate}.`}
               action={
                 <button
                   onClick={() => setIsAddModalOpen(true)}

@@ -1,12 +1,11 @@
 import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { calculateSalariesForMonth,getWages } from "@/lib/hr-data";
 import { NextResponse } from "next/server";
+import { salaryPeriod, salaryPeriodQuery } from "@/lib/salary-period";
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const year = Number(searchParams.get("year")) || new Date().getFullYear();
-    const month = Number(searchParams.get("month")) || new Date().getMonth() + 1;
+    const { year, month } = salaryPeriodQuery(req);
     const wages = getWages(year, month);
     return NextResponse.json(wages);
   } catch (err) {
@@ -16,11 +15,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { year, month, workingDays } = await req.json();
-    if (!year || !month) {
-      return NextResponse.json({ error: "Year and month required" }, { status: 400 });
-    }
-    const computed = calculateSalariesForMonth(Number(year), Number(month), Number(workingDays) || 26);
+    const { year, month, workingDays } = salaryPeriod(await req.json(), false);
+    const computed = calculateSalariesForMonth(year, month, workingDays);
     return NextResponse.json(computed);
   } catch (err) {
     return NextResponse.json({ error: getErrorMessage(err) }, { status: 400 });

@@ -1,3 +1,4 @@
+import { withTransaction } from "@/lib/db-storage";
 import { WagePaidStatus } from "@/lib/db-storage";
 import { errorMessage as getErrorMessage } from "@/lib/errors";
 import {
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "wageId is required" }, { status: 400 });
     }
 
+    return withTransaction(() => {
     const updated = recordWagePayment(body.wageId, {
       paidAmount: body.paidAmount,
       paidDate: body.paidDate,
@@ -48,6 +50,7 @@ export async function POST(request: Request) {
     syncWageToCropExpense(updated);
 
     return NextResponse.json(updated);
+    });
   } catch (err) {
     return NextResponse.json(
       { error: getErrorMessage(err) || "Failed to record wage payment" },

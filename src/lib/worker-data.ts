@@ -367,6 +367,14 @@ function upsertWorkerAttendanceAndWageImpl(data: {
   if (!db.wageEntries) db.wageEntries = [];
   validateAllocation(db, undefined, data.cropCycleId);
 
+  const previous = db.workerAttendances.find(a => a.workerId === data.workerId && a.date === data.date);
+  const checkIn = data.checkInTime === undefined ? previous?.checkInTime : data.checkInTime;
+  const checkOut = data.checkOutTime === undefined ? previous?.checkOutTime : data.checkOutTime;
+  for (const time of [checkIn, checkOut]) {
+    if (time !== undefined && time !== '' && (typeof time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))) throw new ValidationError('Attendance times must use HH:mm.');
+  }
+  if (checkIn && checkOut && checkOut < checkIn) throw new ValidationError('Check-out cannot precede check-in on the attendance date.');
+
   const now = new Date().toISOString();
 
   // 1. Calculate hours & wage

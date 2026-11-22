@@ -1,3 +1,5 @@
+import { positiveNumber } from "@/lib/validation";
+import { getDatabase, withTransaction } from "@/lib/db-storage";
 import { addCropIncome,deleteCropIncome,getCropCycleFinancials } from "@/lib/crop-cycle-data";
 import { errorMessage as getErrorMessage } from "@/lib/errors";
 import { NextResponse } from "next/server";
@@ -13,13 +15,14 @@ export async function POST(
   try {
     const body = await request.json();
 
+    return withTransaction(() => {
     const result = addCropIncome({
       cropCycleId: id,
       source: body.source,
-      quantitySold: Number(body.quantitySold),
+      quantitySold: positiveNumber(body.quantitySold, "quantitySold"),
       unit: body.unit,
-      ratePerUnit: Number(body.ratePerUnit),
-      amount: body.amount !== undefined ? Number(body.amount) : undefined,
+      ratePerUnit: positiveNumber(body.ratePerUnit, "ratePerUnit"),
+      amount: body.amount !== undefined ? positiveNumber(body.amount, "amount") : undefined,
       date: body.date,
       buyerName: body.buyerName,
       invoiceNo: body.invoiceNo,
@@ -34,6 +37,7 @@ export async function POST(
       },
       { status: 201 }
     );
+    });
   } catch (err) {
     return NextResponse.json(
       { error: getErrorMessage(err) || "Failed to log income" },
@@ -42,16 +46,17 @@ export async function POST(
   }
 }
 
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const incomeId = searchParams.get("incomeId");
-  if (!incomeId) {
-    return NextResponse.json({ error: "incomeId is required" }, { status: 400 });
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const recordId = new URL(request.url).searchParams.get("incomeId");
+    if (!recordId) return NextResponse.json({ error: "incomeId is required" }, { status: 400 });
+    return withTransaction(() => {
+      const record = (getDatabase().cropIncomes || []).find(row => row.id === recordId && row.cropCycleId === id);
+      if (!record || !deleteCropIncome(recordId)) return NextResponse.json({ error: "Income not found" }, { status: 404 });
+      return NextResponse.json({ success: true });
+    });
+  } catch (error) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
-
-  const success = deleteCropIncome(incomeId);
-  if (!success) {
-    return NextResponse.json({ error: "Income entry not found" }, { status: 404 });
-  }
-  return NextResponse.json({ success: true });
 }

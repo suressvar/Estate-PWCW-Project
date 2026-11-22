@@ -17,7 +17,7 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/app/layout.tsx'],
       reporter: ['text', 'json-summary', 'html'],
-      thresholds: { lines: 60, statements: 59, functions: 48, branches: 40 },
+      thresholds: { lines: 65, statements: 63, functions: 53, branches: 46 },
     },
   },
 });

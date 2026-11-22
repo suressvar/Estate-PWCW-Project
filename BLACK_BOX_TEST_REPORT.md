@@ -1,6 +1,6 @@
 # Black-box testing and repair report
 
-21 November 2026, Asia/Kolkata. Application: Ranga Estate PWCW.
+22 November 2026, Asia/Kolkata. Application: Ranga Estate PWCW. Verification ran on 21–22 November.
 
 ## Result and score
 
@@ -8,12 +8,12 @@
 
 | Final suite | Passed | Failed |
 | --- | ---: | ---: |
-| Unit, component, storage and direct-handler regression tests | 517 | 0 |
+| Unit, component, storage and direct-handler regression tests | 519 | 0 |
 | Production HTTP integration, validation and browser tests | 239 | 0 |
 | Additional black-box cases included in the production suite above | 147 | 0 |
 | Existing repository browser/logic suite | 50 | 0 |
 | Firefox and WebKit, including logout/history checks | 42 | 0 |
-| **Combined regression total** | **848** | **0** |
+| **Combined regression total** | **850** | **0** |
 
 The black-box row is a subset of the production suite and is not added twice. No tests were skipped. Build, type checks and lint passed; lint reported zero errors and warnings. The dependency audit reported zero known advisories. The tested production source matched the working application.
 
@@ -34,6 +34,7 @@ The additional cases cover 80 invalid-body combinations across 16 public write e
 | A failed plot/crop loading request caused a page exception. | Validate loading responses, retain existing data, show a clear error and provide Retry. | Injected 503 responses cause no page exception; retry retrieves and displays a saved record. |
 | Operational APIs accepted negative, invalid, overflowing quantities and impossible dates, including values serialized as null. | Validate before committing logs and return a client error. Preserve required transaction data and rollback on rejection. | All 16 new boundary cases failed before repair; final cases require rejection and an unchanged register. |
 | Fuel quantities were saved but displayed blank, selected metadata was lost, and fractional issues were blocked by the form. | Use canonical log fields, retain plot/equipment/operator metadata and permit the supported quantity precision. | A public 0.001 L issue leaves 0.999 L in stock and appears in the register; metadata retention is asserted. |
+| Already-fixed failures reappeared when an older application and copied test snapshot was launched. | Normal test commands refresh stale builds/copies, verify build fingerprints, and guard legacy tests against the real workspace. | The old snapshot is rejected; both storage-safety unit checks pass. All regression cases pass, with compatibility rerun after an interrupted browser cleanup. |
 
 Related export repairs preserve commas, quotes, newlines, Unicode, hash characters and zero amounts. Download data is encoded completely rather than treating hash characters as URL fragments. Fifteen additional unit cases check CSV safety, cell boundaries, numeric fidelity and download encoding.
 
@@ -48,6 +49,7 @@ Spreadsheet protection follows [OWASP CSV Injection guidance](https://community.
 - Full accessibility certification, independent penetration testing, long-running soak tests, production-scale capacity and every interaction in every browser remain outside the verified scope.
 - The product remains a single-administrator application with cooperating local file writers. Multi-host storage and external service integrations are not certified by these tests. Legacy approved leave without provenance snapshots still needs manual attendance review before reversal.
 - Other layout work was retained and retested. Generated evidence was moved outside the shared cleanup area. Earlier interrupted runs and corrected test assumptions are excluded from the final passing totals.
+- The all-suite command reached the final browser cleanup before a long interruption caused a teardown timeout. The complete compatibility suite was rerun against the same verified source; the final tables use that rerun rather than treating the interrupted command as a clean run.
 
 ## Evidence and data preservation
 
@@ -59,7 +61,7 @@ Evidence directory: C:/Users/Suressvar/.codex/visualizations/2026/11/15/01a1de5c
 - Build, types, lint and audit: integration-build-output.txt, fix-typecheck.txt, fix-lint.json and dependency-audit-final.json.
 - The full test inventory and reproduction commands are in [FINAL_SOFTWARE_REPORT.md](FINAL_SOFTWARE_REPORT.md).
 
-Estate data SHA-256 at the start and end of the final run: 5debbd1abd3aa420c34a1c7ec9ed5b520a9e74adf1961c85b7cbb0efa3ad4b64.
+Estate data SHA-256 at the start and end of the final run: ba95846e7bd9b75425e70a887f5b178a0cf773109152577765e849b4e38cfcf3.
 
 The workspace and data file changed between interrupted snapshots. This report preserves the current baseline captured for the final run; no older estate-data file was restored.
 

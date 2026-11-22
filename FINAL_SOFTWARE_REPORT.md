@@ -1,6 +1,6 @@
 # Final software repair and verification report
 
-Date: 21 November 2026 (Asia/Kolkata). Updated after black-box testing and the full regression pass.
+Date: 22 November 2026 (Asia/Kolkata). Verification ran on 21–22 November 2026.
 
 See [BLACK_BOX_TEST_REPORT.md](BLACK_BOX_TEST_REPORT.md) for the latest public-interface findings, repairs and remaining verification limits.
 
@@ -23,11 +23,11 @@ The score weights business risk and verification scope; it is not the percentage
 
 | Suite | Passed | Failed | Total |
 | --- | ---: | ---: | ---: |
-| Unit, component, storage, authentication and direct-handler tests | 517 | 0 | 517 |
+| Unit, component, storage, authentication and direct-handler tests | 519 | 0 | 519 |
 | Production HTTP integration, validation and browser suite | 239 | 0 | 239 |
 | Updated existing repository suite | 50 | 0 | 50 |
 | Firefox and WebKit browser compatibility | 42 | 0 | 42 |
-| **Combined** | **848** | **0** | **848** |
+| **Combined** | **850** | **0** | **850** |
 
 No tests are skipped. Some suites exercise overlapping behavior; this is not a count of unique requirements.
 
@@ -60,6 +60,7 @@ No tests are skipped. Some suites exercise overlapping behavior; this is not a c
 - Failed plot/crop register loads retain prior data and offer a working retry instead of crashing on an error response.
 - Operational logs reject negative, nonnumeric, overflowing and invalid-date entries before saving. Fuel records retain plot/equipment/operator details and display the saved quantity; fractional fuel issues are available in the form. Restored accessible quantity and time-input labels.
 - Added public-boundary tests, recovery scenarios and cross-browser logout history checks. Retested the latest parallel layout changes; protected the test evidence from shared-folder cleanup.
+- Test commands now refresh stale application/test copies automatically. Build fingerprints and worker-level storage guards prevent old builds or unsafe direct legacy launches from producing misleading failures or using real estate records. Run npm run test:all for the complete sequence.
 
 ### White-box repairs on 21 November
 
@@ -71,7 +72,7 @@ No tests are skipped. Some suites exercise overlapping behavior; this is not a c
 
 ### Additional repairs and evidence since the 88/100 assessment
 
-- Unit/component/direct-handler tests increased from 236 to 517. Whole-source unit line coverage increased from 27.84% to 64.02% without removing additional files from coverage. Branch coverage increased from 19.82% to 45.42%. Enforced coverage floors are 60% lines, 59% statements, 48% functions and 40% branches.
+- Unit/component/direct-handler tests increased from 236 to 519. Whole-source unit line coverage increased from 27.84% to 64.02% without removing additional files from coverage. Branch coverage increased from 19.82% to 45.42%. Enforced coverage floors are 60% lines, 59% statements, 48% functions and 40% branches.
 - Core-library line coverage (including financial, authentication, storage and other src/lib modules) is 88.01% (2495/2835 lines). The whole-source figure also includes application pages, API handlers and shared controls.
 - Added empty and populated scenarios for all 49 application page files (some are aliases), real-handler resource CRUD checks, form saves/cancellations, navigation tests, rejected-save feedback and targeted financial regressions. Page loading checks do not assert every possible interaction.
 - Replaced millisecond-only record and invoice group IDs with UUID-based identities. Rapid creation no longer collides. Updates reject primary-key replacement.
@@ -145,8 +146,8 @@ The following evidence paths are relative to: C:/Users/Suressvar/.codex/visualiz
 - Unit coverage: coverage/index.html and coverage/coverage-summary.json.
 - Structured results: test-results.json, integration-results.json, legacy-browser-results.json and cross-browser-results.json.
 - Additional logs: integration-build-output.txt, fix-typecheck.txt, fix-lint.json and dependency-audit-final.json.
-- Estate data SHA-256 at the start of the final run: 5debbd1abd3aa420c34a1c7ec9ed5b520a9e74adf1961c85b7cbb0efa3ad4b64
-- Estate data SHA-256 after the final run: 5debbd1abd3aa420c34a1c7ec9ed5b520a9e74adf1961c85b7cbb0efa3ad4b64
+- Estate data SHA-256 at the start of the final run: ba95846e7bd9b75425e70a887f5b178a0cf773109152577765e849b4e38cfcf3
+- Estate data SHA-256 after the final run: ba95846e7bd9b75425e70a887f5b178a0cf773109152577765e849b4e38cfcf3
 
 All destructive test operations ran in the marked isolated copy .black-box-app on port 3117. Existing application edits were preserved. The original estate data was not copied into the tests or modified by the test runs.
 
@@ -157,15 +158,11 @@ $env:TEST_APP_DIR = '.black-box-app'
 $env:TEST_SERVER_PORT = '3117'
 $env:TEST_EVIDENCE_DIR = 'C:\Users\Suressvar\.codex\visualizations\2026\11\15\01a1de5c-0a4c-7b70-b3a8-f859a9796134\black-box-evidence'
 npm ci
-npm run lint
-npx tsc --noEmit
-npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
-npm run test:integration:prepare
-npm run test:integration:build
-npm run test:integration
-npm run test:e2e
-npm run test:cross-browser
-npm audit
+npm run test:all
+npx eslint . --format json --output-file "$env:TEST_EVIDENCE_DIR/fix-lint.json"
+npx tsc --noEmit --pretty false *> "$env:TEST_EVIDENCE_DIR/fix-typecheck.txt"
+npm audit --json > "$env:TEST_EVIDENCE_DIR/dependency-audit-final.json"
+npm run test:integration:report
 ~~~
 
 Run the production suites sequentially. Install the corresponding Chromium, Firefox and WebKit Playwright browsers first. The safe legacy wrapper sets its working directory to the isolated copy; direct-storage tests are blocked from running against working estate records.

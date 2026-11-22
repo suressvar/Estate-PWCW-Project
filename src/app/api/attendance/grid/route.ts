@@ -1,12 +1,11 @@
 import { getAttendanceForMonth,getEmployees } from "@/lib/hr-data";
 import { NextResponse } from "next/server";
+import { salaryPeriodQuery } from "@/lib/salary-period";
+import { errorMessage } from "@/lib/errors";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const now = new Date();
-  const year = parseInt(searchParams.get("year") || String(now.getFullYear()));
-  const month = parseInt(searchParams.get("month") || String(now.getMonth() + 1));
-
+  try {
+  const { year, month } = salaryPeriodQuery(req);
   const employees = getEmployees();
   const records = getAttendanceForMonth(year, month);
 
@@ -16,4 +15,7 @@ export async function GET(req: Request) {
     employees,
     records,
   });
+  } catch (error) {
+    return NextResponse.json({ error: errorMessage(error) }, { status: 400 });
+  }
 }
